@@ -85,6 +85,12 @@ def get_sequence_column_numbers(align):
 
 
 def fetch_uniprot_sequences(protein_identifiers):
+    """
+    Retrieve UniProt sequences.
+
+    :param protein_identifiers: List of protein identifiers (UniProt IDs or protein name)
+    :return: List of protein sequences.
+    """
     url = 'http://www.uniprot.org/uniprot/'
     uniprot_sequences = []
     for p in protein_identifiers:
