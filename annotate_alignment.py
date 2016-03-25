@@ -67,6 +67,23 @@ def get_row_residue_numbers(align, uniprot_seqs, use_local_alignment):
     return align_res_nums
 
 
+def get_sequence_column_numbers(align):
+    """
+    
+    :param align:
+    :return:
+    """
+    # Build list of column numbers for each non-gap for each sequence
+    align_col_nums = []
+    for a in align:
+        seq_id = a.id
+        seq = str(a.seq)
+        col_nums = [i for i, s in enumerate(seq) if s != '-']
+        align_col_nums.append((seq_id, col_nums))
+
+    return align_col_nums
+
+
 def _fetch_variants(prots):
     # Get variant data
     # Get the data with EnsEMBL variants
@@ -138,15 +155,7 @@ def main():
     # Read alignment
     align = AlignIO.read(args.fasta_file, "fasta")
 
-    # Build list of column numbers for each non-gap for each sequence
-    align_col_nums = []
-    for a in align:
-        seq_id = a.id
-        seq = str(a.seq)
-        col_nums = [i for i, s in enumerate(seq) if s != '-']
-        align_col_nums.append((seq_id, col_nums))
-
-    # Get UniProt sequences
+    align_col_nums = get_sequence_column_numbers(align)# Get UniProt sequences
     prots = [re.search('\w*', a.id).group().strip() for a in align]
     url = 'http://www.uniprot.org/uniprot/'
     uniprot_seqs = []
