@@ -174,20 +174,13 @@ def write_jalview_annotation(ordered_values, file_name, title, description):
     return 0
 
 
-def main():
+def main(args):
     """
     Fetch variants for identified protein sequences in an MSA, map to residues and columns and write Jalview feature
     files with key statistics.
 
     :return:
     """
-    # CLI Arguments
-    parser = argparse.ArgumentParser(description='Create variant counts column wise for an alignment.')
-    parser.add_argument('fasta_file', type=str, help='Path to fasta file containing MSA.')
-    parser.add_argument('--use_local_alignment', action='store_true',
-                        help='Align sub-sequences to UniProt rather than enforcing exact match.')
-    args = parser.parse_args()
-
     # Read alignment
     alignment = AlignIO.read(args.fasta_file, "fasta")
 
@@ -256,5 +249,13 @@ def main():
 
 
 if __name__ == '__main__':
-    merged_table = main()
+    # CLI Arguments
+    parser = argparse.ArgumentParser(description='Create variant counts column wise for an alignment.')
+    parser.add_argument('fasta_file', type=str, help='Path to fasta file containing MSA.')
+    parser.add_argument('--use_local_alignment', action='store_true',
+                        help='Align sub-sequences to UniProt rather than enforcing exact match.')
+    args = parser.parse_args()
+
+    merged_table = main(args)
+
     code.interact(local=dict(globals(), **locals()))
