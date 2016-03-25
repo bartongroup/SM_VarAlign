@@ -203,21 +203,19 @@ def main(args):
     for i in mapped:
         mapped_df = mapped_df.append(pd.DataFrame(i), ignore_index=True)
 
+    # Fetch variants
     germline_table = _fetch_variants(protein_identifiers)
 
-    # Merge the data and write Jalview annotations
+    # Merge the data
     # Merge variant table and key table
     merged_table = pd.merge(mapped_df, germline_table,
                             left_on=['prot_name_key', 'uniprot_res_num'],
                             right_on=['UniProt_dbAccessionId', 'start'])
 
-    # Count variants per column
-    raw_counts = merged_table['alignment_col_num'].value_counts(sort=False)
-    variants_per_pos = parse_variant_count(raw_counts)
-
-    # Write annotation track
-    ordered_values = zip(*variants_per_pos)[1]
-    write_jalview_annotation(ordered_values, 'variants_per_column.csv', 'Total_Variants',
+    # Counting variants and writing Jalview annotations
+    total_variant_counts = merged_table['alignment_col_num'].value_counts(sort=False)
+    total_variants_per_column = parse_variant_count(total_variant_counts)
+    write_jalview_annotation(zip(*total_variants_per_column)[1], 'variants_per_column.csv', 'Total_Variants',
                              'Total number of variants in summed over all proteins.')
 
     # Do some other counts
@@ -226,21 +224,20 @@ def main(args):
     is_ED = (merged_table['from_aa'] == 'E') & (merged_table['to_aa_expanded'] == 'D')
     is_DE = (merged_table['from_aa'] == 'D') & (merged_table['to_aa_expanded'] == 'E')
 
-    raw_missense = merged_table.loc[is_missense, 'alignment_col_num'].value_counts(sort=False)
-    raw_missense_exc_DE = merged_table.loc[is_missense & ~(is_ED | is_DE), 'alignment_col_num'].value_counts(sort=False)
+    missense_variant_counts = merged_table.loc[is_missense, 'alignment_col_num'].value_counts(sort=False)
+    missense_variants_per_column = parse_variant_count(missense_variant_counts)
+    write_jalview_annotation(zip(*missense_variants_per_column)[1], 'missense_per_column.csv', 'Missense_Variants',
+                             'Total number of missense variants in summed over all proteins.')
 
-    missense_per_pos = parse_variant_count(raw_missense)
-    missense_per_pos_exc_DE = parse_variant_count(raw_missense_exc_DE)
-
+    missense_exc_DE_counts = merged_table.loc[is_missense & ~(is_ED | is_DE), 'alignment_col_num'].value_counts(sort=False)
+    missense_exc_DE_per_column = parse_variant_count(missense_exc_DE_counts)
+    write_jalview_annotation(zip(*missense_exc_DE_per_column)[1], 'missense_per_column_exc_DE.csv',
+                             'Missense_Variants (exc. DE)',
+                             'Number of missense variants excluding E-D and D-E summed over all proteins.')
+    
     # TODO: Need to check key exists as won't if no pathogenic...
     #raw_pathogenic = pd.crosstab(merged_table['alignment_col_num'], merged_table['clinical_significance'])['pathogenic']
     #patho_per_pos = parse_variant_count(raw_pathogenic)
-
-    write_jalview_annotation(zip(*missense_per_pos)[1], 'missense_per_column.csv', 'Missense_Variants',
-                         'Total number of missense variants in summed over all proteins.')
-    write_jalview_annotation(zip(*missense_per_pos_exc_DE)[1], 'missense_per_column_exc_DE.csv',
-                             'Missense_Variants (exc. DE)',
-                             'Number of missense variants excluding E-D and D-E summed over all proteins.')
     #write_jalview_annotation(zip(*patho_per_pos)[1], 'patho_per_column.csv', 'Pathogenic_variants',
     #                         'Number of variants annotated pathogenic by ClinVar.')
 
