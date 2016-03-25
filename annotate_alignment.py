@@ -166,14 +166,14 @@ def _fetch_variants(prots):
 
 
 def fill_variant_count(value_counts, length):
-        variants_per_pos = []
-        for i in xrange(length):
-            col_pos = i + 1
-            try:
-                variants_per_pos.append((col_pos, value_counts[col_pos]))
-            except KeyError:
-                variants_per_pos.append((col_pos, 0))
-        return variants_per_pos
+    variants_per_pos = []
+    for i in xrange(length):
+        col_pos = i + 1
+        try:
+            variants_per_pos.append((col_pos, value_counts[col_pos]))
+        except KeyError:
+            variants_per_pos.append((col_pos, 0))
+    return variants_per_pos
 
 
 def write_jalview_annotation(ordered_values, file_name, title, description):
