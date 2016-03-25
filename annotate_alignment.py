@@ -58,7 +58,7 @@ def main():
     for a in align:
         seq_id = a.id
         seq = str(a.seq)
-        col_nums = [i + 1 for i, s in enumerate(seq) if s != '-']
+        col_nums = [i for i, s in enumerate(seq) if s != '-']
         align_col_nums.append((seq_id, col_nums))
 
     # Get UniProt sequences
@@ -93,7 +93,7 @@ def main():
         align_res_nums = []
         for sub_seq_id, uniprot_seq_id, pairwise in alignments:
             seq = str(pairwise[0][0])
-            res_nums = [i + 1 for i, s in enumerate(seq) if s != '-']  # TODO: wrong if other seq has gaps too
+            res_nums = [i for i, s in enumerate(seq) if s != '-']  # TODO: wrong if other seq has gaps too
             align_res_nums.append((sub_seq_id, uniprot_seq_id, res_nums))
     else:
         align_res_nums = []
