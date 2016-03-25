@@ -165,7 +165,7 @@ def _fetch_variants(prots):
     return germline_table
 
 
-def parse_variant_count(value_counts, length=160):
+def fill_variant_count(value_counts, length=160):
         variants_per_pos = []
         for i in xrange(length):
             col_pos = i + 1
@@ -215,7 +215,7 @@ def main(args):
 
     # Counting variants and writing Jalview annotations
     total_variant_counts = merged_table['alignment_col_num'].value_counts(sort=False)
-    total_variants_per_column = parse_variant_count(total_variant_counts)
+    total_variants_per_column = fill_variant_count(total_variant_counts)
     write_jalview_annotation(zip(*total_variants_per_column)[1], 'variants_per_column.csv', 'Total_Variants',
                              'Total number of variants in summed over all proteins.')
 
@@ -226,19 +226,19 @@ def main(args):
     is_DE = (merged_table['from_aa'] == 'D') & (merged_table['to_aa_expanded'] == 'E')
 
     missense_variant_counts = merged_table.loc[is_missense, 'alignment_col_num'].value_counts(sort=False)
-    missense_variants_per_column = parse_variant_count(missense_variant_counts)
+    missense_variants_per_column = fill_variant_count(missense_variant_counts)
     write_jalview_annotation(zip(*missense_variants_per_column)[1], 'missense_per_column.csv', 'Missense_Variants',
                              'Total number of missense variants in summed over all proteins.')
 
     missense_exc_DE_counts = merged_table.loc[is_missense & ~(is_ED | is_DE), 'alignment_col_num'].value_counts(sort=False)
-    missense_exc_DE_per_column = parse_variant_count(missense_exc_DE_counts)
+    missense_exc_DE_per_column = fill_variant_count(missense_exc_DE_counts)
     write_jalview_annotation(zip(*missense_exc_DE_per_column)[1], 'missense_per_column_exc_DE.csv',
                              'Missense_Variants (exc. DE)',
                              'Number of missense variants excluding E-D and D-E summed over all proteins.')
 
     # TODO: Need to check key exists as won't if no pathogenic...
     #raw_pathogenic = pd.crosstab(merged_table['alignment_col_num'], merged_table['clinical_significance'])['pathogenic']
-    #patho_per_pos = parse_variant_count(raw_pathogenic)
+    #patho_per_pos = fill_variant_count(raw_pathogenic)
     #write_jalview_annotation(zip(*patho_per_pos)[1], 'patho_per_column.csv', 'Pathogenic_variants',
     #                         'Number of variants annotated pathogenic by ClinVar.')
 
