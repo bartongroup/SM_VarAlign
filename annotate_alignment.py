@@ -103,6 +103,17 @@ def fetch_uniprot_sequences(protein_identifiers):
     return uniprot_sequences
 
 
+def map_columns_to_residues(alignment_column_numbers, alignment_residue_numbers):
+    # Map Alignment Column to UniProt Res. Number
+    mapped = []
+    for seq_id, uniprot_seq_id, res_nums in alignment_residue_numbers:
+        ind = zip(*alignment_column_numbers)[0].index(seq_id)
+        col_nums = zip(*alignment_column_numbers)[1][ind]
+        mapped.append({'seq_id': seq_id, 'uniprot_seq_id': uniprot_seq_id, 'uniprot_res_num': res_nums,
+                       'alignment_col_num': col_nums})
+    return mapped
+
+
 def _fetch_variants(prots):
     # Get variant data
     # Get the data with EnsEMBL variants
@@ -181,15 +192,9 @@ def main():
     uniprot_sequences = fetch_uniprot_sequences(protein_identifiers)
     protein_identifiers = zip(*uniprot_sequences)[0]  # Ensure prots contains UniProt IDs (could be protein names)
 
+    # Map columns to residues
     alignment_residue_numbers = get_row_residue_numbers(alignment, uniprot_sequences, args.use_local_alignment)
-
-    # Map Alignment Column to UniProt Res. Number
-    mapped = []
-    for seq_id, uniprot_seq_id, res_nums in alignment_residue_numbers:
-        ind = zip(*alignment_column_numbers)[0].index(seq_id)
-        col_nums = zip(*alignment_column_numbers)[1][ind]
-        mapped.append({'seq_id': seq_id, 'uniprot_seq_id': uniprot_seq_id,'uniprot_res_num': res_nums,
-                       'alignment_col_num': col_nums})
+    mapped = map_columns_to_residues(alignment_column_numbers, alignment_residue_numbers)
 
     for i in mapped:
         prot_name = i['uniprot_seq_id'].split('|')[1]  # UniProt ID
