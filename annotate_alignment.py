@@ -196,17 +196,19 @@ def main():
     missense_per_pos = parse_variant_count(raw_missense)
     missense_per_pos_exc_DE = parse_variant_count(raw_missense_exc_DE)
 
-    raw_pathogenic = pd.crosstab(merged_table['alignment_col_num'], merged_table['clinical_significance'])['pathogenic']
-    patho_per_pos = parse_variant_count(raw_pathogenic)
+    # TODO: Need to check key exists as won't if no pathogenic...
+    #raw_pathogenic = pd.crosstab(merged_table['alignment_col_num'], merged_table['clinical_significance'])['pathogenic']
+    #patho_per_pos = parse_variant_count(raw_pathogenic)
 
     write_jalview_annotation(zip(*missense_per_pos)[1], 'missense_per_column.csv', 'Missense_Variants',
                          'Total number of missense variants in summed over all proteins.')
     write_jalview_annotation(zip(*missense_per_pos_exc_DE)[1], 'missense_per_column_exc_DE.csv', 'Missense_Variants (exc. DE)',
                              'Number of missense variants excluding E-D and D-E summed over all proteins.')
-    write_jalview_annotation(zip(*patho_per_pos)[1], 'patho_per_column.csv', 'Pathogenic_variants',
-                             'Number of variants annotated pathogenic by ClinVar.')
+    #write_jalview_annotation(zip(*patho_per_pos)[1], 'patho_per_column.csv', 'Pathogenic_variants',
+    #                         'Number of variants annotated pathogenic by ClinVar.')
 
     return merged_table
+
 
 if __name__ == '__main__':
     merged_table = main()
