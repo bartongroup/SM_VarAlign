@@ -179,8 +179,23 @@ def fill_variant_count(value_counts, length=160):
 def write_jalview_annotation(ordered_values, file_name, title, description):
     with open(file_name, 'w') as results_file:
         results_file.write('JALVIEW_ANNOTATION\n')
-        results_file.write('BAR_GRAPH\t{}\t{}\t'.format(title, description) +
-                           '|'.join('{},,{}'.format(str(x), str(x)) for x in ordered_values))
+        if isinstance(ordered_values, tuple) and all(map(lambda x: isinstance(x, str), [title, description])):
+            results_file.write('BAR_GRAPH\t{}\t{}\t'.format(title, description) +
+                               '|'.join('{},,{}'.format(str(x), str(x)) for x in ordered_values))
+        elif all(map(lambda x: isinstance(x, list), [ordered_values, title, description])):
+            arg_lengths = map(len, [ordered_values, title, description])
+            if len(set(arg_lengths)) == 1:
+                for v, t, d in zip(ordered_values, title, description):
+                    results_file.write('BAR_GRAPH\t{}\t{}\t'.format(t, d) +
+                                       '|'.join('{},,{}'.format(str(x), str(x)) for x in v))
+                    results_file.write('\n')
+            else:
+                log.error('List arguments must be of same length')
+                raise TypeError
+        else:
+            log.error('Must provide same number of titles/descriptions as lists of values.')
+            raise TypeError
+
     return 0
 
 
@@ -219,7 +234,7 @@ def main(args):
     write_jalview_annotation(zip(*total_variants_per_column)[1], 'variants_per_column.csv', 'Total_Variants',
                              'Total number of variants in summed over all proteins.')
 
-    # Do some other counts
+    # Make some other counts
     is_missense = (merged_table['type'] == 'missense_variant') & \
                   (merged_table['from_aa'] != merged_table['to_aa_expanded'])
     is_ED = (merged_table['from_aa'] == 'E') & (merged_table['to_aa_expanded'] == 'D')
@@ -227,14 +242,18 @@ def main(args):
 
     missense_variant_counts = merged_table.loc[is_missense, 'alignment_col_num'].value_counts(sort=False)
     missense_variants_per_column = fill_variant_count(missense_variant_counts)
-    write_jalview_annotation(zip(*missense_variants_per_column)[1], 'missense_per_column.csv', 'Missense_Variants',
-                             'Total number of missense variants in summed over all proteins.')
 
     missense_exc_DE_counts = merged_table.loc[is_missense & ~(is_ED | is_DE), 'alignment_col_num'].value_counts(sort=False)
     missense_exc_DE_per_column = fill_variant_count(missense_exc_DE_counts)
-    write_jalview_annotation(zip(*missense_exc_DE_per_column)[1], 'missense_per_column_exc_DE.csv',
-                             'Missense_Variants (exc. DE)',
-                             'Number of missense variants excluding E-D and D-E summed over all proteins.')
+
+    variant_counts = [zip(*missense_variants_per_column)[1],
+                      zip(*missense_exc_DE_per_column)[1]]
+    titles = ['Missense_Variants',
+              'Missense_Variants (exc. DE)']
+    descriptions = ['Total number of missense variants in summed over all proteins.',
+                    'Number of missense variants excluding E-D and D-E summed over all proteins.']
+
+    write_jalview_annotation(variant_counts, 'jalview_annotations.csv', titles, descriptions)
 
     # TODO: Need to check key exists as won't if no pathogenic...
     #raw_pathogenic = pd.crosstab(merged_table['alignment_col_num'], merged_table['clinical_significance'])['pathogenic']
