@@ -19,10 +19,19 @@ import logging
 log = logging.getLogger(__name__)
 
 def get_row_residue_numbers(align, uniprot_seqs, use_local_alignment):
+    """
+    Map each sequence in an alignment to a longer sequence and return the residue numbers.
+
+    :param align: MultipleSeqAlignment for processing.
+    :param uniprot_seqs: List of full-length SeqRecords.
+    :param use_local_alignment: If True, use a local alignment rather than exact pattern matching.
+    :return: A list of tuples with the sequence IDs and residues numbers for each sequence in the alignment.
+    """
     # Prepare sequences for alignment to UniProt by removing gaps
     unaligned_seqs = []
     for a in align:
         unaligned_seqs.append(SeqRecord(Seq(str(a.seq).replace('-', '').upper(), a.seq.alphabet), id=a.id))
+
     if use_local_alignment:
         # Align input alignment sequences to UniProt Sequences
         alignments = []
