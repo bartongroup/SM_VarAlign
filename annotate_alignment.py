@@ -165,7 +165,7 @@ def _fetch_variants(prots):
     return germline_table
 
 
-def fill_variant_count(value_counts, length=160):
+def fill_variant_count(value_counts, length):
         variants_per_pos = []
         for i in xrange(length):
             col_pos = i + 1
@@ -235,13 +235,13 @@ def main(args):
     is_DE = (merged_table['from_aa'] == 'D') & (merged_table['to_aa_expanded'] == 'E')
 
     total_variant_counts = merged_table['alignment_col_num'].value_counts(sort=False)
-    total_variants_per_column = fill_variant_count(total_variant_counts)
-    
+    total_variants_per_column = fill_variant_count(total_variant_counts, alignment.get_alignment_length())
+
     missense_variant_counts = merged_table.loc[is_missense, 'alignment_col_num'].value_counts(sort=False)
-    missense_variants_per_column = fill_variant_count(missense_variant_counts)
+    missense_variants_per_column = fill_variant_count(missense_variant_counts, alignment.get_alignment_length())
 
     missense_exc_DE_counts = merged_table.loc[is_missense & ~(is_ED | is_DE), 'alignment_col_num'].value_counts(sort=False)
-    missense_exc_DE_per_column = fill_variant_count(missense_exc_DE_counts)
+    missense_exc_DE_per_column = fill_variant_count(missense_exc_DE_counts, alignment.get_alignment_length())
 
     variant_counts = [zip(*total_variants_per_column)[1],
                       zip(*missense_variants_per_column)[1],
