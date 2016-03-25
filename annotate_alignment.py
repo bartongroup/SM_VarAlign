@@ -117,7 +117,17 @@ def map_columns_to_residues(alignment_column_numbers, alignment_residue_numbers)
         col_nums = zip(*alignment_column_numbers)[1][ind]
         mapped.append({'seq_id': seq_id, 'uniprot_seq_id': uniprot_seq_id, 'uniprot_res_num': res_nums,
                        'alignment_col_num': col_nums})
-    return mapped
+
+    for i in mapped:
+        prot_name = i['uniprot_seq_id'].split('|')[1]  # UniProt ID
+        i.update({'UniProt_ID': prot_name})
+
+    # Create and concat mapping tables
+    mapped_df = pd.DataFrame()
+    for i in mapped:
+        mapped_df = mapped_df.append(pd.DataFrame(i), ignore_index=True)
+
+    return mapped_df
 
 
 def _fetch_variants(prots):
@@ -194,22 +204,13 @@ def main(args):
     alignment_residue_numbers = get_row_residue_numbers(alignment, uniprot_sequences, args.use_local_alignment)
     mapped = map_columns_to_residues(alignment_column_numbers, alignment_residue_numbers)
 
-    for i in mapped:
-        prot_name = i['uniprot_seq_id'].split('|')[1]  # UniProt ID
-        i.update({'prot_name_key': prot_name})
-
-    # Create and concat mapping tables
-    mapped_df = pd.DataFrame()
-    for i in mapped:
-        mapped_df = mapped_df.append(pd.DataFrame(i), ignore_index=True)
-
     # Fetch variants
     germline_table = _fetch_variants(protein_identifiers)
 
     # Merge the data
     # Merge variant table and key table
-    merged_table = pd.merge(mapped_df, germline_table,
-                            left_on=['prot_name_key', 'uniprot_res_num'],
+    merged_table = pd.merge(mapped, germline_table,
+                            left_on=['UniProt_ID', 'uniprot_res_num'],
                             right_on=['UniProt_dbAccessionId', 'start'])
 
     # Counting variants and writing Jalview annotations
