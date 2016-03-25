@@ -178,7 +178,8 @@ def main():
     for seq_id, uniprot_seq_id, res_nums in alignment_residue_numbers:
         ind = zip(*alignment_column_numbers)[0].index(seq_id)
         col_nums = zip(*alignment_column_numbers)[1][ind]
-        mapped.append({'seq_id': seq_id, 'uniprot_seq_id': uniprot_seq_id,'uniprot_res_num': res_nums, 'alignment_col_num': col_nums})
+        mapped.append({'seq_id': seq_id, 'uniprot_seq_id': uniprot_seq_id,'uniprot_res_num': res_nums,
+                       'alignment_col_num': col_nums})
 
     for i in mapped:
         prot_name = i['uniprot_seq_id'].split('|')[1]  # UniProt ID
@@ -207,7 +208,8 @@ def main():
                              'Total number of variants in summed over all proteins.')
 
     # Do some other counts
-    is_missense = (merged_table['type'] == 'missense_variant') & (merged_table['from_aa'] != merged_table['to_aa_expanded'])
+    is_missense = (merged_table['type'] == 'missense_variant') & \
+                  (merged_table['from_aa'] != merged_table['to_aa_expanded'])
     is_ED = (merged_table['from_aa'] == 'E') & (merged_table['to_aa_expanded'] == 'D')
     is_DE = (merged_table['from_aa'] == 'D') & (merged_table['to_aa_expanded'] == 'E')
 
@@ -223,7 +225,8 @@ def main():
 
     write_jalview_annotation(zip(*missense_per_pos)[1], 'missense_per_column.csv', 'Missense_Variants',
                          'Total number of missense variants in summed over all proteins.')
-    write_jalview_annotation(zip(*missense_per_pos_exc_DE)[1], 'missense_per_column_exc_DE.csv', 'Missense_Variants (exc. DE)',
+    write_jalview_annotation(zip(*missense_per_pos_exc_DE)[1], 'missense_per_column_exc_DE.csv',
+                             'Missense_Variants (exc. DE)',
                              'Number of missense variants excluding E-D and D-E summed over all proteins.')
     #write_jalview_annotation(zip(*patho_per_pos)[1], 'patho_per_column.csv', 'Pathogenic_variants',
     #                         'Number of variants annotated pathogenic by ClinVar.')
