@@ -3,6 +3,7 @@ from Bio import AlignIO, SeqIO, pairwise2
 from Bio.Seq import Seq
 from Bio.SeqRecord import SeqRecord
 from Bio.pairwise2 import format_alignment
+import code
 import pandas as pd
 import re
 import urllib2
@@ -179,4 +180,5 @@ def main():
                              'Total number of variants in summed over all proteins.')
 
 if __name__ == '__main__':
-    main()
+    merged_table = main()
+    code.interact(local=dict(globals(), **locals()))
