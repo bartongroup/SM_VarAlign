@@ -104,7 +104,13 @@ def fetch_uniprot_sequences(protein_identifiers):
 
 
 def map_columns_to_residues(alignment_column_numbers, alignment_residue_numbers):
-    # Map Alignment Column to UniProt Res. Number
+    """
+    Map alignment columns to UniProt residue numbers.
+
+    :param alignment_column_numbers:
+    :param alignment_residue_numbers:
+    :return:
+    """
     mapped = []
     for seq_id, uniprot_seq_id, res_nums in alignment_residue_numbers:
         ind = zip(*alignment_column_numbers)[0].index(seq_id)
