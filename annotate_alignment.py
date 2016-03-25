@@ -84,6 +84,19 @@ def get_sequence_column_numbers(align):
     return align_col_nums
 
 
+def fetch_uniprot_sequences(protein_identifiers):
+    url = 'http://www.uniprot.org/uniprot/'
+    uniprot_sequences = []
+    for p in protein_identifiers:
+        p = p.strip()
+        remote_fasta = url + p + '.fasta'
+        handle = urllib2.urlopen(remote_fasta)
+        for seq_record in SeqIO.parse(handle, "fasta"):
+            p = seq_record.id.split('|')[1]  # Extract UniProt ID
+            uniprot_sequences.append((p, seq_record))
+    return uniprot_sequences
+
+
 def _fetch_variants(prots):
     # Get variant data
     # Get the data with EnsEMBL variants
@@ -159,15 +172,7 @@ def main():
 
     # Get UniProt sequences
     protein_identifiers = [re.search('\w*', sequence.id).group().strip() for sequence in alignment]
-    url = 'http://www.uniprot.org/uniprot/'
-    uniprot_sequences = []
-    for p in protein_identifiers:
-        p = p.strip()
-        remote_fasta = url + p + '.fasta'
-        handle = urllib2.urlopen(remote_fasta)
-        for seq_record in SeqIO.parse(handle, "fasta"):
-            p = seq_record.id.split('|')[1]  # Extract UniProt ID
-            uniprot_sequences.append((p, seq_record))
+    uniprot_sequences = fetch_uniprot_sequences(protein_identifiers)
     protein_identifiers = zip(*uniprot_sequences)[0]  # Ensure prots contains UniProt IDs (could be protein names)
 
     use_local_alignment = args.use_local_alignment
