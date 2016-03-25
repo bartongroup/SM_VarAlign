@@ -153,31 +153,31 @@ def main():
     args = parser.parse_args()
 
     # Read alignment
-    align = AlignIO.read(args.fasta_file, "fasta")
+    alignment = AlignIO.read(args.fasta_file, "fasta")
 
-    align_col_nums = get_sequence_column_numbers(align)
+    alignment_column_numbers = get_sequence_column_numbers(alignment)
 
     # Get UniProt sequences
-    prots = [re.search('\w*', a.id).group().strip() for a in align]
+    protein_identifiers = [re.search('\w*', sequence.id).group().strip() for sequence in alignment]
     url = 'http://www.uniprot.org/uniprot/'
-    uniprot_seqs = []
-    for p in prots:
+    uniprot_sequences = []
+    for p in protein_identifiers:
         p = p.strip()
         remote_fasta = url + p + '.fasta'
         handle = urllib2.urlopen(remote_fasta)
         for seq_record in SeqIO.parse(handle, "fasta"):
             p = seq_record.id.split('|')[1]  # Extract UniProt ID
-            uniprot_seqs.append((p, seq_record))
-    prots = zip(*uniprot_seqs)[0]  # Ensure prots contains UniProt IDs (could be protein names)
+            uniprot_sequences.append((p, seq_record))
+    protein_identifiers = zip(*uniprot_sequences)[0]  # Ensure prots contains UniProt IDs (could be protein names)
 
     use_local_alignment = args.use_local_alignment
-    align_res_nums = get_row_residue_numbers(align, uniprot_seqs, use_local_alignment)
+    alignment_residue_numbers = get_row_residue_numbers(alignment, uniprot_sequences, use_local_alignment)
 
     # Map Alignment Column to UniProt Res. Number
     mapped = []
-    for seq_id, uniprot_seq_id, res_nums in align_res_nums:
-        ind = zip(*align_col_nums)[0].index(seq_id)
-        col_nums = zip(*align_col_nums)[1][ind]
+    for seq_id, uniprot_seq_id, res_nums in alignment_residue_numbers:
+        ind = zip(*alignment_column_numbers)[0].index(seq_id)
+        col_nums = zip(*alignment_column_numbers)[1][ind]
         mapped.append({'seq_id': seq_id, 'uniprot_seq_id': uniprot_seq_id,'uniprot_res_num': res_nums, 'alignment_col_num': col_nums})
 
     for i in mapped:
@@ -189,7 +189,7 @@ def main():
     for i in mapped:
         mapped_df = mapped_df.append(pd.DataFrame(i), ignore_index=True)
 
-    germline_table = _fetch_variants(prots)
+    germline_table = _fetch_variants(protein_identifiers)
 
     # Merge the data and write Jalview annotations
     # Merge variant table and key table
