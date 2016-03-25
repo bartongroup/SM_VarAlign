@@ -181,8 +181,7 @@ def main():
     uniprot_sequences = fetch_uniprot_sequences(protein_identifiers)
     protein_identifiers = zip(*uniprot_sequences)[0]  # Ensure prots contains UniProt IDs (could be protein names)
 
-    use_local_alignment = args.use_local_alignment
-    alignment_residue_numbers = get_row_residue_numbers(alignment, uniprot_sequences, use_local_alignment)
+    alignment_residue_numbers = get_row_residue_numbers(alignment, uniprot_sequences, args.use_local_alignment)
 
     # Map Alignment Column to UniProt Res. Number
     mapped = []
