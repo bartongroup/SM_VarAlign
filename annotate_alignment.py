@@ -229,28 +229,28 @@ def main(args):
                             right_on=['UniProt_dbAccessionId', 'start'])
 
     # Counting variants and writing Jalview annotations
-    total_variant_counts = merged_table['alignment_col_num'].value_counts(sort=False)
-    total_variants_per_column = fill_variant_count(total_variant_counts)
-    write_jalview_annotation(zip(*total_variants_per_column)[1], 'variants_per_column.csv', 'Total_Variants',
-                             'Total number of variants in summed over all proteins.')
-
-    # Make some other counts
     is_missense = (merged_table['type'] == 'missense_variant') & \
                   (merged_table['from_aa'] != merged_table['to_aa_expanded'])
     is_ED = (merged_table['from_aa'] == 'E') & (merged_table['to_aa_expanded'] == 'D')
     is_DE = (merged_table['from_aa'] == 'D') & (merged_table['to_aa_expanded'] == 'E')
 
+    total_variant_counts = merged_table['alignment_col_num'].value_counts(sort=False)
+    total_variants_per_column = fill_variant_count(total_variant_counts)
+    
     missense_variant_counts = merged_table.loc[is_missense, 'alignment_col_num'].value_counts(sort=False)
     missense_variants_per_column = fill_variant_count(missense_variant_counts)
 
     missense_exc_DE_counts = merged_table.loc[is_missense & ~(is_ED | is_DE), 'alignment_col_num'].value_counts(sort=False)
     missense_exc_DE_per_column = fill_variant_count(missense_exc_DE_counts)
 
-    variant_counts = [zip(*missense_variants_per_column)[1],
+    variant_counts = [zip(*total_variants_per_column)[1],
+                      zip(*missense_variants_per_column)[1],
                       zip(*missense_exc_DE_per_column)[1]]
-    titles = ['Missense_Variants',
+    titles = ['Total_Variants',
+              'Missense_Variants',
               'Missense_Variants (exc. DE)']
-    descriptions = ['Total number of missense variants in summed over all proteins.',
+    descriptions = ['Total number of variants in summed over all proteins.',
+                    'Total number of missense variants in summed over all proteins.',
                     'Number of missense variants excluding E-D and D-E summed over all proteins.']
 
     write_jalview_annotation(variant_counts, 'jalview_annotations.csv', titles, descriptions)
