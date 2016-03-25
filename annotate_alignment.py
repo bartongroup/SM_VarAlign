@@ -234,7 +234,7 @@ def main(args):
     write_jalview_annotation(zip(*missense_exc_DE_per_column)[1], 'missense_per_column_exc_DE.csv',
                              'Missense_Variants (exc. DE)',
                              'Number of missense variants excluding E-D and D-E summed over all proteins.')
-    
+
     # TODO: Need to check key exists as won't if no pathogenic...
     #raw_pathogenic = pd.crosstab(merged_table['alignment_col_num'], merged_table['clinical_significance'])['pathogenic']
     #patho_per_pos = parse_variant_count(raw_pathogenic)
@@ -250,8 +250,11 @@ if __name__ == '__main__':
     parser.add_argument('fasta_file', type=str, help='Path to fasta file containing MSA.')
     parser.add_argument('--use_local_alignment', action='store_true',
                         help='Align sub-sequences to UniProt rather than enforcing exact match.')
+    parser.add_argument('--interpreter', action='store_true',
+                        help='Drop into interactive python session once analysis is complete.')
     args = parser.parse_args()
 
     merged_table = main(args)
 
-    code.interact(local=dict(globals(), **locals()))
+    if args.interpreter:
+        code.interact(local=dict(globals(), **locals()))
