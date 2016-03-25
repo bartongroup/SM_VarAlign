@@ -184,14 +184,13 @@ def main(args):
     # Read alignment
     alignment = AlignIO.read(args.fasta_file, "fasta")
 
-    alignment_column_numbers = get_sequence_column_numbers(alignment)
-
     # Get UniProt sequences
     protein_identifiers = [re.search('\w*', sequence.id).group().strip() for sequence in alignment]
     uniprot_sequences = fetch_uniprot_sequences(protein_identifiers)
     protein_identifiers = zip(*uniprot_sequences)[0]  # Ensure prots contains UniProt IDs (could be protein names)
 
     # Map columns to residues
+    alignment_column_numbers = get_sequence_column_numbers(alignment)
     alignment_residue_numbers = get_row_residue_numbers(alignment, uniprot_sequences, args.use_local_alignment)
     mapped = map_columns_to_residues(alignment_column_numbers, alignment_residue_numbers)
 
