@@ -282,7 +282,8 @@ def main(args):
 
     # Statistics!
     # TODO: This only has non-variant residues if the protein has a variant somewhere else...
-    cross_table = pd.crosstab(merged_table['seq_id'], merged_table['alignment_col_num'])
+    t = merged_table[is_missense]
+    cross_table = pd.crosstab(t['seq_id'], t['alignment_col_num'])
 
     # Count sequences that have no variants anywhere
     all_sequence_ids = [a.id for a in alignment]
