@@ -301,6 +301,7 @@ def main(args):
     #         cross_table = cross_table.drop(i, axis=1)
 
     print '---Tests for conservation---\n'
+    fisher_test_results = []
     for col_num in range(alignment.get_alignment_length()):
         # TODO: this doesn't account for number of gaps in a column
         # TODO: also doesn't account for sequences with no variants
@@ -322,7 +323,12 @@ def main(args):
         odds_ratio, pvalue = fisher_exact([[variants_in_column, variants_in_other],
                                        [non_variant_in_column, non_variant_other]],
                                       alternative='less')
+        fisher_test_results.append((odds_ratio, pvalue))
         print 'Alignment column: {}, OR = {}, p = {}'.format(col_num, odds_ratio, pvalue)
+
+    # Write fisher test results to jalview annotation
+    write_jalview_annotation(zip(*fisher_test_results)[1], 'jalview_annotations.csv',
+                             'Missense p-value', '', append=True)
 
     return merged_table
 
