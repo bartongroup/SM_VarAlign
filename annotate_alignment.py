@@ -176,9 +176,14 @@ def fill_variant_count(value_counts, length):
     return variants_per_pos
 
 
-def write_jalview_annotation(ordered_values, file_name, title, description):
-    with open(file_name, 'w') as results_file:
-        results_file.write('JALVIEW_ANNOTATION\n')
+def write_jalview_annotation(ordered_values, file_name, title, description, append=False):
+    file_mode = 'w'
+    if append:
+        file_mode = 'a'
+
+    with open(file_name, file_mode) as results_file:
+        if not append:
+            results_file.write('JALVIEW_ANNOTATION\n')
         if isinstance(ordered_values, tuple) and all(map(lambda x: isinstance(x, str), [title, description])):
             results_file.write('BAR_GRAPH\t{}\t{}\t'.format(title, description) +
                                '|'.join('{},,{}'.format(str(x), str(x)) for x in ordered_values))
@@ -255,11 +260,19 @@ def main(args):
 
     write_jalview_annotation(variant_counts, 'jalview_annotations.csv', titles, descriptions)
 
-    # TODO: Need to check key exists as won't if no pathogenic...
-    #raw_pathogenic = pd.crosstab(merged_table['alignment_col_num'], merged_table['clinical_significance'])['pathogenic']
-    #patho_per_pos = fill_variant_count(raw_pathogenic)
-    #write_jalview_annotation(zip(*patho_per_pos)[1], 'patho_per_column.csv', 'Pathogenic_variants',
-    #                         'Number of variants annotated pathogenic by ClinVar.')
+    # If we have at least one unambiguous pathogenic variant...
+    if 'pathogenic' in list(merged_table['clinical_significance']):
+        clinical_significance_counts = \
+            pd.crosstab(merged_table['alignment_col_num'], merged_table['clinical_significance'])
+        pathogenic_variant_counts = clinical_significance_counts['pathogenic']
+        pathogenic_column_counts = fill_variant_count(pathogenic_variant_counts, alignment.get_alignment_length())
+        write_jalview_annotation(zip(*pathogenic_column_counts)[1], 'patho_per_column.csv', 'Pathogenic_variants',
+                                 'Number of variants annotated pathogenic by ClinVar.', append=False)
+
+    # Statistics!
+    odds_ratio, pvalue = fisher_exact([[missense_not_upstream, missense_in_upstream],
+                                   [no_missense_not_upstream, no_missense_upstream]],
+                                  alternative='greater')
 
     return merged_table
 
