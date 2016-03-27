@@ -290,13 +290,13 @@ def main(args):
     non_variant_sequences = [a for a in all_sequence_ids if a not in sequences_with_variants]
     n_non_variant_sequences = len(non_variant_sequences)
 
-    # Drop columns that have a lot of gaps
-    max_gaps = 5
-    for i in range(alignment.get_alignment_length()):
-        column_string = alignment[:, i]
-        number_of_gaps = column_string.count('-')
-        if number_of_gaps > max_gaps and i in cross_table.columns:
-            cross_table = cross_table.drop(i, axis=1)
+    # # Drop columns that have a lot of gaps
+    # max_gaps = 5
+    # for i in range(alignment.get_alignment_length()):
+    #     column_string = alignment[:, i]
+    #     number_of_gaps = column_string.count('-')
+    #     if number_of_gaps > max_gaps and i in cross_table.columns:
+    #         cross_table = cross_table.drop(i, axis=1)
 
     print '---Tests for conservation---\n'
     for col_num in range(alignment.get_alignment_length()):
