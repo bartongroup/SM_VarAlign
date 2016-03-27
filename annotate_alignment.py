@@ -314,7 +314,7 @@ def main(args):
             odds_ratio, pvalue = fisher_exact([[variants_in_column, variants_in_other],
                                            [non_variant_in_column, non_variant_other]],
                                           alternative='less')
-            print 'Alignment column: {}, OR = {}, p = {}'.format(col_num, odds_ratio, pvalue)
+            print 'Alignment column: {}, OR = {}, p = {}'.format(col_num + 1, odds_ratio, pvalue)
 
     return merged_table
 
