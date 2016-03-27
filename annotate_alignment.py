@@ -198,6 +198,7 @@ def write_jalview_annotation(ordered_values, file_name, title, description, appe
         if isinstance(ordered_values, tuple) and all(map(lambda x: isinstance(x, str), [title, description])):
             results_file.write('BAR_GRAPH\t{}\t{}\t'.format(title, description) +
                                '|'.join('{},,{}'.format(str(x), str(x)) for x in ordered_values))
+            results_file.write('\n')
         elif all(map(lambda x: isinstance(x, list), [ordered_values, title, description])):
             arg_lengths = map(len, [ordered_values, title, description])
             if len(set(arg_lengths)) == 1:
