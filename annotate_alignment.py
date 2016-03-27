@@ -311,10 +311,15 @@ def main(args):
             non_variant_in_column = sum(cross_table.loc[:, col_num] == 0) + n_non_variant_sequences - n_gaps
             variants_in_other = sum(cross_table.drop(col_num, axis=1).sum())
             non_variant_other = sum((cross_table.drop(col_num, axis=1) == 0).sum()) + n_non_variant_sequences - n_gaps
-            odds_ratio, pvalue = fisher_exact([[variants_in_column, variants_in_other],
-                                           [non_variant_in_column, non_variant_other]],
-                                          alternative='less')
-            print 'Alignment column: {}, OR = {}, p = {}'.format(col_num + 1, odds_ratio, pvalue)
+        else:
+            variants_in_column = 0
+            non_variant_in_column = len(alignment) - n_gaps
+            variants_in_other = sum(cross_table.sum())
+            non_variant_other = sum((cross_table == 0).sum()) + n_non_variant_sequences - n_gaps
+        odds_ratio, pvalue = fisher_exact([[variants_in_column, variants_in_other],
+                                       [non_variant_in_column, non_variant_other]],
+                                      alternative='less')
+        print 'Alignment column: {}, OR = {}, p = {}'.format(col_num + 1, odds_ratio, pvalue)
 
     return merged_table
 
