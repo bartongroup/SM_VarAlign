@@ -281,7 +281,14 @@ def main(args):
                                  'Number of variants annotated pathogenic by ClinVar.', append=False)
 
     # Statistics!
+    # TODO: This only has non-variant residues if the protein has a variant somewhere else...
     cross_table = pd.crosstab(merged_table['seq_id'], merged_table['alignment_col_num'])
+
+    # Count sequences that have no variants anywhere
+    all_sequence_ids = [a.id for a in alignment]
+    sequences_with_variants = list(merged_table['seq_id'].unique())
+    non_variant_sequences = [a for a in all_sequence_ids if a not in sequences_with_variants]
+    n_non_variant_sequences = len(non_variant_sequences)
 
     # Drop columns that have a lot of gaps
     max_gaps = 5
@@ -298,9 +305,9 @@ def main(args):
         # Count variants
         if col_num in cross_table.columns:
             variants_in_column = sum(cross_table.loc[:, col_num])
-            non_variant_in_column = sum(cross_table.loc[:, col_num] == 0)
+            non_variant_in_column = sum(cross_table.loc[:, col_num] == 0) + n_non_variant_sequences
             variants_in_other = sum(cross_table.drop(col_num, axis=1).sum())
-            non_variant_other = sum((cross_table.drop(col_num, axis=1) == 0).sum())
+            non_variant_other = sum((cross_table.drop(col_num, axis=1) == 0).sum()) + n_non_variant_sequences
             odds_ratio, pvalue = fisher_exact([[variants_in_column, variants_in_other],
                                            [non_variant_in_column, non_variant_other]],
                                           alternative='less')
