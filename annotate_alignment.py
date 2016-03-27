@@ -4,6 +4,7 @@ from Bio.Seq import Seq
 from Bio.SeqRecord import SeqRecord
 from Bio.pairwise2 import format_alignment
 import code
+import os.path
 import pandas as pd
 import re
 import urllib2
@@ -133,35 +134,44 @@ def map_columns_to_residues(alignment_column_numbers, alignment_residue_numbers)
 def _fetch_variants(prots):
     # Get variant data
     # Get the data with EnsEMBL variants
-    tables = []
-    for p in list(set(prots)):
-        try:
-            variant_table = select_uniprot_variants(p, reduced_annotations=False)
-            variant_table['UniProt_dbAccessionId'] = p
-            tables.append(variant_table)
-        except (ValueError, KeyError):
-            log.error('Could not retrieve variants for {}'.format(p))
+    if not os.path.isfile('alignment_variant_table.csv'):
+        tables = []
+        for p in list(set(prots)):
+            try:
+                variant_table = select_uniprot_variants(p, reduced_annotations=False)
+                variant_table['UniProt_dbAccessionId'] = p
+                tables.append(variant_table)
+            except (ValueError, KeyError):
+                log.error('Could not retrieve variants for {}'.format(p))
 
-    # Concatenate and process all those variant tables
-    concat_table = pd.concat(tables, ignore_index=True)
-    # Need to expand on 'to_aa' before dedupping
-    concat_table['orig_index'] = concat_table.index
-    concat_table = expand_dataframe(df=concat_table, expand_column='to_aa', id_column='orig_index')
-    concat_table = concat_table.drop('orig_index', 1)
-    # Fix or remove list columns
-    concat_table = concat_table.drop('to_aa', 1)
-    concat_table['clinical_significance'] = concat_table['clinical_significance'].apply(lambda x: ';'.join(x))
-    # And dedup, bearing in mind the same variant can pop up in different transcripts
-    # (so dedupping is only done on certain columns)
-    concat_table = concat_table.drop_duplicates(['UniProt_dbAccessionId',
-                                                 'start',
-                                                 'end',
-                                                 'variant_id',
-                                                 'to_aa_expanded']).reset_index(drop=True)
+        # Concatenate and process all those variant tables
+        concat_table = pd.concat(tables, ignore_index=True)
+        # Need to expand on 'to_aa' before dedupping
+        concat_table['orig_index'] = concat_table.index
+        concat_table = expand_dataframe(df=concat_table, expand_column='to_aa', id_column='orig_index')
+        concat_table = concat_table.drop('orig_index', 1)
+        # Fix or remove list columns
+        concat_table = concat_table.drop('to_aa', 1)
+        concat_table['clinical_significance'] = concat_table['clinical_significance'].apply(lambda x: ';'.join(x))
+        concat_table['clinical_significance'].fillna('')
+        # And dedup, bearing in mind the same variant can pop up in different transcripts
+        # (so dedupping is only done on certain columns)
+        concat_table = concat_table.drop_duplicates(['UniProt_dbAccessionId',
+                                                     'start',
+                                                     'end',
+                                                     'variant_id',
+                                                     'to_aa_expanded']).reset_index(drop=True)
+
+        # Write table to file
+        concat_table.to_csv('alignment_variant_table.csv')
+    else:
+        concat_table = pd.read_csv('alignment_variant_table.csv')
+
     # is_somatic = concat_table['variant_id'].apply(lambda x: x.startswith('COS'))
     is_germline = concat_table['variant_id'].apply(lambda x: x.startswith('rs'))
     # somatic_table = concat_table[is_somatic]
     germline_table = concat_table[is_germline]
+
     return germline_table
 
 
