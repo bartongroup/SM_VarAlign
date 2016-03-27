@@ -3,6 +3,7 @@ from Bio import AlignIO, SeqIO, pairwise2
 from Bio.Seq import Seq
 from Bio.SeqRecord import SeqRecord
 from Bio.pairwise2 import format_alignment
+from scipy.stats import fisher_exact
 import code
 import os.path
 import pandas as pd
@@ -280,9 +281,30 @@ def main(args):
                                  'Number of variants annotated pathogenic by ClinVar.', append=False)
 
     # Statistics!
-    odds_ratio, pvalue = fisher_exact([[missense_not_upstream, missense_in_upstream],
-                                   [no_missense_not_upstream, no_missense_upstream]],
-                                  alternative='greater')
+    cross_table = pd.crosstab(merged_table['seq_id'], merged_table['alignment_col_num'])
+
+    # Drop columns that have a lot of gaps
+    max_gaps = 5
+    for i in range(alignment.get_alignment_length()):
+        column_string = alignment[:, i]
+        number_of_gaps = column_string.count('-')
+        if number_of_gaps > max_gaps and i in cross_table.columns:
+            cross_table = cross_table.drop(i, axis=1)
+
+    print '---Tests for conservation---\n'
+    for col_num in range(alignment.get_alignment_length()):
+        # TODO: this doesn't account for number of gaps in a column
+        # TODO: also doesn't account for sequences with no variants
+        # Count variants
+        if col_num in cross_table.columns:
+            variants_in_column = sum(cross_table.loc[:, col_num])
+            non_variant_in_column = sum(cross_table.loc[:, col_num] == 0)
+            variants_in_other = sum(cross_table.drop(col_num, axis=1).sum())
+            non_variant_other = sum((cross_table.drop(col_num, axis=1) == 0).sum())
+            odds_ratio, pvalue = fisher_exact([[variants_in_column, variants_in_other],
+                                           [non_variant_in_column, non_variant_other]],
+                                          alternative='less')
+            print 'Alignment column: {}, OR = {}, p = {}'.format(col_num, odds_ratio, pvalue)
 
     return merged_table
 
