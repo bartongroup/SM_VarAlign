@@ -302,12 +302,15 @@ def main(args):
     for col_num in range(alignment.get_alignment_length()):
         # TODO: this doesn't account for number of gaps in a column
         # TODO: also doesn't account for sequences with no variants
+        # Count gaps
+        column_string = alignment[:, col_num]
+        n_gaps = column_string.count('-')
         # Count variants
         if col_num in cross_table.columns:
             variants_in_column = sum(cross_table.loc[:, col_num])
-            non_variant_in_column = sum(cross_table.loc[:, col_num] == 0) + n_non_variant_sequences
+            non_variant_in_column = sum(cross_table.loc[:, col_num] == 0) + n_non_variant_sequences - n_gaps
             variants_in_other = sum(cross_table.drop(col_num, axis=1).sum())
-            non_variant_other = sum((cross_table.drop(col_num, axis=1) == 0).sum()) + n_non_variant_sequences
+            non_variant_other = sum((cross_table.drop(col_num, axis=1) == 0).sum()) + n_non_variant_sequences - n_gaps
             odds_ratio, pvalue = fisher_exact([[variants_in_column, variants_in_other],
                                            [non_variant_in_column, non_variant_other]],
                                           alternative='less')
