@@ -48,7 +48,7 @@ def get_row_residue_numbers(align, uniprot_seqs, use_local_alignment):
         align_res_nums = []
         for sub_seq_id, uniprot_seq_id, pairwise in alignments:
             seq = str(pairwise[0][0])
-            res_nums = [i for i, s in enumerate(seq) if s != '-']  # TODO: wrong if other seq has gaps too
+            res_nums = [i + 1 for i, s in enumerate(seq) if s != '-']  # TODO: wrong if other seq has gaps too
             align_res_nums.append((sub_seq_id, uniprot_seq_id, res_nums))
     else:
         align_res_nums = []
@@ -57,7 +57,7 @@ def get_row_residue_numbers(align, uniprot_seqs, use_local_alignment):
             uniprot_str_seq = str(uniprot_seq[1].seq)
             if str_seq in uniprot_str_seq:
                 log.debug('Matching sub-sequence: {} to UniProt sequence: {}'.format(s.id, uniprot_seq[1].id))
-                start = uniprot_str_seq.find(str_seq)
+                start = uniprot_str_seq.find(str_seq) + 1
                 end = start + len(str_seq)
                 res_nums = range(start, end)
                 align_res_nums.append((s.id, uniprot_seq[1].id, res_nums))
@@ -80,7 +80,7 @@ def get_sequence_column_numbers(align):
     for a in align:
         seq_id = a.id
         seq = str(a.seq)
-        col_nums = [i for i, s in enumerate(seq) if s != '-']
+        col_nums = [i + 1 for i, s in enumerate(seq) if s != '-']
         align_col_nums.append((seq_id, col_nums))
 
     return align_col_nums
@@ -304,7 +304,8 @@ def main(args):
         # TODO: this doesn't account for number of gaps in a column
         # TODO: also doesn't account for sequences with no variants
         # Count gaps
-        column_string = alignment[:, col_num]
+        col_num += 1
+        column_string = alignment[:, col_num - 1]
         n_gaps = column_string.count('-')
         # Count variants
         if col_num in cross_table.columns:
@@ -320,7 +321,7 @@ def main(args):
         odds_ratio, pvalue = fisher_exact([[variants_in_column, variants_in_other],
                                        [non_variant_in_column, non_variant_other]],
                                       alternative='less')
-        print 'Alignment column: {}, OR = {}, p = {}'.format(col_num + 1, odds_ratio, pvalue)
+        print 'Alignment column: {}, OR = {}, p = {}'.format(col_num, odds_ratio, pvalue)
 
     return merged_table
 
