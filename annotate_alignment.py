@@ -21,7 +21,7 @@ import logging
 
 log = logging.getLogger(__name__)
 
-def get_row_residue_numbers(align, uniprot_seqs, use_local_alignment):
+def get_row_residue_numbers(subseq, uniprot_seqs, use_local_alignment):
     """
     Map each sequence in an alignment to a longer sequence and return the residue numbers.
 
@@ -31,41 +31,39 @@ def get_row_residue_numbers(align, uniprot_seqs, use_local_alignment):
     :return: A list of tuples with the sequence IDs and residues numbers for each sequence in the alignment.
     """
     # Prepare sequences for alignment to UniProt by removing gaps
-    unaligned_seqs = []
-    for a in align:
-        unaligned_seqs.append(SeqRecord(Seq(str(a.seq).replace('-', '').upper(), a.seq.alphabet), id=a.id))
+    subseq = SeqRecord(Seq(str(subseq.seq).replace('-', '').upper(), subseq.seq.alphabet), id=subseq.id)
+    sequence_name = re.search('\w*', subseq.id).group().strip()
 
     if use_local_alignment:
         # Align input alignment sequences to UniProt Sequences
-        alignments = []
-        for s, uniprot_seq in zip(unaligned_seqs, uniprot_seqs):
-            log.debug('Aligning sub-sequence: {} to UniProt sequence: {}'.format(s.id, uniprot_seq[1].id))
-            local_alignment = pairwise2.align.localxs(s.seq, uniprot_seq[1].seq, -.5, -.1)
-            for pairwise_alignment in local_alignment:
-                log.debug('{}'.format('\n' + format_alignment(*pairwise_alignment)))
-            alignments.append((s.id, uniprot_seq[1].id, local_alignment))
+        for uniprot_seq in uniprot_seqs:
+            if sequence_name in uniprot_seq[1].id:
+                log.debug('Aligning sub-sequence: {} to UniProt sequence: {}'.format(subseq.id, uniprot_seq[1].id))
+                local_alignment = pairwise2.align.localxs(subseq.seq, uniprot_seq[1].seq, -.5, -.1)
+                for pairwise_alignment in local_alignment:
+                    log.debug('{}'.format('\n' + format_alignment(*pairwise_alignment)))
+                alignment = subseq.id, uniprot_seq[1].id, local_alignment
 
         # Build list of UniProt residue numbers for each non-gap for each sequence
-        align_res_nums = []
-        for sub_seq_id, uniprot_seq_id, pairwise in alignments:
-            seq = str(pairwise[0][0])
-            res_nums = [i + 1 for i, s in enumerate(seq) if s != '-']  # TODO: wrong if other seq has gaps too
-            align_res_nums.append((sub_seq_id, uniprot_seq_id, res_nums))
+        sub_seq_id, uniprot_seq_id, pairwise = alignment
+        seq = str(pairwise[0][0])
+        res_nums = [i + 1 for i, s in enumerate(seq) if s != '-']  # TODO: wrong if other seq has gaps too
+        align_res_nums = sub_seq_id, uniprot_seq_id, res_nums
     else:
-        align_res_nums = []
-        for s, uniprot_seq in zip(unaligned_seqs, uniprot_seqs):
-            str_seq = str(s.seq)
-            uniprot_str_seq = str(uniprot_seq[1].seq)
-            if str_seq in uniprot_str_seq:
-                log.debug('Matching sub-sequence: {} to UniProt sequence: {}'.format(s.id, uniprot_seq[1].id))
-                start = uniprot_str_seq.find(str_seq) + 1
-                end = start + len(str_seq)
-                res_nums = range(start, end)
-                align_res_nums.append((s.id, uniprot_seq[1].id, res_nums))
-            else:
-                log.error('Sub-sequence: {} does not match UniProt sequence: {}'.format(s.id, uniprot_seq[1].id))
-                log.error('Sub-sequence: {} does not match UniProt sequence: {}'.format(str_seq, uniprot_str_seq))
-                raise TypeError
+        for uniprot_seq in uniprot_seqs:
+            if sequence_name in uniprot_seq[1].id:
+                str_seq = str(subseq.seq)
+                uniprot_str_seq = str(uniprot_seq[1].seq)
+                if str_seq in uniprot_str_seq:
+                    log.debug('Matching sub-sequence: {} to UniProt sequence: {}'.format(subseq.id, uniprot_seq[1].id))
+                    start = uniprot_str_seq.find(str_seq) + 1
+                    end = start + len(str_seq)
+                    res_nums = range(start, end)
+                    align_res_nums = subseq.id, uniprot_seq[1].id, res_nums
+                else:
+                    log.error('Sub-sequence: {} does not match UniProt sequence: {}'.format(subseq.id, uniprot_seq[1].id))
+                    log.error('Sub-sequence: {} does not match UniProt sequence: {}'.format(str_seq, uniprot_str_seq))
+                    raise TypeError
 
     return align_res_nums
 
@@ -234,7 +232,9 @@ def main(args):
 
     # Map columns to residues
     alignment_column_numbers = get_sequence_column_numbers(alignment)
-    alignment_residue_numbers = get_row_residue_numbers(alignment, uniprot_sequences, args.use_local_alignment)
+    alignment_residue_numbers = []
+    for seq in alignment:
+        alignment_residue_numbers.append(get_row_residue_numbers(seq, uniprot_sequences, args.use_local_alignment))
     mapped = map_columns_to_residues(alignment_column_numbers, alignment_residue_numbers)
 
     # Fetch variants
