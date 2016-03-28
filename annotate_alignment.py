@@ -85,7 +85,7 @@ def get_sequence_column_numbers(align):
     return align_col_nums
 
 
-def fetch_uniprot_sequences(protein_identifiers):
+def fetch_uniprot_sequences(seq_name):
     """
     Retrieve UniProt sequences.
 
@@ -93,15 +93,13 @@ def fetch_uniprot_sequences(protein_identifiers):
     :return: List of protein sequences.
     """
     url = 'http://www.uniprot.org/uniprot/'
-    uniprot_sequences = []
-    for p in protein_identifiers:
-        p = p.strip()
-        remote_fasta = url + p + '.fasta'
-        handle = urlopen_with_retry(remote_fasta)
-        for seq_record in SeqIO.parse(handle, "fasta"):
-            p = seq_record.id.split('|')[1]  # Extract UniProt ID
-            uniprot_sequences.append((p, seq_record))
-    return uniprot_sequences
+    p = seq_name.strip()
+    remote_fasta = url + p + '.fasta'
+    handle = urlopen_with_retry(remote_fasta)
+    seq_record = SeqIO.read(handle, "fasta")
+    p = seq_record.id.split('|')[1]  # Extract UniProt ID
+    uniprot_sequence = p, seq_record
+    return uniprot_sequence
 
 
 def map_columns_to_residues(alignment_column_numbers, alignment_residue_numbers):
@@ -227,7 +225,9 @@ def main(args):
 
     # Get UniProt sequences
     protein_identifiers = [re.search('\w*', sequence.id).group().strip() for sequence in alignment]
-    uniprot_sequences = fetch_uniprot_sequences(protein_identifiers)
+    uniprot_sequences = []
+    for seq_name in protein_identifiers:
+        uniprot_sequences.append(fetch_uniprot_sequences(seq_name))
     protein_identifiers = zip(*uniprot_sequences)[0]  # Ensure prots contains UniProt IDs (could be protein names)
 
     # Map columns to residues
