@@ -79,7 +79,7 @@ def get_sequence_column_numbers(sequence):
     return align_col_nums
 
 
-def fetch_uniprot_sequences(seq_name):
+def fetch_uniprot_sequences(seq_name, downloads=None):
     """
     Retrieve UniProt sequences.
 
@@ -88,9 +88,15 @@ def fetch_uniprot_sequences(seq_name):
     """
     url = 'http://www.uniprot.org/uniprot/'
     p = seq_name.strip()
+    fasta_file_name = os.path.join(downloads, 'UniProt_sequences', p + '.fasta')
     remote_fasta = url + p + '.fasta'
-    handle = urlopen_with_retry(remote_fasta)
-    seq_record = SeqIO.read(handle, "fasta")
+    if not os.path.isfile(fasta_file_name):
+        handle = urlopen_with_retry(remote_fasta)
+        seq_record = SeqIO.read(handle, "fasta")
+        SeqIO.write(seq_record, fasta_file_name, "fasta")
+    else:
+        handle = open(fasta_file_name, 'r')
+        seq_record = SeqIO.read(handle, "fasta")
     p = seq_record.id.split('|')[1]  # Extract UniProt ID
     uniprot_sequence = p, seq_record
     return uniprot_sequence
@@ -123,10 +129,11 @@ def map_columns_to_residues(alignment_column_numbers, alignment_residue_numbers)
     return mapped_df
 
 
-def _fetch_variants(prots):
+def _fetch_variants(prots, downloads=None):
     # Get variant data
     # Get the data with EnsEMBL variants
-    if not os.path.isfile('alignment_variant_table.csv'):
+    table_file_name = os.path.join(downloads, 'alignment_variant_table.csv')
+    if not os.path.isfile(table_file_name):
         tables = []
         for p in list(set(prots)):
             try:
@@ -155,9 +162,9 @@ def _fetch_variants(prots):
                                                      'to_aa_expanded']).reset_index(drop=True)
 
         # Write table to file
-        concat_table.to_csv('alignment_variant_table.csv')
+        concat_table.to_csv(table_file_name)
     else:
-        concat_table = pd.read_csv('alignment_variant_table.csv')
+        concat_table = pd.read_csv(table_file_name)
 
     # is_somatic = concat_table['variant_id'].apply(lambda x: x.startswith('COS'))
     is_germline = concat_table['variant_id'].apply(lambda x: x.startswith('rs'))
@@ -214,6 +221,9 @@ def main(args):
 
     :return:
     """
+    # Some parameters
+    downloads = '.VarAlign'
+
     # Read alignment
     alignment = AlignIO.read(args.fasta_file, "fasta")
 
@@ -223,7 +233,7 @@ def main(args):
     alignment_column_numbers = []
     for seq in alignment:
         seq_name = re.search('\w*', seq.id).group().strip()
-        uniprot_seq = fetch_uniprot_sequences(seq_name)
+        uniprot_seq = fetch_uniprot_sequences(seq_name, downloads)
         uniprot_sequences.append(uniprot_seq)  # Keep for later too
         alignment_residue_numbers.append(get_row_residue_numbers(seq, uniprot_seq, args.use_local_alignment))
         alignment_column_numbers.append(get_sequence_column_numbers(seq))
@@ -231,7 +241,7 @@ def main(args):
 
     # Fetch variants
     protein_identifiers = zip(*uniprot_sequences)[0]  # Ensure prots contains UniProt IDs (could be protein names)
-    germline_table = _fetch_variants(protein_identifiers)
+    germline_table = _fetch_variants(protein_identifiers, downloads)
 
     # Merge the data
     # Merge variant table and key table
