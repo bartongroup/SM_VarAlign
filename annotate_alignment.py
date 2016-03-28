@@ -9,6 +9,7 @@ import os.path
 import pandas as pd
 import re
 import urllib2
+from utils import urlopen_with_retry
 
 # Use my developement branch of ProteoFAV
 import sys
@@ -98,7 +99,7 @@ def fetch_uniprot_sequences(protein_identifiers):
     for p in protein_identifiers:
         p = p.strip()
         remote_fasta = url + p + '.fasta'
-        handle = urllib2.urlopen(remote_fasta)
+        handle = urlopen_with_retry(remote_fasta)
         for seq_record in SeqIO.parse(handle, "fasta"):
             p = seq_record.id.split('|')[1]  # Extract UniProt ID
             uniprot_sequences.append((p, seq_record))
