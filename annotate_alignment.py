@@ -64,19 +64,17 @@ def get_row_residue_numbers(subseq, uniprot_seq, use_local_alignment):
     return align_res_nums
 
 
-def get_sequence_column_numbers(align):
+def get_sequence_column_numbers(sequence):
     """
     Build list of column numbers for each non-gap for each sequence.
 
-    :param align:
+    :param sequence: Aligned sequence.
     :return:
     """
-    align_col_nums = []
-    for a in align:
-        seq_id = a.id
-        seq = str(a.seq)
-        col_nums = [i + 1 for i, s in enumerate(seq) if s != '-']
-        align_col_nums.append((seq_id, col_nums))
+    seq_id = sequence.id
+    seq = str(sequence.seq)
+    col_nums = [i + 1 for i, s in enumerate(seq) if s != '-']
+    align_col_nums = seq_id, col_nums
 
     return align_col_nums
 
@@ -220,23 +218,19 @@ def main(args):
     alignment = AlignIO.read(args.fasta_file, "fasta")
 
     # Get UniProt sequences
-    protein_identifiers = [re.search('\w*', sequence.id).group().strip() for sequence in alignment]
-
     uniprot_sequences = []
     alignment_residue_numbers = []
+    alignment_column_numbers = []
     for seq in alignment:
         seq_name = re.search('\w*', seq.id).group().strip()
         uniprot_seq = fetch_uniprot_sequences(seq_name)
         uniprot_sequences.append(uniprot_seq)  # Keep for later too
         alignment_residue_numbers.append(get_row_residue_numbers(seq, uniprot_seq, args.use_local_alignment))
-
-    protein_identifiers = zip(*uniprot_sequences)[0]  # Ensure prots contains UniProt IDs (could be protein names)
-
-    # Map columns to residues
-    alignment_column_numbers = get_sequence_column_numbers(alignment)
-    mapped = map_columns_to_residues(alignment_column_numbers, alignment_residue_numbers)
+        alignment_column_numbers.append(get_sequence_column_numbers(seq))
+    mapped = map_columns_to_residues(alignment_column_numbers, alignment_residue_numbers)  # Map columns to residues
 
     # Fetch variants
+    protein_identifiers = zip(*uniprot_sequences)[0]  # Ensure prots contains UniProt IDs (could be protein names)
     germline_table = _fetch_variants(protein_identifiers)
 
     # Merge the data
