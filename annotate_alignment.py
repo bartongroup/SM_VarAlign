@@ -217,7 +217,7 @@ def main(args):
     # Read alignment
     alignment = AlignIO.read(args.fasta_file, "fasta")
 
-    # Get UniProt sequences
+    # Map alignment columns to sequence UniProt residue numbers
     uniprot_sequences = []
     alignment_residue_numbers = []
     alignment_column_numbers = []
