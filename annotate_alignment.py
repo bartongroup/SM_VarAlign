@@ -229,6 +229,79 @@ def write_jalview_annotation(ordered_values, file_name, title, description, appe
     return 0
 
 
+def run_fisher_tests(alignment, table_mask, merged_table):
+    """
+    Test each column in the alignment for being statistically significantly depleted of variants on a per residue basis.
+
+    :param alignment: Original alignment to calculate column statistics.
+    :param table_mask: A mask to pre-filter the variant table.
+    :param merged_table: The merged alignment residue mapping and variant tables table.
+    :return:
+    """
+    print '---Tests for conservation---\n'
+    t = merged_table[table_mask]
+    cross_table = pd.crosstab(t['seq_id'], t['alignment_col_num'])
+    # TODO: This only has non-variant residues if the protein has a variant somewhere else...
+    # # Drop columns that have a lot of gaps
+    # max_gaps = 5
+    # for i in range(alignment.get_alignment_length()):
+    #     column_string = alignment[:, i]
+    #     number_of_gaps = column_string.count('-')
+    #     if number_of_gaps > max_gaps and i in cross_table.columns:
+    #         cross_table = cross_table.drop(i, axis=1)
+    # Count sequences that have no variants anywhere
+    all_sequence_ids = [a.id for a in alignment]
+    sequences_with_variants = list(merged_table['seq_id'].unique())
+    non_variant_sequences = [a for a in all_sequence_ids if a not in sequences_with_variants]
+    n_non_variant_sequences = len(non_variant_sequences)
+    # Calculate how many positions are in non_variant columns
+    non_variant_columns = [i for i in range(1, alignment.get_alignment_length() + 1) if i not in cross_table.columns]
+    # Run fisher tests for all columns
+    fisher_test_results = []
+    for col_num in range(alignment.get_alignment_length()):
+        # TODO: this doesn't account for number of gaps in a column
+        # TODO: also doesn't account for sequences with no variants
+        # Count gaps
+        col_num += 1
+        column_string = alignment[:, col_num - 1]
+        n_gaps = column_string.count('-')
+        sub_alignment = alignment[:, :col_num - 1] + alignment[:, col_num:]
+        n_gaps_other = sum([str(a.seq).count('-') for a in sub_alignment])
+
+        # TODO: This might mean I'm double counting residues that are in both non_variant_columns and non_variant_sequences
+        # Calculate positions in other non_variant columns
+        if col_num not in non_variant_columns:
+            n_positions_in_non_variant_columns = len(non_variant_columns) * len(alignment)
+        else:
+            n_positions_in_non_variant_columns = (len(non_variant_columns) - 1) * len(alignment)
+
+        # # Count non-variant sequence residues in and not in column
+        # non_variant_sub_alignment = [str(a.seq) for a in sub_alignment if a.id not in sequences_with_variants]
+        # n_other_residues_non_variant_seq = sum([len(a) for a in non_variant_sub_alignment])
+        # Count variants
+        if col_num in cross_table.columns:
+            variants_in_column = sum(cross_table.loc[:, col_num])
+            non_variant_in_column = sum(cross_table.loc[:, col_num] == 0) + n_non_variant_sequences - n_gaps
+            variants_in_other = sum(cross_table.drop(col_num, axis=1).sum())
+            non_variant_other = sum((cross_table.drop(col_num, axis=1) == 0).sum()) \
+                                + n_positions_in_non_variant_columns \
+                                + (n_non_variant_sequences * (alignment.get_alignment_length() - 1)) - n_gaps_other
+        else:
+            variants_in_column = 0
+            non_variant_in_column = len(alignment) - n_gaps
+            variants_in_other = sum(cross_table.sum())
+            non_variant_other = sum((cross_table == 0).sum()) \
+                                + n_positions_in_non_variant_columns \
+                                + (n_non_variant_sequences * (alignment.get_alignment_length() - 1)) - n_gaps_other
+        odds_ratio, pvalue = fisher_exact([[variants_in_column, variants_in_other],
+                                           [non_variant_in_column, non_variant_other]],
+                                          alternative='less')
+        fisher_test_results.append((odds_ratio, pvalue))
+        print 'Alignment column: {}, OR = {}, p = {}'.format(col_num, odds_ratio, pvalue)
+
+    return fisher_test_results
+
+
 def main(args):
     """
     Fetch variants for identified protein sequences in an MSA, map to residues and columns and write Jalview feature
@@ -324,70 +397,8 @@ def main(args):
             log.warning('Count not count pathogenic variants.')
 
     # Statistics!
-    # TODO: This only has non-variant residues if the protein has a variant somewhere else...
-    t = merged_table[is_missense]
-    cross_table = pd.crosstab(t['seq_id'], t['alignment_col_num'])
-
-    # Count sequences that have no variants anywhere
-    all_sequence_ids = [a.id for a in alignment]
-    sequences_with_variants = list(merged_table['seq_id'].unique())
-    non_variant_sequences = [a for a in all_sequence_ids if a not in sequences_with_variants]
-    n_non_variant_sequences = len(non_variant_sequences)
-    # Calculate how many positions are in non_variant columns
-    non_variant_columns = [i for i in range(1, alignment.get_alignment_length() + 1) if i not in cross_table.columns]
-
-    # # Drop columns that have a lot of gaps
-    # max_gaps = 5
-    # for i in range(alignment.get_alignment_length()):
-    #     column_string = alignment[:, i]
-    #     number_of_gaps = column_string.count('-')
-    #     if number_of_gaps > max_gaps and i in cross_table.columns:
-    #         cross_table = cross_table.drop(i, axis=1)
-
-    print '---Tests for conservation---\n'
-    fisher_test_results = []
-    for col_num in range(alignment.get_alignment_length()):
-        # TODO: this doesn't account for number of gaps in a column
-        # TODO: also doesn't account for sequences with no variants
-        # Count gaps
-        col_num += 1
-        column_string = alignment[:, col_num - 1]
-        n_gaps = column_string.count('-')
-        sub_alignment = alignment[:, :col_num - 1] + alignment[:, col_num:]
-        n_gaps_other = sum([str(a.seq).count('-') for a in sub_alignment])
-
-        # TODO: This might mean I'm double counting residues that are in both non_variant_columns and non_variant_sequences
-        # Calculate positions in other non_variant columns
-        if col_num not in non_variant_columns:
-            n_positions_in_non_variant_columns = len(non_variant_columns) * len(alignment)
-        else:
-            n_positions_in_non_variant_columns = (len(non_variant_columns) - 1) * len(alignment)
-
-        # # Count non-variant sequence residues in and not in column
-        # non_variant_sub_alignment = [str(a.seq) for a in sub_alignment if a.id not in sequences_with_variants]
-        # n_other_residues_non_variant_seq = sum([len(a) for a in non_variant_sub_alignment])
-        # Count variants
-        if col_num in cross_table.columns:
-            variants_in_column = sum(cross_table.loc[:, col_num])
-            non_variant_in_column = sum(cross_table.loc[:, col_num] == 0) + n_non_variant_sequences - n_gaps
-            variants_in_other = sum(cross_table.drop(col_num, axis=1).sum())
-            non_variant_other = sum((cross_table.drop(col_num, axis=1) == 0).sum()) \
-                                + n_positions_in_non_variant_columns \
-                                + (n_non_variant_sequences * (alignment.get_alignment_length() - 1)) - n_gaps_other
-        else:
-            variants_in_column = 0
-            non_variant_in_column = len(alignment) - n_gaps
-            variants_in_other = sum(cross_table.sum())
-            non_variant_other = sum((cross_table == 0).sum()) \
-                                + n_positions_in_non_variant_columns \
-                                + (n_non_variant_sequences * (alignment.get_alignment_length() - 1)) - n_gaps_other
-        odds_ratio, pvalue = fisher_exact([[variants_in_column, variants_in_other],
-                                       [non_variant_in_column, non_variant_other]],
-                                      alternative='less')
-        fisher_test_results.append((odds_ratio, pvalue))
-        print 'Alignment column: {}, OR = {}, p = {}'.format(col_num, odds_ratio, pvalue)
-
     # Write fisher test results to jalview annotation
+    fisher_test_results = run_fisher_tests(alignment, is_missense, merged_table)
     write_jalview_annotation(zip(*fisher_test_results)[1], jalview_out_file,
                              'Missense p-value', '', append=True)
 
