@@ -91,7 +91,7 @@ def fetch_uniprot_sequences(seq_name, downloads=None):
     """
     url = 'http://www.uniprot.org/uniprot/'
     p = seq_name.strip()
-    fasta_file_name = os.path.join(downloads, 'UniProt_sequences', p + '.fasta')
+    fasta_file_name = os.path.join(downloads, p + '.fasta')
     remote_fasta = url + p + '.fasta'
     if not os.path.isfile(fasta_file_name):
         print remote_fasta
@@ -105,7 +105,10 @@ def fetch_uniprot_sequences(seq_name, downloads=None):
             remote_fasta = url + p + '.fasta'
             handle = urlopen_with_retry(remote_fasta)
         seq_record = SeqIO.read(handle, "fasta")
-        SeqIO.write(seq_record, fasta_file_name, "fasta")
+        if downloads is not None:
+            if not os.path.exists(downloads):
+                os.makedirs(downloads)
+            SeqIO.write(seq_record, fasta_file_name, "fasta")
     else:
         handle = open(fasta_file_name, 'r')
         seq_record = SeqIO.read(handle, "fasta")
@@ -235,6 +238,9 @@ def main(args):
     """
     # Some parameters
     downloads = '.VarAlign'
+    UniProt_sequences_downloads = os.path.join(downloads, 'UniProt_sequences')
+    if not os.path.exists(downloads):
+        os.makedirs(downloads)
 
     # Read alignment
     alignment = AlignIO.read(args.fasta_file, "fasta")
@@ -245,7 +251,7 @@ def main(args):
     alignment_column_numbers = []
     for seq in alignment:
         seq_name = parse_seq_name(seq.id)
-        uniprot_seq = fetch_uniprot_sequences(seq_name, downloads)
+        uniprot_seq = fetch_uniprot_sequences(seq_name, UniProt_sequences_downloads)
         uniprot_sequences.append(uniprot_seq)  # Keep for later too
         try:
             alignment_residue_numbers.append(get_row_residue_numbers(seq, uniprot_seq, args.use_local_alignment))
