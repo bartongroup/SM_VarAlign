@@ -247,7 +247,20 @@ def main(args):
         seq_name = parse_seq_name(seq.id)
         uniprot_seq = fetch_uniprot_sequences(seq_name, downloads)
         uniprot_sequences.append(uniprot_seq)  # Keep for later too
-        alignment_residue_numbers.append(get_row_residue_numbers(seq, uniprot_seq, args.use_local_alignment))
+        try:
+            alignment_residue_numbers.append(get_row_residue_numbers(seq, uniprot_seq, args.use_local_alignment))
+        except TypeError:
+            # Maybe it's a different isoform
+            canonical_uniprot = uniprot_seq[1].id.split('|')[1]
+            for suffix in ('-2', '-3'):
+                try:
+                    isoform = canonical_uniprot + suffix
+                    print isoform
+                    uniprot_seq = fetch_uniprot_sequences(isoform, downloads)
+                    alignment_residue_numbers.append(get_row_residue_numbers(seq, uniprot_seq, args.use_local_alignment))
+                    break
+                except TypeError:
+                    continue
         alignment_column_numbers.append(get_sequence_column_numbers(seq))
     mapped = map_columns_to_residues(alignment_column_numbers, alignment_residue_numbers)  # Map columns to residues
 
