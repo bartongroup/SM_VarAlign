@@ -144,10 +144,10 @@ def map_columns_to_residues(alignment_column_numbers, alignment_residue_numbers)
     return mapped_df
 
 
-def _fetch_variants(prots, downloads=None):
+def _fetch_variants(prots, downloads=None, save_name=None):
     # Get variant data
     # Get the data with EnsEMBL variants
-    table_file_name = os.path.join(downloads, 'alignment_variant_table.csv')
+    table_file_name = os.path.join(downloads, save_name)
     if not os.path.isfile(table_file_name):
         tables = []
         for p in list(set(prots)):
@@ -275,7 +275,7 @@ def main(args):
 
     # Fetch variants
     protein_identifiers = zip(*uniprot_sequences)[0]  # Ensure prots contains UniProt IDs (could be protein names)
-    germline_table = _fetch_variants(protein_identifiers, downloads)
+    germline_table = _fetch_variants(protein_identifiers, downloads, args.fasta_file + 'alignment_variant_table.csv')
 
     # Merge the data
     # Merge variant table and key table
@@ -308,7 +308,8 @@ def main(args):
                     'Total number of missense variants in summed over all proteins.',
                     'Number of missense variants excluding E-D and D-E summed over all proteins.']
 
-    write_jalview_annotation(variant_counts, 'jalview_annotations.csv', titles, descriptions)
+    jalview_out_file = args.fasta_file + '_jalview_annotations.csv'
+    write_jalview_annotation(variant_counts, jalview_out_file, titles, descriptions)
 
     # If we have at least one unambiguous pathogenic variant...
     if 'pathogenic' in list(merged_table['clinical_significance']):
@@ -387,7 +388,7 @@ def main(args):
         print 'Alignment column: {}, OR = {}, p = {}'.format(col_num, odds_ratio, pvalue)
 
     # Write fisher test results to jalview annotation
-    write_jalview_annotation(zip(*fisher_test_results)[1], 'jalview_annotations.csv',
+    write_jalview_annotation(zip(*fisher_test_results)[1], jalview_out_file,
                              'Missense p-value', '', append=True)
 
     return merged_table
