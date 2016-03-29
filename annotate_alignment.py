@@ -21,6 +21,9 @@ import logging
 
 log = logging.getLogger(__name__)
 
+def parse_seq_name(seq_name):
+    return re.search('\w*', seq_name).group().strip()
+
 def get_row_residue_numbers(subseq, uniprot_seq, use_local_alignment):
     """
     Map each sequence in an alignment to a longer sequence and return the residue numbers.
@@ -32,7 +35,7 @@ def get_row_residue_numbers(subseq, uniprot_seq, use_local_alignment):
     """
     # Prepare sequences for alignment to UniProt by removing gaps
     subseq = SeqRecord(Seq(str(subseq.seq).replace('-', '').upper(), subseq.seq.alphabet), id=subseq.id)
-    sequence_name = re.search('\w*', subseq.id).group().strip()
+    sequence_name = parse_seq_name(subseq.id)  #TODO: No longer needed
 
     if use_local_alignment:
         # Align input alignment sequences to UniProt Sequences
@@ -232,7 +235,7 @@ def main(args):
     alignment_residue_numbers = []
     alignment_column_numbers = []
     for seq in alignment:
-        seq_name = re.search('\w*', seq.id).group().strip()
+        seq_name = parse_seq_name(seq.id)
         uniprot_seq = fetch_uniprot_sequences(seq_name, downloads)
         uniprot_sequences.append(uniprot_seq)  # Keep for later too
         alignment_residue_numbers.append(get_row_residue_numbers(seq, uniprot_seq, args.use_local_alignment))
