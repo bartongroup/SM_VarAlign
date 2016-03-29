@@ -312,12 +312,15 @@ def main(args):
 
     # If we have at least one unambiguous pathogenic variant...
     if 'pathogenic' in list(merged_table['clinical_significance']):
-        clinical_significance_counts = \
-            pd.crosstab(merged_table.loc[is_missense, 'alignment_col_num'], merged_table.loc[is_missense, 'clinical_significance'])
-        pathogenic_variant_counts = clinical_significance_counts['pathogenic']
-        pathogenic_column_counts = fill_variant_count(pathogenic_variant_counts, alignment.get_alignment_length())
-        write_jalview_annotation(zip(*pathogenic_column_counts)[1], 'jalview_annotations.csv', 'Pathogenic_missense_variants',
-                                 'Number of missense variants annotated pathogenic by ClinVar.', append=True)
+        try:
+            clinical_significance_counts = \
+                pd.crosstab(merged_table.loc[is_missense, 'alignment_col_num'], merged_table.loc[is_missense, 'clinical_significance'])
+            pathogenic_variant_counts = clinical_significance_counts['pathogenic']
+            pathogenic_column_counts = fill_variant_count(pathogenic_variant_counts, alignment.get_alignment_length())
+            write_jalview_annotation(zip(*pathogenic_column_counts)[1], jalview_out_file, 'Pathogenic_missense_variants',
+                                     'Number of missense variants annotated pathogenic by ClinVar.', append=True)
+        except:
+            log.warning('Count not count pathogenic variants.')
 
     # Statistics!
     # TODO: This only has non-variant residues if the protein has a variant somewhere else...
