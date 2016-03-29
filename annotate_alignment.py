@@ -9,7 +9,7 @@ import os.path
 import pandas as pd
 import re
 import urllib2
-from utils import urlopen_with_retry
+from utils import urlopen_with_retry, query_uniprot
 
 # Use my developement branch of ProteoFAV
 import sys
@@ -94,7 +94,16 @@ def fetch_uniprot_sequences(seq_name, downloads=None):
     fasta_file_name = os.path.join(downloads, 'UniProt_sequences', p + '.fasta')
     remote_fasta = url + p + '.fasta'
     if not os.path.isfile(fasta_file_name):
-        handle = urlopen_with_retry(remote_fasta)
+        print remote_fasta
+        try:
+            handle = urlopen_with_retry(remote_fasta)
+        except urllib2.HTTPError:
+            # Will need to query instead
+            p = parse_seq_name(p)  # First word only
+            # TODO: This should be configurable
+            p = query_uniprot(('gene:' + p, 'reviewed:yes', 'organism:human'), first=True)
+            remote_fasta = url + p + '.fasta'
+            handle = urlopen_with_retry(remote_fasta)
         seq_record = SeqIO.read(handle, "fasta")
         SeqIO.write(seq_record, fasta_file_name, "fasta")
     else:
