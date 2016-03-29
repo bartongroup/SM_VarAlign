@@ -250,6 +250,9 @@ def main(args):
     alignment_residue_numbers = []
     alignment_column_numbers = []
     for seq in alignment:
+        if args.seq_id_filter is not None and args.seq_id_filter not in seq.id:
+            log.info('Filtering sequence {}.'.format(seq.id))
+            continue
         seq_name = parse_seq_name(seq.id)
         uniprot_seq = fetch_uniprot_sequences(seq_name, UniProt_sequences_downloads)
         uniprot_sequences.append(uniprot_seq)  # Keep for later too
@@ -374,6 +377,8 @@ if __name__ == '__main__':
     parser.add_argument('fasta_file', type=str, help='Path to fasta file containing MSA.')
     parser.add_argument('--use_local_alignment', action='store_true',
                         help='Align sub-sequences to UniProt rather than enforcing exact match.')
+    parser.add_argument('--seq_id_filter', type=str,
+                        help='An inclusive filter to process only a subset of sequences.')
     parser.add_argument('--interpreter', action='store_true',
                         help='Drop into interactive python session once analysis is complete.')
     args = parser.parse_args()
