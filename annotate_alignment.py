@@ -347,17 +347,24 @@ def main(args):
         col_num += 1
         column_string = alignment[:, col_num - 1]
         n_gaps = column_string.count('-')
+        sub_alignment = alignment[:, :col_num - 1] + alignment[:, col_num:]
+        n_gaps_other = sum([str(a.seq).count('-') for a in sub_alignment])
+        # # Count non-variant sequence residues in and not in column
+        # non_variant_sub_alignment = [str(a.seq) for a in sub_alignment if a.id not in sequences_with_variants]
+        # n_other_residues_non_variant_seq = sum([len(a) for a in non_variant_sub_alignment])
         # Count variants
         if col_num in cross_table.columns:
             variants_in_column = sum(cross_table.loc[:, col_num])
             non_variant_in_column = sum(cross_table.loc[:, col_num] == 0) + n_non_variant_sequences - n_gaps
             variants_in_other = sum(cross_table.drop(col_num, axis=1).sum())
-            non_variant_other = sum((cross_table.drop(col_num, axis=1) == 0).sum()) + n_non_variant_sequences - n_gaps
+            non_variant_other = sum((cross_table.drop(col_num, axis=1) == 0).sum()) \
+                                + (n_non_variant_sequences * (alignment.get_alignment_length() - 1)) - n_gaps_other
         else:
             variants_in_column = 0
             non_variant_in_column = len(alignment) - n_gaps
             variants_in_other = sum(cross_table.sum())
-            non_variant_other = sum((cross_table == 0).sum()) + n_non_variant_sequences - n_gaps
+            non_variant_other = sum((cross_table == 0).sum()) \
+                                + (n_non_variant_sequences * (alignment.get_alignment_length() - 1)) - n_gaps_other
         odds_ratio, pvalue = fisher_exact([[variants_in_column, variants_in_other],
                                        [non_variant_in_column, non_variant_other]],
                                       alternative='less')
