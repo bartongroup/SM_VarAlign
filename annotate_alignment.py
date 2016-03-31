@@ -355,6 +355,7 @@ def main(args):
     merged_table = pd.merge(mapped, germline_table,
                             left_on=['UniProt_ID', 'uniprot_res_num'],
                             right_on=['UniProt_dbAccessionId', 'start'])
+    merged_table.to_csv(args.fasta_file + '_merged_table.csv')
 
     # Counting variants and writing Jalview annotations
     is_missense = (merged_table['type'] == 'missense_variant') & \
