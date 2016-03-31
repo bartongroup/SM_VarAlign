@@ -60,11 +60,15 @@ def main(args):
 
         # Pick out first X-ray structure
         # TODO: better structure selection
+        pdb_id = None
         for prot, record in sifts_pdb.iteritems():
             for r_dict in record:
                 if r_dict.get('experimental_method') == 'X-ray diffraction':
                     pdb_id = r_dict.get('pdb_id')
                     break
+        if pdb_id is None:
+            log.info('No X-ray structure for {}.'.format(seq_name))
+            continue
 
         # Download and parse that PDB
         pdbl = PDBList()
