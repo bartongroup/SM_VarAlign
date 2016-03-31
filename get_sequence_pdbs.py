@@ -132,7 +132,7 @@ def main(args):
         end = select_residues[3]
         if not os.path.exists(output_dir):
             os.makedirs(output_dir)
-        filename = os.path.join(output_dir, seq_name + '_' + structure.get_id() + '.pdb')
+        filename = os.path.join(output_dir, '_'.join([seq_name, structure.get_id(), chain_id, str(start) + '-' + str(end)]) + '.pdb')
         #extract(structure, chain_id, start, end, filename)
         sel = alpha_select(chain_id, start, end)
         io = PDBIO()
