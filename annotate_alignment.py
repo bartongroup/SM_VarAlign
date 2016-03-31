@@ -285,14 +285,16 @@ def run_fisher_tests(alignment, table_mask, merged_table):
             variants_in_other = sum(cross_table.drop(col_num, axis=1).sum())
             non_variant_other = sum((cross_table.drop(col_num, axis=1) == 0).sum()) \
                                 + n_positions_in_non_variant_columns \
-                                + (n_non_variant_sequences * (alignment.get_alignment_length() - 1)) - n_gaps_other
+                                + (n_non_variant_sequences * (alignment.get_alignment_length() - (1 + len(non_variant_columns)))) \
+                                - n_gaps_other
         else:
             variants_in_column = 0
             non_variant_in_column = len(alignment) - n_gaps
             variants_in_other = sum(cross_table.sum())
             non_variant_other = sum((cross_table == 0).sum()) \
                                 + n_positions_in_non_variant_columns \
-                                + (n_non_variant_sequences * (alignment.get_alignment_length() - 1)) - n_gaps_other
+                                + (n_non_variant_sequences * (alignment.get_alignment_length() - (1 + len(non_variant_columns)))) \
+                                - n_gaps_other
         odds_ratio, pvalue = fisher_exact([[variants_in_column, variants_in_other],
                                            [non_variant_in_column, non_variant_other]],
                                           alternative='less')
