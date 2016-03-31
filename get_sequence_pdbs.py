@@ -56,6 +56,7 @@ def main(args):
             raise NotImplemented
         sifts_pdb = sifts_best(seq_name)
         if sifts_pdb is None:
+            log.info('No SIFTs mapping for {}.'.format(seq_name))
             continue
 
         # Pick out first X-ray structure
@@ -120,6 +121,7 @@ def main(args):
                 select_residues = (pdb, c, start, end)
                 seq_matched = True
         if not seq_matched:
+            log.info('Could not match {} to {}.'.format(seq_name, pdb_id))
             continue
 
         pdb_id = select_residues[0]
@@ -138,6 +140,7 @@ def main(args):
         io.save(filename, sel)
 
         output_pdb_files.append(filename)
+        log.info('Successfully matched {} to {}.'.format(seq_name, pdb_id))
 
     # Lastly create MAMMOTH input file
     with open('MAMMOTH_input.pdb', 'w') as mammoth_file:
