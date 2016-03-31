@@ -402,7 +402,7 @@ def main(args):
     write_jalview_annotation(zip(*fisher_test_results)[1], jalview_out_file,
                              'Missense p-value', '', append=True)
 
-    return merged_table
+    return merged_table, fisher_test_results
 
 
 if __name__ == '__main__':
@@ -417,7 +417,7 @@ if __name__ == '__main__':
                         help='Drop into interactive python session once analysis is complete.')
     args = parser.parse_args()
 
-    merged_table = main(args)
+    merged_table, fisher_test_results = main(args)
 
     if args.interpreter:
         code.interact(local=dict(globals(), **locals()))
