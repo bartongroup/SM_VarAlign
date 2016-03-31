@@ -350,7 +350,7 @@ def main(args):
 
     # Fetch variants
     protein_identifiers = zip(*uniprot_sequences)[0]  # Ensure prots contains UniProt IDs (could be protein names)
-    germline_table = _fetch_variants(protein_identifiers, downloads, args.fasta_file + 'alignment_variant_table.csv')
+    germline_table = _fetch_variants(protein_identifiers, downloads, args.fasta_file + '_alignment_variant_table.csv')
 
     # Merge the data
     # Merge variant table and key table
