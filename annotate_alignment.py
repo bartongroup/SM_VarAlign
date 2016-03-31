@@ -251,7 +251,7 @@ def run_fisher_tests(alignment, table_mask, merged_table):
     #         cross_table = cross_table.drop(i, axis=1)
     # Count sequences that have no variants anywhere
     all_sequence_ids = [a.id for a in alignment]
-    sequences_with_variants = list(merged_table['seq_id'].unique())
+    sequences_with_variants = list(t['seq_id'].unique())
     non_variant_sequences = [a for a in all_sequence_ids if a not in sequences_with_variants]
     n_non_variant_sequences = len(non_variant_sequences)
     # Calculate how many positions are in non_variant columns
