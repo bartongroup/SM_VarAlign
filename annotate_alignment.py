@@ -3,7 +3,8 @@ from Bio import AlignIO, SeqIO, pairwise2
 from Bio.Seq import Seq
 from Bio.SeqRecord import SeqRecord
 from Bio.pairwise2 import format_alignment
-from scipy.stats import fisher_exact
+from scipy.stats import fisher_exact, linregress
+import numpy as np
 import code
 import os.path
 import pandas as pd
@@ -388,6 +389,15 @@ def main(args):
 
     jalview_out_file = args.fasta_file + '_jalview_annotations.csv'
     write_jalview_annotation(variant_counts, jalview_out_file, titles, descriptions)
+
+    # column RVIS scores
+    y = np.array(zip(*missense_variants_per_column)[1])
+    x = np.array(zip(*total_variants_per_column)[1])
+    slope, intercept, r_value, p_value, slope_std_error = linregress(x, y)
+    predict_y = intercept + slope * x
+    pred_error = y - predict_y
+    rvis = tuple(pred_error)
+    write_jalview_annotation(rvis, jalview_out_file, 'RVIS', '', append=True)
 
     # If we have at least one unambiguous pathogenic variant...
     if 'pathogenic' in list(merged_table['clinical_significance']):
