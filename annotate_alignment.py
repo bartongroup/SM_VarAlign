@@ -4,6 +4,8 @@ from Bio.Seq import Seq
 from Bio.SeqRecord import SeqRecord
 from Bio.pairwise2 import format_alignment
 from scipy.stats import fisher_exact, linregress
+from sklearn import linear_model
+from regressors.stats import residuals
 import numpy as np
 import code
 import os.path
@@ -396,8 +398,18 @@ def main(args):
     slope, intercept, r_value, p_value, slope_std_error = linregress(x, y)
     predict_y = intercept + slope * x
     pred_error = y - predict_y
-    rvis = tuple(pred_error)
-    write_jalview_annotation(rvis, jalview_out_file, 'RVIS', '', append=True)
+    write_jalview_annotation(tuple(pred_error), jalview_out_file, 'Unstandardised RVIS', '', append=True)
+
+    # Proper RVIS
+    x = x.reshape((176,1))
+    y = y.reshape((176,1))
+    regr = linear_model.LinearRegression()
+    regr.fit(x, y)
+    rvis_int_stud = residuals(regr, x, y, 'standardized')  # Different format...
+    rvis_int_stud = tuple(rvis_int_stud.reshape((len(rvis_int_stud), )))
+    rvis_ext_stud = tuple(residuals(regr, x, y, 'studentized'))
+    write_jalview_annotation(rvis_int_stud, jalview_out_file, 'Int. Stud. RVIS', '', append=True)
+    write_jalview_annotation(rvis_ext_stud, jalview_out_file, 'Ext. Stud. RVIS', '', append=True)
 
     # If we have at least one unambiguous pathogenic variant...
     if 'pathogenic' in list(merged_table['clinical_significance']):
