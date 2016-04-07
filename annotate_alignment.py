@@ -12,7 +12,7 @@ import os.path
 import pandas as pd
 import re
 import urllib2
-from utils import urlopen_with_retry, query_uniprot
+from utils import urlopen_with_retry, query_uniprot, worse_than
 
 # Use my developement branch of ProteoFAV
 import sys
@@ -397,23 +397,41 @@ def main(args):
     write_jalview_annotation(variant_counts, jalview_out_file, titles, descriptions)
 
     # column RVIS scores
-    y = np.array(zip(*missense_variants_per_column)[1])
+    # MAF threshold
+    is_common = merged_table['minor_allele_frequency'].notnull()
+
+    #TODO: This is a good scheme for classifying variants, use elsewhere?
+    is_bad_type = merged_table.type.apply(lambda x: x in worse_than('missense_variant'))
+    is_mutant = merged_table['from_aa'] != merged_table['to_aa_expanded']
+    is_functional = is_bad_type & is_mutant
+
+    # common_functional = merged_table.loc[is_functional & is_common, 'alignment_col_num'].value_counts(sort=False)
+    common_functional = merged_table.loc[is_functional, 'alignment_col_num'].value_counts(sort=False)
+    common_functional_per_column = fill_variant_count(common_functional, alignment.get_alignment_length())
+
+    # Data
+    y = np.array(zip(*common_functional_per_column)[1])
     x = np.array(zip(*total_variants_per_column)[1])
+
+    # RVIS approx.
     slope, intercept, r_value, p_value, slope_std_error = linregress(x, y)
     predict_y = intercept + slope * x
     pred_error = y - predict_y
     write_jalview_annotation(tuple(pred_error), jalview_out_file, 'Unstandardised RVIS', '', append=True)
 
-    # Proper RVIS
-    x = x.reshape((176,1))
-    y = y.reshape((176,1))
-    regr = linear_model.LinearRegression()
-    regr.fit(x, y)
-    rvis_int_stud = residuals(regr, x, y, 'standardized')  # Different format...
-    rvis_int_stud = tuple(rvis_int_stud.reshape((len(rvis_int_stud), )))
-    rvis_ext_stud = tuple(residuals(regr, x, y, 'studentized'))
-    write_jalview_annotation(rvis_int_stud, jalview_out_file, 'Int. Stud. RVIS', '', append=True)
-    write_jalview_annotation(rvis_ext_stud, jalview_out_file, 'Ext. Stud. RVIS', '', append=True)
+    rvis = tuple(pred_error / np.std(pred_error))
+    write_jalview_annotation(rvis, jalview_out_file, 'RVIS', '', append=True)
+
+    # # Proper RVIS
+    # x = x.reshape((len(x),1))
+    # y = y.reshape((len(y),1))
+    # regr = linear_model.LinearRegression()
+    # regr.fit(x, y)
+    # rvis_int_stud = residuals(regr, x, y, 'standardized')  # Different format...
+    # rvis_int_stud = tuple(rvis_int_stud.reshape((len(rvis_int_stud), )))
+    # rvis_ext_stud = tuple(residuals(regr, x, y, 'studentized'))
+    # write_jalview_annotation(rvis_int_stud, jalview_out_file, 'Int. Stud. RVIS', '', append=True)
+    # write_jalview_annotation(rvis_ext_stud, jalview_out_file, 'Ext. Stud. RVIS', '', append=True)
 
     # If we have at least one unambiguous pathogenic variant...
     if 'pathogenic' in list(merged_table['clinical_significance']):
