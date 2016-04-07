@@ -334,7 +334,11 @@ def main(args):
             log.info('Filtering sequence {}.'.format(seq.id))
             continue
         seq_name = parse_seq_name(seq.id)
-        uniprot_seq = fetch_uniprot_sequences(seq_name, UniProt_sequences_downloads)
+        try:
+            uniprot_seq = fetch_uniprot_sequences(seq_name, UniProt_sequences_downloads)
+        except ValueError:
+            log.error('Could not retrieve sequence for {}, skipping...'.format(seq_name))
+            continue
         uniprot_sequences.append(uniprot_seq)  # Keep for later too
         try:
             alignment_residue_numbers.append(get_row_residue_numbers(seq, uniprot_seq, args.use_local_alignment))
