@@ -155,7 +155,7 @@ def _fetch_variants(prots, downloads=None, save_name=None):
         tables = []
         for p in list(set(prots)):
             try:
-                variant_table = select_uniprot_variants(p, reduced_annotations=False)
+                variant_table = select_uniprot_variants(p, reduced_annotations=False)  #TODO: Use new variant fetcher?
                 variant_table['UniProt_dbAccessionId'] = p
                 tables.append(variant_table)
             except (ValueError, KeyError):
@@ -184,7 +184,7 @@ def _fetch_variants(prots, downloads=None, save_name=None):
     else:
         concat_table = pd.read_csv(table_file_name)
 
-    # is_somatic = concat_table['variant_id'].apply(lambda x: x.startswith('COS'))
+    # is_somatic = concat_table['variant_id'].apply(lambda x: x.startswith('COS'))  #TODO: include this?
     is_germline = concat_table['variant_id'].apply(lambda x: x.startswith('rs'))
     # somatic_table = concat_table[is_somatic]
     germline_table = concat_table[is_germline]
@@ -369,6 +369,7 @@ def main(args):
     merged_table.to_csv(args.fasta_file + '_merged_table.csv')
 
     # Counting variants and writing Jalview annotations
+    # TODO: does any of this need deduped?
     is_missense = (merged_table['type'] == 'missense_variant') & \
                   (merged_table['from_aa'] != merged_table['to_aa_expanded'])
     is_ED = (merged_table['from_aa'] == 'E') & (merged_table['to_aa_expanded'] == 'D')
