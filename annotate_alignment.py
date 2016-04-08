@@ -449,6 +449,7 @@ def main(args):
     # Statistics!
     # Write fisher test results to jalview annotation
     fisher_test_results = run_fisher_tests(alignment, is_missense, merged_table)
+    # TODO: This and other calcs could be run with %gap threshold, ignored columns given the worst value for jalview visualisation
     write_jalview_annotation(zip(*fisher_test_results)[1], jalview_out_file,
                              'Missense p-value', '', append=True)
     missense_significance = tuple(1 - x for x in zip(*fisher_test_results)[1])
