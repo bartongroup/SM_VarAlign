@@ -350,7 +350,7 @@ def calculate_rvis(x, y):
     predict_y = intercept + slope * x
     pred_error = y - predict_y
     rvis = tuple(pred_error / np.std(pred_error))
-    
+
     # # Proper RVIS
     # x = x.reshape((len(x),1))
     # y = y.reshape((len(y),1))
@@ -377,6 +377,7 @@ def main(args):
     UniProt_sequences_downloads = os.path.join(downloads, 'UniProt_sequences')
     if not os.path.exists(downloads):
         os.makedirs(downloads)
+    jalview_out_file = args.fasta_file + '_jalview_annotations.csv'
 
     # Read alignment
     alignment = AlignIO.read(args.fasta_file, "fasta")
@@ -419,7 +420,6 @@ def main(args):
     protein_identifiers = zip(*uniprot_sequences)[0]  # Ensure prots contains UniProt IDs (could be protein names)
     germline_table = _fetch_variants(protein_identifiers, downloads, args.fasta_file + '_alignment_variant_table.csv')
 
-    # Merge the data
     # Merge variant table and key table
     merged_table = pd.merge(mapped, germline_table,
                             left_on=['UniProt_ID', 'uniprot_res_num'],
@@ -432,13 +432,10 @@ def main(args):
                   (merged_table['from_aa'] != merged_table['to_aa_expanded'])
     is_ED = (merged_table['from_aa'] == 'E') & (merged_table['to_aa_expanded'] == 'D')
     is_DE = (merged_table['from_aa'] == 'D') & (merged_table['to_aa_expanded'] == 'E')
-
     total_variant_counts = merged_table['alignment_col_num'].value_counts(sort=False)
     total_variants_per_column = fill_variant_count(total_variant_counts, alignment_length)
-
     missense_variant_counts = merged_table.loc[is_missense, 'alignment_col_num'].value_counts(sort=False)
     missense_variants_per_column = fill_variant_count(missense_variant_counts, alignment_length)
-
     missense_exc_DE_counts = merged_table.loc[is_missense & ~(is_ED | is_DE), 'alignment_col_num'].value_counts(
         sort=False)
     missense_exc_DE_per_column = fill_variant_count(missense_exc_DE_counts, alignment_length)
@@ -452,34 +449,26 @@ def main(args):
     descriptions = ['Total number of variants in summed over all proteins.',
                     'Total number of missense variants in summed over all proteins.',
                     'Number of missense variants excluding E-D and D-E summed over all proteins.']
-
-    jalview_out_file = args.fasta_file + '_jalview_annotations.csv'
     # write_jalview_annotation(variant_counts, jalview_out_file, titles, descriptions)
     write_jalview_annotation(variant_counts[1], jalview_out_file, titles[1], descriptions[1])
 
-    # column RVIS scores
-    # MAF threshold
-    is_common = merged_table['minor_allele_frequency'].notnull()
-
+    # RVIS calculation: need to count variants and format data.
     # TODO: This is a good scheme for classifying variants, use elsewhere?
+    is_common = merged_table['minor_allele_frequency'].notnull()
     is_bad_type = merged_table.type.apply(lambda x: x in worse_than('missense_variant'))
     is_mutant = merged_table['from_aa'] != merged_table['to_aa_expanded']
     is_functional = is_bad_type & is_mutant
-
-    # common_functional = merged_table.loc[is_functional & is_common, 'alignment_col_num'].value_counts(sort=False)
     common_functional = merged_table.loc[is_common & is_functional, 'alignment_col_num'].value_counts(sort=False)
     common_functional_per_column = fill_variant_count(common_functional, alignment_length)
 
-    # Data
     y = np.array(zip(*common_functional_per_column)[1])
     x = np.array(zip(*total_variants_per_column)[1])
-
     pred_error, rvis = calculate_rvis(x, y)
 
     write_jalview_annotation(tuple(pred_error), jalview_out_file, 'Unstandardised RVIS', '', append=True)
     write_jalview_annotation(rvis, jalview_out_file, 'RVIS', '', append=True)
 
-    # If we have at least one unambiguous pathogenic variant...
+    # Count pathogenic variants if we have at least one unambiguous pathogenic variant.
     if 'pathogenic' in list(merged_table['clinical_significance']):
         try:
             clinical_significance_counts = \
@@ -493,16 +482,15 @@ def main(args):
         except:
             log.warning('Count not count pathogenic variants.')
 
-    # Statistics!
-    # Write fisher test results to jalview annotation
-    fisher_test_results = run_fisher_tests(alignment, is_missense, merged_table)
+    # Calculate and write fisher test results to Jalview annotation file.
     # TODO: This and other calcs could be run with %gap threshold, ignored columns given the worst value for jalview visualisation
+    fisher_test_results = run_fisher_tests(alignment, is_missense, merged_table)
+    missense_significance = tuple(1 - x for x in zip(*fisher_test_results)[1])
+    # missense_ratio = tuple(1./x for x in zip(*fisher_test_results)[0])
     write_jalview_annotation(zip(*fisher_test_results)[1], jalview_out_file,
                              'Missense p-value', '', append=True)
-    missense_significance = tuple(1 - x for x in zip(*fisher_test_results)[1])
     write_jalview_annotation(missense_significance, jalview_out_file,
                              'Missense "sginificance" (1 - p)', '', append=True)
-    # missense_ratio = tuple(1./x for x in zip(*fisher_test_results)[0])
     # write_jalview_annotation(missense_ratio, jalview_out_file,
     #                          'Missense OR', '', append=True)
 
