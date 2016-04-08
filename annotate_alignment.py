@@ -324,6 +324,7 @@ def main(args):
 
     # Read alignment
     alignment = AlignIO.read(args.fasta_file, "fasta")
+    alignment_length = alignment.get_alignment_length()
 
     # Map alignment columns to sequence UniProt residue numbers
     uniprot_sequences = []
@@ -376,13 +377,13 @@ def main(args):
     is_DE = (merged_table['from_aa'] == 'D') & (merged_table['to_aa_expanded'] == 'E')
 
     total_variant_counts = merged_table['alignment_col_num'].value_counts(sort=False)
-    total_variants_per_column = fill_variant_count(total_variant_counts, alignment.get_alignment_length())
+    total_variants_per_column = fill_variant_count(total_variant_counts, alignment_length)
 
     missense_variant_counts = merged_table.loc[is_missense, 'alignment_col_num'].value_counts(sort=False)
-    missense_variants_per_column = fill_variant_count(missense_variant_counts, alignment.get_alignment_length())
+    missense_variants_per_column = fill_variant_count(missense_variant_counts, alignment_length)
 
     missense_exc_DE_counts = merged_table.loc[is_missense & ~(is_ED | is_DE), 'alignment_col_num'].value_counts(sort=False)
-    missense_exc_DE_per_column = fill_variant_count(missense_exc_DE_counts, alignment.get_alignment_length())
+    missense_exc_DE_per_column = fill_variant_count(missense_exc_DE_counts, alignment_length)
 
     variant_counts = [zip(*total_variants_per_column)[1],
                       zip(*missense_variants_per_column)[1],
@@ -408,7 +409,7 @@ def main(args):
 
     # common_functional = merged_table.loc[is_functional & is_common, 'alignment_col_num'].value_counts(sort=False)
     common_functional = merged_table.loc[is_common & is_functional, 'alignment_col_num'].value_counts(sort=False)
-    common_functional_per_column = fill_variant_count(common_functional, alignment.get_alignment_length())
+    common_functional_per_column = fill_variant_count(common_functional, alignment_length)
 
     # Data
     y = np.array(zip(*common_functional_per_column)[1])
@@ -440,7 +441,7 @@ def main(args):
             clinical_significance_counts = \
                 pd.crosstab(merged_table.loc[is_missense, 'alignment_col_num'], merged_table.loc[is_missense, 'clinical_significance'])
             pathogenic_variant_counts = clinical_significance_counts['pathogenic']
-            pathogenic_column_counts = fill_variant_count(pathogenic_variant_counts, alignment.get_alignment_length())
+            pathogenic_column_counts = fill_variant_count(pathogenic_variant_counts, alignment_length)
             write_jalview_annotation(zip(*pathogenic_column_counts)[1], jalview_out_file, 'Pathogenic_missense_variants',
                                      'Number of missense variants annotated pathogenic by ClinVar.', append=True)
         except:
