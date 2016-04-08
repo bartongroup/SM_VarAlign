@@ -295,8 +295,8 @@ def run_fisher_tests(alignment, table_mask, merged_table):
     #     number_of_gaps = column_string.count('-')
     #     if number_of_gaps > max_gaps and i in cross_table.columns:
     #         cross_table = cross_table.drop(i, axis=1)
-    # Count sequences that have no variants anywhere
 
+    # Count sequences that have no variants anywhere
     non_variant_sequences = _non_variant_sequences(alignment, t)
     n_non_variant_sequences = len(non_variant_sequences)
 
