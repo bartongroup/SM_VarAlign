@@ -258,19 +258,20 @@ def run_fisher_tests(alignment, table_mask, merged_table):
     non_variant_sequences = [a for a in all_sequence_ids if a not in sequences_with_variants]
     n_non_variant_sequences = len(non_variant_sequences)
     # Calculate how many positions are in non_variant columns
-    non_variant_columns = [i for i in range(1, alignment.get_alignment_length() + 1) if i not in cross_table.columns]
+    alignment_length = alignment.get_alignment_length()
+    non_variant_columns = [i for i in range(1, alignment_length + 1) if i not in cross_table.columns]
     # Count gaps per column
-    gaps_per_column = [alignment[:, i].count('-') for i in range(alignment.get_alignment_length())] # slow
+    gaps_per_column = [alignment[:, i].count('-') for i in range(alignment_length)] # slow
     # Run fisher tests for all columns
     fisher_test_results = []
-    for col_num in range(alignment.get_alignment_length()):
+    for col_num in range(alignment_length):
         # TODO: this doesn't account for number of gaps in a column
         # TODO: also doesn't account for sequences with no variants
         # Count gaps
         col_num += 1
         column_string = alignment[:, col_num - 1]
         n_gaps = column_string.count('-')
-        other_columns = range(alignment.get_alignment_length())
+        other_columns = range(alignment_length)
         other_columns.remove(col_num - 1)
         n_gaps_other = sum([gaps_per_column[i] for i in other_columns])
         # TODO: This might mean I'm double counting residues that are in both non_variant_columns and non_variant_sequences
@@ -290,7 +291,7 @@ def run_fisher_tests(alignment, table_mask, merged_table):
             variants_in_other = sum(cross_table.drop(col_num, axis=1).sum())
             non_variant_other = sum((cross_table.drop(col_num, axis=1) == 0).sum()) \
                                 + n_positions_in_non_variant_columns \
-                                + (n_non_variant_sequences * (alignment.get_alignment_length() - (1 + len(non_variant_columns)))) \
+                                + (n_non_variant_sequences * (alignment_length - (1 + len(non_variant_columns)))) \
                                 - n_gaps_other
         else:
             variants_in_column = 0
@@ -298,7 +299,7 @@ def run_fisher_tests(alignment, table_mask, merged_table):
             variants_in_other = sum(cross_table.sum())
             non_variant_other = sum((cross_table == 0).sum()) \
                                 + n_positions_in_non_variant_columns \
-                                + (n_non_variant_sequences * (alignment.get_alignment_length() - (1 + len(non_variant_columns)))) \
+                                + (n_non_variant_sequences * (alignment_length - (1 + len(non_variant_columns)))) \
                                 - n_gaps_other
         odds_ratio, pvalue = fisher_exact([[variants_in_column, variants_in_other],
                                            [non_variant_in_column, non_variant_other]],
