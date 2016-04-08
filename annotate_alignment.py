@@ -1,21 +1,21 @@
 import argparse
+import code
+import os.path
+import re
+import urllib2
+
+import numpy as np
+import pandas as pd
 from Bio import AlignIO, SeqIO, pairwise2
 from Bio.Seq import Seq
 from Bio.SeqRecord import SeqRecord
 from Bio.pairwise2 import format_alignment
 from scipy.stats import fisher_exact, linregress
-from sklearn import linear_model
-from regressors.stats import residuals
-import numpy as np
-import code
-import os.path
-import pandas as pd
-import re
-import urllib2
-from utils import urlopen_with_retry, query_uniprot, worse_than
 
+from utils import urlopen_with_retry, query_uniprot, worse_than
 # Use my developement branch of ProteoFAV
 import sys
+
 sys.path.extend(['/Users/smacgowan/PycharmProjects/ProteoFAV'])
 from proteofav.variants import select_uniprot_variants
 from proteofav.analysis.utils import expand_dataframe
@@ -24,8 +24,10 @@ import logging
 
 log = logging.getLogger(__name__)
 
+
 def parse_seq_name(seq_name):
     return re.search('\w*', seq_name).group().strip()
+
 
 def get_row_residue_numbers(subseq, uniprot_seq, use_local_alignment):
     """
@@ -38,7 +40,7 @@ def get_row_residue_numbers(subseq, uniprot_seq, use_local_alignment):
     """
     # Prepare sequences for alignment to UniProt by removing gaps
     subseq = SeqRecord(Seq(str(subseq.seq).replace('-', '').upper(), subseq.seq.alphabet), id=subseq.id)
-    sequence_name = parse_seq_name(subseq.id)  #TODO: No longer needed
+    sequence_name = parse_seq_name(subseq.id)  # TODO: No longer needed
 
     if use_local_alignment:
         # Align input alignment sequences to UniProt Sequences
@@ -162,7 +164,7 @@ def _fetch_variants(prots, downloads=None, save_name=None):
         tables = []
         for p in list(set(prots)):
             try:
-                variant_table = select_uniprot_variants(p, reduced_annotations=False)  #TODO: Use new variant fetcher?
+                variant_table = select_uniprot_variants(p, reduced_annotations=False)  # TODO: Use new variant fetcher?
                 variant_table['UniProt_dbAccessionId'] = p
                 tables.append(variant_table)
             except (ValueError, KeyError):
@@ -285,7 +287,7 @@ def run_fisher_tests(alignment, table_mask, merged_table):
     alignment_length = alignment.get_alignment_length()
     non_variant_columns = [i for i in range(1, alignment_length + 1) if i not in cross_table.columns]
     # Count gaps per column
-    gaps_per_column = [alignment[:, i].count('-') for i in range(alignment_length)] # slow
+    gaps_per_column = [alignment[:, i].count('-') for i in range(alignment_length)]  # slow
     # Run fisher tests for all columns
     fisher_test_results = []
     for col_num in range(alignment_length):
@@ -393,7 +395,8 @@ def main(args):
                     isoform = canonical_uniprot + suffix
                     print isoform
                     uniprot_seq = fetch_uniprot_sequences(isoform, downloads)
-                    alignment_residue_numbers.append(get_row_residue_numbers(seq, uniprot_seq, args.use_local_alignment))
+                    alignment_residue_numbers.append(
+                        get_row_residue_numbers(seq, uniprot_seq, args.use_local_alignment))
                     break
                 except TypeError:
                     continue
@@ -424,7 +427,8 @@ def main(args):
     missense_variant_counts = merged_table.loc[is_missense, 'alignment_col_num'].value_counts(sort=False)
     missense_variants_per_column = fill_variant_count(missense_variant_counts, alignment_length)
 
-    missense_exc_DE_counts = merged_table.loc[is_missense & ~(is_ED | is_DE), 'alignment_col_num'].value_counts(sort=False)
+    missense_exc_DE_counts = merged_table.loc[is_missense & ~(is_ED | is_DE), 'alignment_col_num'].value_counts(
+        sort=False)
     missense_exc_DE_per_column = fill_variant_count(missense_exc_DE_counts, alignment_length)
 
     variant_counts = [zip(*total_variants_per_column)[1],
@@ -438,14 +442,14 @@ def main(args):
                     'Number of missense variants excluding E-D and D-E summed over all proteins.']
 
     jalview_out_file = args.fasta_file + '_jalview_annotations.csv'
-    #write_jalview_annotation(variant_counts, jalview_out_file, titles, descriptions)
+    # write_jalview_annotation(variant_counts, jalview_out_file, titles, descriptions)
     write_jalview_annotation(variant_counts[1], jalview_out_file, titles[1], descriptions[1])
 
     # column RVIS scores
     # MAF threshold
     is_common = merged_table['minor_allele_frequency'].notnull()
 
-    #TODO: This is a good scheme for classifying variants, use elsewhere?
+    # TODO: This is a good scheme for classifying variants, use elsewhere?
     is_bad_type = merged_table.type.apply(lambda x: x in worse_than('missense_variant'))
     is_mutant = merged_table['from_aa'] != merged_table['to_aa_expanded']
     is_functional = is_bad_type & is_mutant
@@ -478,10 +482,12 @@ def main(args):
     if 'pathogenic' in list(merged_table['clinical_significance']):
         try:
             clinical_significance_counts = \
-                pd.crosstab(merged_table.loc[is_missense, 'alignment_col_num'], merged_table.loc[is_missense, 'clinical_significance'])
+                pd.crosstab(merged_table.loc[is_missense, 'alignment_col_num'],
+                            merged_table.loc[is_missense, 'clinical_significance'])
             pathogenic_variant_counts = clinical_significance_counts['pathogenic']
             pathogenic_column_counts = fill_variant_count(pathogenic_variant_counts, alignment_length)
-            write_jalview_annotation(zip(*pathogenic_column_counts)[1], jalview_out_file, 'Pathogenic_missense_variants',
+            write_jalview_annotation(zip(*pathogenic_column_counts)[1], jalview_out_file,
+                                     'Pathogenic_missense_variants',
                                      'Number of missense variants annotated pathogenic by ClinVar.', append=True)
         except:
             log.warning('Count not count pathogenic variants.')
