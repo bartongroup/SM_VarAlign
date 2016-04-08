@@ -310,6 +310,21 @@ def run_fisher_tests(alignment, table_mask, merged_table):
     return fisher_test_results
 
 
+def calculate_rvis(x, y):
+    """
+
+    :param x:
+    :param y:
+    :return:
+    """
+    # RVIS approx.
+    slope, intercept, r_value, p_value, slope_std_error = linregress(x, y)
+    predict_y = intercept + slope * x
+    pred_error = y - predict_y
+    rvis = tuple(pred_error / np.std(pred_error))
+    return pred_error, rvis
+
+
 def main(args):
     """
     Fetch variants for identified protein sequences in an MSA, map to residues and columns and write Jalview feature
@@ -416,13 +431,9 @@ def main(args):
     y = np.array(zip(*common_functional_per_column)[1])
     x = np.array(zip(*total_variants_per_column)[1])
 
-    # RVIS approx.
-    slope, intercept, r_value, p_value, slope_std_error = linregress(x, y)
-    predict_y = intercept + slope * x
-    pred_error = y - predict_y
-    write_jalview_annotation(tuple(pred_error), jalview_out_file, 'Unstandardised RVIS', '', append=True)
+    pred_error, rvis = calculate_rvis(x, y)
 
-    rvis = tuple(pred_error / np.std(pred_error))
+    write_jalview_annotation(tuple(pred_error), jalview_out_file, 'Unstandardised RVIS', '', append=True)
     write_jalview_annotation(rvis, jalview_out_file, 'RVIS', '', append=True)
 
     # # Proper RVIS
