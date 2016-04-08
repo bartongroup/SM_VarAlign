@@ -451,6 +451,9 @@ def main(args):
     fisher_test_results = run_fisher_tests(alignment, is_missense, merged_table)
     write_jalview_annotation(zip(*fisher_test_results)[1], jalview_out_file,
                              'Missense p-value', '', append=True)
+    missense_significance = tuple(1 - x for x in zip(*fisher_test_results)[1])
+    write_jalview_annotation(missense_significance, jalview_out_file,
+                             'Missense "sginificance" (1 - p)', '', append=True)
 
     return merged_table, fisher_test_results
 
