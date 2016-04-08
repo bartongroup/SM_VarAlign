@@ -325,6 +325,8 @@ def run_fisher_tests(alignment, table_mask, merged_table):
                                 + n_positions_in_non_variant_columns \
                                 + (n_non_variant_sequences * (alignment_length - (1 + len(non_variant_columns)))) \
                                 - n_gaps_other
+        # print (variants_in_column, variants_in_other)
+        # print (non_variant_in_column, non_variant_other)
         odds_ratio, pvalue = fisher_exact([[variants_in_column, variants_in_other],
                                            [non_variant_in_column, non_variant_other]],
                                           alternative='less')
@@ -492,6 +494,9 @@ def main(args):
     missense_significance = tuple(1 - x for x in zip(*fisher_test_results)[1])
     write_jalview_annotation(missense_significance, jalview_out_file,
                              'Missense "sginificance" (1 - p)', '', append=True)
+    # missense_ratio = tuple(1./x for x in zip(*fisher_test_results)[0])
+    # write_jalview_annotation(missense_ratio, jalview_out_file,
+    #                          'Missense OR', '', append=True)
 
     return merged_table, fisher_test_results
 
