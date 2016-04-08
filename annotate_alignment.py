@@ -438,7 +438,8 @@ def main(args):
                     'Number of missense variants excluding E-D and D-E summed over all proteins.']
 
     jalview_out_file = args.fasta_file + '_jalview_annotations.csv'
-    write_jalview_annotation(variant_counts, jalview_out_file, titles, descriptions)
+    #write_jalview_annotation(variant_counts, jalview_out_file, titles, descriptions)
+    write_jalview_annotation(variant_counts[1], jalview_out_file, titles[1], descriptions[1])
 
     # column RVIS scores
     # MAF threshold
