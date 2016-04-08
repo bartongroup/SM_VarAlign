@@ -29,6 +29,21 @@ def parse_seq_name(seq_name):
     return re.search('\w*', seq_name).group().strip()
 
 
+def _non_variant_sequences(alignment, variant_table):
+    """
+    Identify sequences in an aligment that have no corresponding entry in a variant table.
+
+    :param alignment: Bio.Align.MultipleSeqAlignment
+    :param variant_table: Pandas.DataFrame variant table
+    :return: List of sequence IDs not found in the variant table
+    """
+    # Identify missing sequences because entirely non-variant
+    all_sequence_ids = [a.id for a in alignment]
+    sequences_with_variants = list(variant_table['seq_id'].unique())
+    non_variant_sequences = [a for a in all_sequence_ids if a not in sequences_with_variants]
+    return non_variant_sequences
+
+
 def get_row_residue_numbers(subseq, uniprot_seq, use_local_alignment):
     """
     Map each sequence in an alignment to a longer sequence and return the residue numbers.
@@ -282,10 +297,7 @@ def run_fisher_tests(alignment, table_mask, merged_table):
     #         cross_table = cross_table.drop(i, axis=1)
     # Count sequences that have no variants anywhere
 
-    # Identify missing sequences because entirely non-variant
-    all_sequence_ids = [a.id for a in alignment]
-    sequences_with_variants = list(t['seq_id'].unique())
-    non_variant_sequences = [a for a in all_sequence_ids if a not in sequences_with_variants]
+    non_variant_sequences = _non_variant_sequences(alignment, t)
     n_non_variant_sequences = len(non_variant_sequences)
 
     # Calculate how many positions are in non-variant columns
