@@ -300,6 +300,7 @@ def run_fisher_tests(alignment, table_mask, merged_table):
     for col_num in range(alignment_length):
         # TODO: this doesn't account for number of gaps in a column
         # TODO: also doesn't account for sequences with no variants
+        # TODO: Might be double counting residues that are in both non_variant_columns and non_variant_sequences
 
         col_num += 1  # aligment_col_num is 1-indexed
 
@@ -309,7 +310,6 @@ def run_fisher_tests(alignment, table_mask, merged_table):
         other_columns.remove(col_num - 1)
         n_gaps_other = sum([gaps_per_column[i] for i in other_columns])
 
-        # TODO: This might mean I'm double counting residues that are in both non_variant_columns and non_variant_sequences
         # Calculate positions in other non_variant columns and sequences
         if col_num not in non_variant_columns:
             n_positions_in_non_variant_columns = len(non_variant_columns) * len(alignment)
