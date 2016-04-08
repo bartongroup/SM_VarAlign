@@ -148,6 +148,13 @@ def map_columns_to_residues(alignment_column_numbers, alignment_residue_numbers)
 
 
 def _fetch_variants(prots, downloads=None, save_name=None):
+    """
+    
+    :param prots:
+    :param downloads:
+    :param save_name:
+    :return:
+    """
     # Get variant data
     # Get the data with EnsEMBL variants
     table_file_name = os.path.join(downloads, save_name)
@@ -193,6 +200,13 @@ def _fetch_variants(prots, downloads=None, save_name=None):
 
 
 def fill_variant_count(value_counts, length):
+    """
+    Order an alignment column number value counts Series by alignment column and insert 0s for any unobserved columns.
+
+    :param value_counts: `alignment_col_num`.value_counts() Series
+    :param length: The length of the alignment.
+    :return:
+    """
     variants_per_pos = []
     for i in xrange(length):
         col_pos = i + 1
@@ -204,6 +218,16 @@ def fill_variant_count(value_counts, length):
 
 
 def write_jalview_annotation(ordered_values, file_name, title, description, append=False):
+    """
+    Write data to a Jalview annotation file.
+
+    :param ordered_values: Tuple or list of tuples containing annotation scores for each column in alignment.
+    :param file_name: Filename for Jalview annotations
+    :param title: Tuple or list of tuples of titles for each annotation track.
+    :param description: As above containing descriptions.
+    :param append: Wheter to append to an existing Jalview annotation file.
+    :return:
+    """
     file_mode = 'w'
     if append:
         file_mode = 'a'
