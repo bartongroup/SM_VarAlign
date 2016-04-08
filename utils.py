@@ -32,3 +32,20 @@ def query_uniprot(search_terms, first=False):
         return uniprots[0]
     else:
         return uniprots
+
+
+def worse_than(SO_term):
+    """
+    Identify what variant effects are worse than the specified term.
+
+    :param SO_term: Sequence Ontology term
+    :return: list of SO terms 'worse than' and including the query
+    """
+    # http://www.ensembl.org/info/genome/variation/predicted_data.html#consequences
+    ranked_terms = ('transcript_ablation', 'splice_acceptor_variant', 'splice_donor_variant',
+                    'stop_gained', 'frameshift_variant', 'stop_lost', 'start_lost', 'transcript_amplification',
+                    'inframe_insertion', 'inframe_deletion', 'missense_variant', 'protein_altering_variant',
+                    'splice_region_variant', 'incomplete_terminal_codon_variant', 'stop_retained_variant',
+                    'synonymous_variant')
+    return ranked_terms[:ranked_terms.index(SO_term) + 1]
+
