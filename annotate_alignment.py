@@ -407,7 +407,7 @@ def main(args):
     is_functional = is_bad_type & is_mutant
 
     # common_functional = merged_table.loc[is_functional & is_common, 'alignment_col_num'].value_counts(sort=False)
-    common_functional = merged_table.loc[is_functional, 'alignment_col_num'].value_counts(sort=False)
+    common_functional = merged_table.loc[is_common & is_functional, 'alignment_col_num'].value_counts(sort=False)
     common_functional_per_column = fill_variant_count(common_functional, alignment.get_alignment_length())
 
     # Data
