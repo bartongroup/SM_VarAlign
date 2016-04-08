@@ -302,10 +302,9 @@ def run_fisher_tests(alignment, table_mask, merged_table):
         # TODO: also doesn't account for sequences with no variants
 
         col_num += 1  # aligment_col_num is 1-indexed
-        
+
         # Count gaps
-        column_string = alignment[:, col_num - 1]
-        n_gaps = column_string.count('-')
+        n_gaps = gaps_per_column[col_num - 1]
         other_columns = range(alignment_length)
         other_columns.remove(col_num - 1)
         n_gaps_other = sum([gaps_per_column[i] for i in other_columns])
