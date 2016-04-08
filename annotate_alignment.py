@@ -267,7 +267,7 @@ def run_fisher_tests(alignment, table_mask, merged_table):
     :param merged_table: The merged alignment residue mapping and variant tables table.
     :return:
     """
-    print '---Tests for conservation---\n'
+    log.info('---Running Tests for Conservation---')
     t = merged_table[table_mask]
     cross_table = pd.crosstab(t['seq_id'], t['alignment_col_num'])
     # TODO: This only has non-variant residues if the protein has a variant somewhere else...
@@ -333,7 +333,7 @@ def run_fisher_tests(alignment, table_mask, merged_table):
                                            [non_variant_in_column, non_variant_other]],
                                           alternative='less')
         fisher_test_results.append((odds_ratio, pvalue))
-        print 'Alignment column: {}, OR = {}, p = {}'.format(col_num, odds_ratio, pvalue)
+        log.info('Alignment column: {}, OR = {}, p = {}'.format(col_num, odds_ratio, pvalue))
 
     return fisher_test_results
 
