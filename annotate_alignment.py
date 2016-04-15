@@ -337,6 +337,7 @@ def run_fisher_tests(alignment, table_mask, merged_table):
 
         # Count variants
         if col_num in cross_table.columns:
+            log.debug('Counting variants for column {} using cross-table...'.format(col_num))
             variants_in_column = sum(cross_table.loc[:, col_num])
             non_variant_in_column = sum(cross_table.loc[:, col_num] == 0) + n_non_variant_sequences - n_gaps
             variants_in_other = sum(cross_table.drop(col_num, axis=1).sum())
@@ -345,6 +346,7 @@ def run_fisher_tests(alignment, table_mask, merged_table):
                                 + n_positions_in_non_variant_seqs \
                                 - n_gaps_other
         else:
+            log.debug('Column {} not in cross-table, assuming 0 variants...'.format(col_num))
             variants_in_column = 0
             non_variant_in_column = len(alignment) - n_gaps
             variants_in_other = sum(cross_table.sum())
