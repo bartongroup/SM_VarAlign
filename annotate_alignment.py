@@ -409,7 +409,7 @@ def main(args):
     jalview_out_file = args.fasta_file + '_jalview_annotations.csv'
 
     # Read alignment
-    alignment = AlignIO.read(args.fasta_file, "fasta")
+    alignment = AlignIO.read(args.fasta_file, args.format)
     alignment_length = alignment.get_alignment_length()
 
     # Map alignment columns to sequence UniProt residue numbers
@@ -532,6 +532,8 @@ if __name__ == '__main__':
     parser.add_argument('fasta_file', type=str, help='Path to fasta file containing MSA.')
     parser.add_argument('--use_local_alignment', action='store_true',
                         help='Align sub-sequences to UniProt rather than enforcing exact match.')
+    parser.add_argument('--format', type=str, default='fasta',
+                        help='Alignment format.')
     parser.add_argument('--seq_id_filter', type=str,
                         help='An inclusive filter to process only a subset of sequences.')
     parser.add_argument('--interpreter', action='store_true',
