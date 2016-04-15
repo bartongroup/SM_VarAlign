@@ -124,7 +124,11 @@ def fetch_uniprot_sequences(seq_name, downloads=None):
             p = query_uniprot(('gene:' + p, 'reviewed:yes', 'organism:human'), first=True)
             remote_fasta = url + p + '.fasta'
             handle = urlopen_with_retry(remote_fasta)
-        seq_record = SeqIO.read(handle, "fasta")
+        try:
+            seq_record = SeqIO.read(handle, "fasta")
+        except ValueError:
+            log.error('Could not retrieve sequence for {}'.format(seq_name))
+            return None
         if downloads is not None:
             if not os.path.exists(downloads):
                 os.makedirs(downloads)
@@ -420,13 +424,13 @@ def main(args):
         if args.seq_id_filter is not None and args.seq_id_filter not in seq.id:
             log.info('Filtering sequence {}.'.format(seq.id))
             continue
+
         seq_name = parse_seq_name(seq.id)
-        try:
-            uniprot_seq = fetch_uniprot_sequences(seq_name, UniProt_sequences_downloads)
-        except ValueError:
-            log.error('Could not retrieve sequence for {}, skipping...'.format(seq_name))
+        uniprot_seq = fetch_uniprot_sequences(seq_name, UniProt_sequences_downloads)
+        if uniprot_seq is None:
             continue
         uniprot_sequences.append(uniprot_seq)  # Keep for later too
+
         try:
             alignment_residue_numbers.append(get_row_residue_numbers(seq, uniprot_seq, args.use_local_alignment))
         except TypeError:
@@ -443,6 +447,7 @@ def main(args):
                 except TypeError:
                     continue
         alignment_column_numbers.append(get_sequence_column_numbers(seq))
+
     mapped = map_columns_to_residues(alignment_column_numbers, alignment_residue_numbers)  # Map columns to residues
 
     # Fetch variants
