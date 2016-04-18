@@ -398,7 +398,7 @@ def calculate_rvis(x, y):
     return pred_error, rvis
 
 
-def main(args):
+def main(alignment, args):
     """
     Fetch variants for identified protein sequences in an MSA, map to residues and columns and write Jalview feature
     files with key statistics.
@@ -416,8 +416,7 @@ def main(args):
         os.makedirs(downloads)
     jalview_out_file = args.fasta_file + annotation_suffix
 
-    # Read alignment
-    alignment = AlignIO.read(args.fasta_file, args.format)
+    # Alignment length if used repeatedly to store here
     alignment_length = alignment.get_alignment_length()
 
     # Map alignment columns to sequence UniProt residue numbers
@@ -551,7 +550,9 @@ if __name__ == '__main__':
                         help='Drop into interactive python session once analysis is complete.')
     args = parser.parse_args()
 
-    merged_table, fisher_test_results = main(args)
+    # Read alignment and run analysis
+    alignment = AlignIO.read(args.fasta_file, args.format)
+    merged_table, fisher_test_results = main(alignment, args)
 
     if args.interpreter:
         code.interact(local=dict(globals(), **locals()))
