@@ -398,7 +398,7 @@ def calculate_rvis(x, y):
     return pred_error, rvis
 
 
-def main(alignment, args):
+def main(alignment, alignment_name, seq_id_filter, use_local_alignment, downloads):
     """
     Fetch variants for identified protein sequences in an MSA, map to residues and columns and write Jalview feature
     files with key statistics.
@@ -406,7 +406,6 @@ def main(alignment, args):
     :return:
     """
     # Some parameters
-    downloads = args.downloads
     UniProt_sequences_downloads = os.path.join(downloads, 'UniProt_sequences')
     annotation_suffix = '_jalview_annotations.csv'
     variant_table_suffix = '_alignment_variant_table.csv'
@@ -414,7 +413,7 @@ def main(alignment, args):
     # Create downloads directory if required
     if not os.path.exists(downloads):
         os.makedirs(downloads)
-    jalview_out_file = args.fasta_file + annotation_suffix
+    jalview_out_file = alignment_name + annotation_suffix
 
     # Alignment length if used repeatedly to store here
     alignment_length = alignment.get_alignment_length()
@@ -424,7 +423,7 @@ def main(alignment, args):
     alignment_residue_numbers = []
     alignment_column_numbers = []
     for seq in alignment:
-        if args.seq_id_filter is not None and args.seq_id_filter not in seq.id:
+        if seq_id_filter is not None and seq_id_filter not in seq.id:
             log.info('Filtering sequence {}.'.format(seq.id))
             continue
 
@@ -435,7 +434,7 @@ def main(alignment, args):
         uniprot_sequences.append(uniprot_seq)  # Keep for later too
 
         try:
-            alignment_residue_numbers.append(get_row_residue_numbers(seq, uniprot_seq, args.use_local_alignment))
+            alignment_residue_numbers.append(get_row_residue_numbers(seq, uniprot_seq, use_local_alignment))
         except TypeError:
             # Maybe it's a different isoform
             canonical_uniprot = uniprot_seq[1].id.split('|')[1]
@@ -445,7 +444,7 @@ def main(alignment, args):
                     print isoform
                     uniprot_seq = fetch_uniprot_sequences(isoform, downloads)
                     alignment_residue_numbers.append(
-                        get_row_residue_numbers(seq, uniprot_seq, args.use_local_alignment))
+                        get_row_residue_numbers(seq, uniprot_seq, use_local_alignment))
                     break
                 except TypeError:
                     continue
@@ -455,13 +454,13 @@ def main(alignment, args):
 
     # Fetch variants
     protein_identifiers = zip(*uniprot_sequences)[0]  # Ensure prots contains UniProt IDs (could be protein names)
-    germline_table = _fetch_variants(protein_identifiers, downloads, args.fasta_file + variant_table_suffix)
+    germline_table = _fetch_variants(protein_identifiers, downloads, alignment_name + variant_table_suffix)
 
     # Merge variant table and key table
     merged_table = pd.merge(mapped, germline_table,
                             left_on=['UniProt_ID', 'uniprot_res_num'],
                             right_on=['UniProt_dbAccessionId', 'start'])
-    merged_table.to_csv(args.fasta_file + '_merged_table.csv')
+    merged_table.to_csv(alignment_name + '_merged_table.csv')
 
     # Counting variants and writing Jalview annotations
     # TODO: does any of this need deduped?
@@ -552,7 +551,11 @@ if __name__ == '__main__':
 
     # Read alignment and run analysis
     alignment = AlignIO.read(args.fasta_file, args.format)
-    merged_table, fisher_test_results = main(alignment, args)
+    alignment_name = args.fasta_file
+    seq_id_filter = args.seq_id_filter
+    use_local_alignment = args.use_local_alignment
+    downloads = args.downloads
+    merged_table, fisher_test_results = main(alignment, alignment_name, seq_id_filter, use_local_alignment, downloads)
 
     if args.interpreter:
         code.interact(local=dict(globals(), **locals()))
