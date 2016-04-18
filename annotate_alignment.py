@@ -408,9 +408,13 @@ def main(args):
     # Some parameters
     downloads = args.downloads
     UniProt_sequences_downloads = os.path.join(downloads, 'UniProt_sequences')
+    annotation_suffix = '_jalview_annotations.csv'
+    variant_table_suffix = '_alignment_variant_table.csv'
+
+    # Create downloads directory if required
     if not os.path.exists(downloads):
         os.makedirs(downloads)
-    jalview_out_file = args.fasta_file + '_jalview_annotations.csv'
+    jalview_out_file = args.fasta_file + annotation_suffix
 
     # Read alignment
     alignment = AlignIO.read(args.fasta_file, args.format)
@@ -452,7 +456,7 @@ def main(args):
 
     # Fetch variants
     protein_identifiers = zip(*uniprot_sequences)[0]  # Ensure prots contains UniProt IDs (could be protein names)
-    germline_table = _fetch_variants(protein_identifiers, downloads, args.fasta_file + '_alignment_variant_table.csv')
+    germline_table = _fetch_variants(protein_identifiers, downloads, args.fasta_file + variant_table_suffix)
 
     # Merge variant table and key table
     merged_table = pd.merge(mapped, germline_table,
