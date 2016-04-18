@@ -423,16 +423,20 @@ def main(alignment, alignment_name, seq_id_filter, use_local_alignment, download
     alignment_residue_numbers = []
     alignment_column_numbers = []
     for seq in alignment:
+        # Filter unwanted sequences
         if seq_id_filter is not None and seq_id_filter not in seq.id:
             log.info('Filtering sequence {}.'.format(seq.id))
             continue
 
+        # Identify sequence and retrieve full UniProt
         seq_name = parse_seq_name(seq.id)
         uniprot_seq = fetch_uniprot_sequences(seq_name, UniProt_sequences_downloads)
+        # Skip unknown sequences
         if uniprot_seq is None:
             continue
         uniprot_sequences.append(uniprot_seq)  # Keep for later too
 
+        # Map alignment sequence to UniProt sequence
         try:
             alignment_residue_numbers.append(get_row_residue_numbers(seq, uniprot_seq, use_local_alignment))
         except TypeError:
@@ -448,9 +452,12 @@ def main(alignment, alignment_name, seq_id_filter, use_local_alignment, download
                     break
                 except TypeError:
                     continue
+
+        # Map non-gap column numbers
         alignment_column_numbers.append(get_sequence_column_numbers(seq))
 
-    mapped = map_columns_to_residues(alignment_column_numbers, alignment_residue_numbers)  # Map columns to residues
+    # Map columns to residues
+    mapped = map_columns_to_residues(alignment_column_numbers, alignment_residue_numbers)
 
     # Fetch variants
     protein_identifiers = zip(*uniprot_sequences)[0]  # Ensure prots contains UniProt IDs (could be protein names)
