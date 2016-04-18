@@ -406,7 +406,7 @@ def main(args):
     :return:
     """
     # Some parameters
-    downloads = '.VarAlign'
+    downloads = args.downloads
     UniProt_sequences_downloads = os.path.join(downloads, 'UniProt_sequences')
     if not os.path.exists(downloads):
         os.makedirs(downloads)
@@ -541,6 +541,8 @@ if __name__ == '__main__':
                         help='Alignment format.')
     parser.add_argument('--seq_id_filter', type=str,
                         help='An inclusive filter to process only a subset of sequences.')
+    parser.add_argument('--downloads', type=str, default='.VarAlign',
+                        help='A directory to store downloaded files.')
     parser.add_argument('--interpreter', action='store_true',
                         help='Drop into interactive python session once analysis is complete.')
     args = parser.parse_args()
