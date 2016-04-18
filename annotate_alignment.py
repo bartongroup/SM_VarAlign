@@ -433,16 +433,20 @@ def main(alignment, alignment_name, seq_id_filter, use_local_alignment, local_un
             continue
 
         # Identify sequence and retrieve full UniProt
+        seq_name = parse_seq_name(seq.id)
         if not local_uniprot_index:
-            seq_name = parse_seq_name(seq.id)
             uniprot_seq = fetch_uniprot_sequences(seq_name, UniProt_sequences_downloads)
         else:
             # TODO: Currently local lookup only working with Stockholm format that has AC annotations
             accession_code = seq.annotations['accession'].split('.')[0]  # Dropping sequence version
-            uniprot_seq = accession_code, local_uniprot_index[accession_code]
+            if accession_code in local_uniprot_index:
+                uniprot_seq = accession_code, local_uniprot_index[accession_code]
+            else:
+                uniprot_seq = None
 
         # Skip unknown sequences
         if uniprot_seq is None:
+            log.error('Did not find UniProt sequence corresponding to {}. Skipping.'.format(seq_name))
             continue
         uniprot_sequences.append(uniprot_seq)  # Keep for later too
 
@@ -465,6 +469,11 @@ def main(alignment, alignment_name, seq_id_filter, use_local_alignment, local_un
 
         # Map non-gap column numbers
         alignment_column_numbers.append(get_sequence_column_numbers(seq))
+
+    # If we skipped all sequences, log and exit
+    if len(uniprot_sequences) == 0:
+        log.info('All sequences filtered or none mapped. Analysis of {} is not applicable. Exiting.'.format(alignment_name))
+        return 1
 
     # Map columns to residues
     mapped = map_columns_to_residues(alignment_column_numbers, alignment_residue_numbers)
