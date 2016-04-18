@@ -156,8 +156,12 @@ def map_columns_to_residues(alignment_column_numbers, alignment_residue_numbers)
         mapped.append({'seq_id': seq_id, 'uniprot_seq_id': uniprot_seq_id, 'uniprot_res_num': res_nums,
                        'alignment_col_num': col_nums})
 
+    # TODO: This is messy due to dependency on uniprot_seq_id format in `alignment_residue_numbers`
     for i in mapped:
-        prot_name = i['uniprot_seq_id'].split('|')[1]  # UniProt ID
+        if '|' in i['uniprot_seq_id']:
+            prot_name = i['uniprot_seq_id'].split('|')[1]  # UniProt ID
+        else:
+            prot_name = i['uniprot_seq_id']
         i.update({'UniProt_ID': prot_name})
 
     # Create and concat mapping tables
@@ -398,7 +402,7 @@ def calculate_rvis(x, y):
     return pred_error, rvis
 
 
-def main(alignment, alignment_name, seq_id_filter, use_local_alignment, downloads):
+def main(alignment, alignment_name, seq_id_filter, use_local_alignment, local_uniprot_index, downloads):
     """
     Fetch variants for identified protein sequences in an MSA, map to residues and columns and write Jalview feature
     files with key statistics.
@@ -429,8 +433,14 @@ def main(alignment, alignment_name, seq_id_filter, use_local_alignment, download
             continue
 
         # Identify sequence and retrieve full UniProt
-        seq_name = parse_seq_name(seq.id)
-        uniprot_seq = fetch_uniprot_sequences(seq_name, UniProt_sequences_downloads)
+        if not local_uniprot_index:
+            seq_name = parse_seq_name(seq.id)
+            uniprot_seq = fetch_uniprot_sequences(seq_name, UniProt_sequences_downloads)
+        else:
+            # TODO: Currently local lookup only working with Stockholm format that has AC annotations
+            accession_code = seq.annotations['accession'].split('.')[0]  # Dropping sequence version
+            uniprot_seq = accession_code, local_uniprot_index[accession_code]
+
         # Skip unknown sequences
         if uniprot_seq is None:
             continue
@@ -554,15 +564,26 @@ if __name__ == '__main__':
                         help='A directory to store downloaded files.')
     parser.add_argument('--interpreter', action='store_true',
                         help='Drop into interactive python session once analysis is complete.')
+    parser.add_argument('--local_uniprot_file', type=str,
+                        help='Local uniprot flatfile for sequence lookup.')
     args = parser.parse_args()
 
-    # Read alignment and run analysis
+    # Read alignment, initialise variables and run analysis
     alignment = AlignIO.read(args.fasta_file, args.format)
     alignment_name = args.fasta_file
     seq_id_filter = args.seq_id_filter
     use_local_alignment = args.use_local_alignment
+    local_uniprot_file = args.local_uniprot_file
+    if local_uniprot_file:
+        if args.format != 'stockholm':
+            log.error('Can only use local UniProt with Stockholm alignments that have AC annotations.')
+            raise TypeError
+        local_uniprot_index = SeqIO.index(local_uniprot_file, 'swiss')
+    else:
+        local_uniprot_index = None
     downloads = args.downloads
-    merged_table, fisher_test_results = main(alignment, alignment_name, seq_id_filter, use_local_alignment, downloads)
+    merged_table, fisher_test_results = main(alignment, alignment_name, seq_id_filter, use_local_alignment,
+                                             local_uniprot_index, downloads)
 
     if args.interpreter:
         code.interact(local=dict(globals(), **locals()))
