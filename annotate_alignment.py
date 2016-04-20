@@ -7,6 +7,7 @@ import urllib2
 import numpy as np
 import pandas as pd
 from Bio import AlignIO, SeqIO, pairwise2
+from Bio.Align import MultipleSeqAlignment
 from Bio.Seq import Seq
 from Bio.SeqRecord import SeqRecord
 from Bio.pairwise2 import format_alignment
@@ -403,7 +404,8 @@ def calculate_rvis(x, y):
     return pred_error, rvis
 
 
-def main(alignment, alignment_name, seq_id_filter, use_local_alignment, local_uniprot_index, downloads):
+def main(alignment, alignment_name, seq_id_filter, use_local_alignment, local_uniprot_index, write_filtered_alignment,
+         downloads):
     """
     Fetch variants for identified protein sequences in an MSA, map to residues and columns and write Jalview feature
     files with key statistics.
@@ -423,16 +425,23 @@ def main(alignment, alignment_name, seq_id_filter, use_local_alignment, local_un
     # Alignment length if used repeatedly to store here
     alignment_length = alignment.get_alignment_length()
 
+    # Filter unwanted sequences
+    passing_seqs = []
+    for seq in alignment:
+        if seq_id_filter is not None and seq_id_filter not in seq.id:
+            log.info('Filtering sequence {}.'.format(seq.id))
+        else:
+            passing_seqs.append(seq)
+    filtered_alignment = MultipleSeqAlignment(passing_seqs)
+    filtered_alignment.annotations = alignment.annotations
+    if write_filtered_alignment:
+        AlignIO.write(filtered_alignment, alignment_name + '_filtered.sto', 'stockholm')
+
     # Map alignment columns to sequence UniProt residue numbers
     uniprot_sequences = []
     alignment_residue_numbers = []
     alignment_column_numbers = []
-    for seq in alignment:
-        # Filter unwanted sequences
-        if seq_id_filter is not None and seq_id_filter not in seq.id:
-            log.info('Filtering sequence {}.'.format(seq.id))
-            continue
-
+    for seq in filtered_alignment:
         # Identify sequence and retrieve full UniProt
         seq_name = parse_seq_name(seq.id)
         if not local_uniprot_index:
@@ -579,6 +588,8 @@ if __name__ == '__main__':
                         help='Drop into interactive python session once analysis is complete.')
     parser.add_argument('--local_uniprot_file', type=str,
                         help='Local uniprot flatfile for sequence lookup.')
+    parser.add_argument('--write_filtered_alignment', action='store_true',
+                        help='Write the alignment containing only the sequences that pass `seq_id_filter`')
     args = parser.parse_args()
 
     # Read alignment, initialise variables and run analysis
@@ -594,9 +605,10 @@ if __name__ == '__main__':
         local_uniprot_index = SeqIO.index(local_uniprot_file, 'swiss')
     else:
         local_uniprot_index = None
+    write_filtered_alignment = args.write_filtered_alignment
     downloads = args.downloads
     merged_table, fisher_test_results = main(alignment, alignment_name, seq_id_filter, use_local_alignment,
-                                             local_uniprot_index, downloads)
+                                             local_uniprot_index, write_filtered_alignment, downloads)
 
     if args.interpreter:
         code.interact(local=dict(globals(), **locals()))

@@ -18,7 +18,8 @@ def main(local_uniprot, local_pfam, seq_id_filter, use_local_alignment, download
     for alignment in pfam:
         alignment_name = alignment.annotations['GF']['AC'][0]
         if 'PF0000' in alignment_name:
-            annotate_alignment.main(alignment, alignment_name, seq_id_filter, use_local_alignment, swissprot, downloads)
+            annotate_alignment.main(alignment, alignment_name, seq_id_filter, use_local_alignment, swissprot,
+                                    False, downloads)
 
 
 if __name__ == '__main__':
