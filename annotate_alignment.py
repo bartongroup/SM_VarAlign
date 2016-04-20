@@ -10,6 +10,7 @@ from Bio import AlignIO, SeqIO, pairwise2
 from Bio.Seq import Seq
 from Bio.SeqRecord import SeqRecord
 from Bio.pairwise2 import format_alignment
+import math
 from scipy.stats import fisher_exact, linregress
 
 from utils import urlopen_with_retry, query_uniprot, worse_than
@@ -548,11 +549,14 @@ def main(alignment, alignment_name, seq_id_filter, use_local_alignment, local_un
     # TODO: This and other calcs could be run with %gap threshold, ignored columns given the worst value for jalview visualisation
     fisher_test_results = run_fisher_tests(alignment, is_missense, merged_table)
     missense_significance = tuple(1 - x for x in zip(*fisher_test_results)[1])
+    phred_significance = tuple(-10 * math.log10(x) for x in zip(*fisher_test_results)[1])
     # missense_ratio = tuple(1./x for x in zip(*fisher_test_results)[0])
     write_jalview_annotation(zip(*fisher_test_results)[1], jalview_out_file,
                              'Missense p-value', '', append=True)
     write_jalview_annotation(missense_significance, jalview_out_file,
                              'Missense "sginificance" (1 - p)', '', append=True)
+    write_jalview_annotation(phred_significance, jalview_out_file,
+                             'Phred Missense "significance" (1 - p)', '', append=True)
     # write_jalview_annotation(missense_ratio, jalview_out_file,
     #                          'Missense OR', '', append=True)
 
