@@ -556,7 +556,7 @@ def main(alignment, alignment_name, seq_id_filter, use_local_alignment, local_un
 
     # Calculate and write fisher test results to Jalview annotation file.
     # TODO: This and other calcs could be run with %gap threshold, ignored columns given the worst value for jalview visualisation
-    fisher_test_results = run_fisher_tests(alignment, is_missense, merged_table)
+    fisher_test_results = run_fisher_tests(filtered_alignment, is_missense, merged_table)
     missense_significance = tuple(1 - x for x in zip(*fisher_test_results)[1])
     phred_significance = tuple(-10 * math.log10(x) for x in zip(*fisher_test_results)[1])
     # missense_ratio = tuple(1./x for x in zip(*fisher_test_results)[0])
