@@ -563,7 +563,7 @@ def main(alignment, alignment_name, seq_id_filter, use_local_alignment, local_un
     write_jalview_annotation(zip(*fisher_test_results)[1], jalview_out_file,
                              'Missense p-value', '', append=True)
     write_jalview_annotation(missense_significance, jalview_out_file,
-                             'Missense "sginificance" (1 - p)', '', append=True)
+                             'Missense "significance" (1 - p)', '', append=True)
     write_jalview_annotation(phred_significance, jalview_out_file,
                              'Phred Missense "significance" (1 - p)', '', append=True)
     # write_jalview_annotation(missense_ratio, jalview_out_file,
