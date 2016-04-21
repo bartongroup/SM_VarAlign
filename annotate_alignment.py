@@ -71,7 +71,8 @@ def get_row_residue_numbers(subseq, uniprot_seq, use_local_alignment):
         sub_seq_id, uniprot_seq_id, pairwise = alignment
         seq = str(pairwise[0][0])
         res_nums = [i + 1 for i, s in enumerate(seq) if s != '-']  # TODO: wrong if other seq has gaps too
-        align_res_nums = sub_seq_id, uniprot_seq_id, res_nums
+        seq_indexes = range(1, len(res_nums) + 1)
+        align_res_nums = sub_seq_id, uniprot_seq_id, res_nums, seq_indexes
     else:
         str_seq = str(subseq.seq)
         uniprot_str_seq = str(uniprot_seq[1].seq)
@@ -80,7 +81,8 @@ def get_row_residue_numbers(subseq, uniprot_seq, use_local_alignment):
             start = uniprot_str_seq.find(str_seq) + 1
             end = start + len(str_seq)
             res_nums = range(start, end)
-            align_res_nums = subseq.id, uniprot_seq[1].id, res_nums
+            seq_indexes = range(1, len(res_nums) + 1)
+            align_res_nums = subseq.id, uniprot_seq[1].id, res_nums, seq_indexes
         else:
             log.error('Sub-sequence: {} does not match UniProt sequence: {}'.format(subseq.id, uniprot_seq[1].id))
             log.error('Sub-sequence: {} does not match UniProt sequence: {}'.format(str_seq, uniprot_str_seq))
@@ -152,11 +154,11 @@ def map_columns_to_residues(alignment_column_numbers, alignment_residue_numbers)
     :return:
     """
     mapped = []
-    for seq_id, uniprot_seq_id, res_nums in alignment_residue_numbers:
+    for seq_id, uniprot_seq_id, res_nums, seq_index in alignment_residue_numbers:
         ind = zip(*alignment_column_numbers)[0].index(seq_id)
         col_nums = zip(*alignment_column_numbers)[1][ind]
         mapped.append({'seq_id': seq_id, 'uniprot_seq_id': uniprot_seq_id, 'uniprot_res_num': res_nums,
-                       'alignment_col_num': col_nums})
+                       'alignment_col_num': col_nums, 'sequence_index': seq_index})
 
     # TODO: This is messy due to dependency on uniprot_seq_id format in `alignment_residue_numbers`
     for i in mapped:
@@ -281,6 +283,34 @@ def write_jalview_annotation(ordered_values, file_name, title, description, appe
             raise TypeError
 
     return 0
+
+
+def append_jalview_variant_features(seq_id, positions, descriptions, feature_type, file_name):
+    """
+
+    :param seq_id:
+    :param positions:
+    :param file_name:
+    :return:
+
+    feature_list format: [description, sequenceId, sequenceIndex, start, end, featureType]
+    """
+    with open(file_name, 'a') as output:
+        for pos, desc in zip(positions, descriptions):
+            feature_list = [desc, seq_id, '-1', str(pos), str(pos), feature_type, '0.0']
+            output.write('\t'.join(feature_list) + '\n')
+
+
+def create_jalview_feature_file(feature_dict, file_name):
+    """
+
+    :param feature_dict: {'featureType': colour}
+    :param file_name:
+    :return:
+    """
+    with open(file_name, 'w') as output:
+        for feature, colour in feature_dict.items():
+            output.write('{}\t{}\n'.format(feature, colour))
 
 
 def run_fisher_tests(alignment, table_mask, merged_table):
@@ -552,7 +582,24 @@ def main(alignment, alignment_name, seq_id_filter, use_local_alignment, local_un
                                      'Pathogenic_missense_variants',
                                      'Number of missense variants annotated pathogenic by ClinVar.', append=True)
         except:
-            log.warning('Count not count pathogenic variants.')
+            log.warning('Could not count pathogenic variants (possibly there are none).')
+
+        try:
+            #TODO: These big try except blocks are a bad idea, especially when actively developing
+            # Label pathogenic variants with sequence features
+            pathogenic_tables = merged_table[(merged_table.clinical_significance == 'pathogenic') & \
+                is_missense].groupby('seq_id')
+            pathogenic_features_file = alignment_name + '_pathogenic_features.txt'
+            create_jalview_feature_file({'pathogenic_variant': 'red'}, pathogenic_features_file)
+            for seq_id, sub_table in pathogenic_tables:
+                residue_indexes = list(sub_table['sequence_index'])
+                residue_indexes = [x - 1 + int(seq_id.split('/')[1].split('-')[0]) for x in residue_indexes]
+                variant_ids = list(sub_table['variant_id'])
+                append_jalview_variant_features(seq_id.split('/')[0], residue_indexes, variant_ids, 'pathogenic_variant',
+                                                pathogenic_features_file)
+        except:
+            log.warning('Could not write pathogenic variants as features (possibly there are none).')
+
 
     # Calculate and write fisher test results to Jalview annotation file.
     # TODO: This and other calcs could be run with %gap threshold, ignored columns given the worst value for jalview visualisation
