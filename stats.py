@@ -1,3 +1,6 @@
+"""
+This module contains functions that calculate column-wise statistics on aligned variant tables.
+"""
 import numpy as np
 import pandas as pd
 from scipy.stats import fisher_exact, linregress
@@ -9,9 +12,13 @@ log = logging.getLogger(__name__)
 
 def run_fisher_tests(alignment, table_mask, merged_table):
     """
-    Test each column in the alignment for being statistically significantly depleted of variants on a per residue basis.
+    Test each column in the alignment for being significantly depleted of variants on a per residue basis.
 
-    :param alignment: Original alignment to calculate column statistics.
+    Counts are obtained via the cross-table of the 'alignment_col_num' and 'seq_id' columns of `merged_table`.
+    This lets us count the number of variants in a column trivially. Counting the number of non-variant residues is
+    complicated by gaps in the alignment and non-variant sequences, the latter of which are absent from `merged_table`.
+
+    :param alignment: Alignment to calculate column statistics.
     :param table_mask: A mask to pre-filter the variant table.
     :param merged_table: The merged alignment residue mapping and variant tables table.
     :return:
@@ -118,9 +125,11 @@ def _non_variant_sequences(alignment, variant_table):
 
 def calculate_rvis(x, y):
     """
+    A simple implementation of Petrovski et al's RVIS calculation extended to provide column level scores for an
+    alignment.
 
-    :param x:
-    :param y:
+    :param x: A column ordered numpy.array containing total number of variants for each column.
+    :param y: A column ordered numpy.array containing number of 'common functional variants' for each column.
     :return:
     """
     # RVIS approx.
@@ -145,6 +154,8 @@ def calculate_rvis(x, y):
 
 def fill_variant_count(value_counts, length):
     """
+    Reformat Series.value_counts().
+
     Order an alignment column number value counts Series by alignment column and insert 0s for any unobserved columns.
 
     :param value_counts: `alignment_col_num`.value_counts() Series

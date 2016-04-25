@@ -1,3 +1,7 @@
+"""
+This module contains functions for retrieving external data required for the analysis. In particular,
+the full-length UniProt sequences for the aligned sequences and the variant tables.
+"""
 import os.path
 import urllib2
 import pandas as pd
@@ -57,10 +61,20 @@ def fetch_uniprot_sequences(seq_name, downloads=None):
 
 def _fetch_variants(prots, downloads=None, save_name=None):
     """
+    Fetch variants for a set of proteins from EnsEMBL.
 
-    :param prots:
-    :param downloads:
-    :param save_name:
+    This function is built specifically to produce a multi-protein variant table that is compatible with the
+    downstream analysis. It handles:
+    - Concatenation of variant tables for each protein.
+    - Expanding the 'to_aa' column
+    - Parsing 'clinical_significance' column
+    - De-duping
+    - Separating germline from somatic
+    (- Caching the resultant table)
+
+    :param prots: List of UniProt ACs.
+    :param downloads: Folder to save whole variant set to.
+    :param save_name: Filename for whole variant set.
     :return:
     """
     # Get variant data

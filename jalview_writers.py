@@ -1,3 +1,6 @@
+"""
+This module contains functions that write Jalview annotation files.
+"""
 import logging
 
 log = logging.getLogger(__name__)
@@ -5,13 +8,13 @@ log = logging.getLogger(__name__)
 
 def write_jalview_annotation(ordered_values, file_name, title, description, append=False):
     """
-    Write data to a Jalview annotation file.
+    Create and/or append tracks to a Jalview alignment annotation file.
 
     :param ordered_values: Tuple or list of tuples containing annotation scores for each column in alignment.
-    :param file_name: Filename for Jalview annotations
+    :param file_name: Filename for Jalview output.
     :param title: Tuple or list of tuples of titles for each annotation track.
     :param description: As above containing descriptions.
-    :param append: Wheter to append to an existing Jalview annotation file.
+    :param append: Whether to append to an existing Jalview annotation file.
     :return:
     """
     file_mode = 'w'
@@ -44,10 +47,13 @@ def write_jalview_annotation(ordered_values, file_name, title, description, appe
 
 def append_jalview_variant_features(seq_id, positions, descriptions, feature_type, file_name):
     """
+    Append features to a Jalview features file.
 
-    :param seq_id:
-    :param positions:
-    :param file_name:
+    :param seq_id: The sequence ID that the features are associated with.
+    :param positions: The sequence positions of the features.
+    :param descriptions: The description for each feature.
+    :param feature_type: The Jalview featureType.
+    :param file_name: Jalview feature file to append.
     :return:
 
     feature_list format: [description, sequenceId, sequenceIndex, start, end, featureType]
@@ -60,9 +66,10 @@ def append_jalview_variant_features(seq_id, positions, descriptions, feature_typ
 
 def create_jalview_feature_file(feature_dict, file_name):
     """
+    Write feature definitions to a Jalview features file.
 
     :param feature_dict: {'featureType': colour}
-    :param file_name:
+    :param file_name: Filename for Jalview output.
     :return:
     """
     with open(file_name, 'w') as output:

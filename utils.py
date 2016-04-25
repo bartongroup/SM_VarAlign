@@ -1,3 +1,6 @@
+"""
+Utility functions.
+"""
 import re
 import urllib2
 import requests
@@ -53,4 +56,13 @@ def worse_than(SO_term):
 
 
 def parse_seq_name(seq_name):
+    """
+    Extract identifier portion of alignment sequence name.
+
+    Sequence name strings often contain metadata (e.g., residue ranges P12345/1-21). This function returns the ID
+    portion.
+
+    :param seq_name: Alignment sequence identifier.
+    :return:
+    """
     return re.search('\w*', seq_name).group().strip()
