@@ -1,3 +1,4 @@
+import re
 import urllib2
 import requests
 from retry import retry
@@ -50,3 +51,6 @@ def worse_than(SO_term):
                     'synonymous_variant')
     return ranked_terms[:ranked_terms.index(SO_term) + 1]
 
+
+def parse_seq_name(seq_name):
+    return re.search('\w*', seq_name).group().strip()

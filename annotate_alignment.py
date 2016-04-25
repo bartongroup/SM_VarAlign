@@ -2,8 +2,6 @@ import argparse
 import code
 import math
 import os.path
-import re
-import urllib2
 
 import numpy as np
 import pandas as pd
@@ -13,24 +11,14 @@ from Bio.Seq import Seq
 from Bio.SeqRecord import SeqRecord
 from Bio.pairwise2 import format_alignment
 
+from fetchers import fetch_uniprot_sequences, _fetch_variants
 from jalview_writers import write_jalview_annotation, append_jalview_variant_features, create_jalview_feature_file
 from stats import run_fisher_tests, calculate_rvis, fill_variant_count
-from utils import urlopen_with_retry, query_uniprot, worse_than
-
-# Use my developement branch of ProteoFAV
-import sys
-
-sys.path.extend(['/Users/smacgowan/PycharmProjects/ProteoFAV'])
-from proteofav.variants import select_uniprot_variants
-from proteofav.analysis.utils import expand_dataframe
+from utils import worse_than, parse_seq_name
 
 import logging
 
 log = logging.getLogger(__name__)
-
-
-def parse_seq_name(seq_name):
-    return re.search('\w*', seq_name).group().strip()
 
 
 def get_row_residue_numbers(subseq, uniprot_seq, use_local_alignment):
@@ -93,45 +81,6 @@ def get_sequence_column_numbers(sequence):
     return align_col_nums
 
 
-def fetch_uniprot_sequences(seq_name, downloads=None):
-    """
-    Retrieve UniProt sequences.
-
-    :param protein_identifiers: List of protein identifiers (UniProt IDs or protein name)
-    :return: List of protein sequences.
-    """
-    url = 'http://www.uniprot.org/uniprot/'
-    p = seq_name.strip()
-    fasta_file_name = os.path.join(downloads, p + '.fasta')
-    remote_fasta = url + p + '.fasta'
-    if not os.path.isfile(fasta_file_name):
-        print remote_fasta
-        try:
-            handle = urlopen_with_retry(remote_fasta)
-        except urllib2.HTTPError:
-            # Will need to query instead
-            p = parse_seq_name(p)  # First word only
-            # TODO: This should be configurable
-            p = query_uniprot(('gene:' + p, 'reviewed:yes', 'organism:human'), first=True)
-            remote_fasta = url + p + '.fasta'
-            handle = urlopen_with_retry(remote_fasta)
-        try:
-            seq_record = SeqIO.read(handle, "fasta")
-        except ValueError:
-            log.error('Could not retrieve sequence for {}'.format(seq_name))
-            return None
-        if downloads is not None:
-            if not os.path.exists(downloads):
-                os.makedirs(downloads)
-            SeqIO.write(seq_record, fasta_file_name, "fasta")
-    else:
-        handle = open(fasta_file_name, 'r')
-        seq_record = SeqIO.read(handle, "fasta")
-    p = seq_record.id.split('|')[1]  # Extract UniProt ID
-    uniprot_sequence = p, seq_record
-    return uniprot_sequence
-
-
 def map_columns_to_residues(alignment_column_numbers, alignment_residue_numbers):
     """
     Map alignment columns to UniProt residue numbers.
@@ -161,58 +110,6 @@ def map_columns_to_residues(alignment_column_numbers, alignment_residue_numbers)
         mapped_df = mapped_df.append(pd.DataFrame(i), ignore_index=True)
 
     return mapped_df
-
-
-def _fetch_variants(prots, downloads=None, save_name=None):
-    """
-    
-    :param prots:
-    :param downloads:
-    :param save_name:
-    :return:
-    """
-    # Get variant data
-    # Get the data with EnsEMBL variants
-    table_file_name = os.path.join(downloads, save_name)
-    if not os.path.isfile(table_file_name):
-        tables = []
-        for p in list(set(prots)):
-            try:
-                variant_table = select_uniprot_variants(p, reduced_annotations=False)  # TODO: Use new variant fetcher?
-                variant_table['UniProt_dbAccessionId'] = p
-                tables.append(variant_table)
-            except (ValueError, KeyError):
-                log.error('Could not retrieve variants for {}'.format(p))
-
-        # Concatenate and process all those variant tables
-        concat_table = pd.concat(tables, ignore_index=True)
-        # Need to expand on 'to_aa' before dedupping
-        concat_table['orig_index'] = concat_table.index
-        concat_table = expand_dataframe(df=concat_table, expand_column='to_aa', id_column='orig_index')
-        concat_table = concat_table.drop('orig_index', 1)
-        # Fix or remove list columns
-        concat_table = concat_table.drop('to_aa', 1)
-        concat_table['clinical_significance'] = concat_table['clinical_significance'].apply(lambda x: ';'.join(x))
-        concat_table['clinical_significance'].fillna('')
-        # And dedup, bearing in mind the same variant can pop up in different transcripts
-        # (so dedupping is only done on certain columns)
-        concat_table = concat_table.drop_duplicates(['UniProt_dbAccessionId',
-                                                     'start',
-                                                     'end',
-                                                     'variant_id',
-                                                     'to_aa_expanded']).reset_index(drop=True)
-
-        # Write table to file
-        concat_table.to_csv(table_file_name)
-    else:
-        concat_table = pd.read_csv(table_file_name)
-
-    # is_somatic = concat_table['variant_id'].apply(lambda x: x.startswith('COS'))  #TODO: include this?
-    is_germline = concat_table['variant_id'].apply(lambda x: x.startswith('rs'))
-    # somatic_table = concat_table[is_somatic]
-    germline_table = concat_table[is_germline]
-
-    return germline_table
 
 
 def main(alignment, alignment_name, seq_id_filter, use_local_alignment, local_uniprot_index, write_filtered_alignment,
