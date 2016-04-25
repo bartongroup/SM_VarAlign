@@ -14,7 +14,7 @@ from Bio.SeqRecord import SeqRecord
 from Bio.pairwise2 import format_alignment
 
 from jalview_writers import write_jalview_annotation, append_jalview_variant_features, create_jalview_feature_file
-from stats import run_fisher_tests, calculate_rvis
+from stats import run_fisher_tests, calculate_rvis, fill_variant_count
 from utils import urlopen_with_retry, query_uniprot, worse_than
 
 # Use my developement branch of ProteoFAV
@@ -213,24 +213,6 @@ def _fetch_variants(prots, downloads=None, save_name=None):
     germline_table = concat_table[is_germline]
 
     return germline_table
-
-
-def fill_variant_count(value_counts, length):
-    """
-    Order an alignment column number value counts Series by alignment column and insert 0s for any unobserved columns.
-
-    :param value_counts: `alignment_col_num`.value_counts() Series
-    :param length: The length of the alignment.
-    :return:
-    """
-    variants_per_pos = []
-    for i in xrange(length):
-        col_pos = i + 1
-        try:
-            variants_per_pos.append((col_pos, value_counts[col_pos]))
-        except KeyError:
-            variants_per_pos.append((col_pos, 0))
-    return variants_per_pos
 
 
 def main(alignment, alignment_name, seq_id_filter, use_local_alignment, local_uniprot_index, write_filtered_alignment,

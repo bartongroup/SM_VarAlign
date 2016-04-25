@@ -141,3 +141,21 @@ def calculate_rvis(x, y):
     # write_jalview_annotation(rvis_ext_stud, jalview_out_file, 'Ext. Stud. RVIS', '', append=True)
 
     return pred_error, rvis
+
+
+def fill_variant_count(value_counts, length):
+    """
+    Order an alignment column number value counts Series by alignment column and insert 0s for any unobserved columns.
+
+    :param value_counts: `alignment_col_num`.value_counts() Series
+    :param length: The length of the alignment.
+    :return:
+    """
+    variants_per_pos = []
+    for i in xrange(length):
+        col_pos = i + 1
+        try:
+            variants_per_pos.append((col_pos, value_counts[col_pos]))
+        except KeyError:
+            variants_per_pos.append((col_pos, 0))
+    return variants_per_pos
