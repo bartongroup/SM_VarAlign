@@ -12,10 +12,9 @@ from Bio.Align import MultipleSeqAlignment
 from Bio.Seq import Seq
 from Bio.SeqRecord import SeqRecord
 from Bio.pairwise2 import format_alignment
-from scipy.stats import linregress
 
 from jalview_writers import write_jalview_annotation, append_jalview_variant_features, create_jalview_feature_file
-from stats import run_fisher_tests
+from stats import run_fisher_tests, calculate_rvis
 from utils import urlopen_with_retry, query_uniprot, worse_than
 
 # Use my developement branch of ProteoFAV
@@ -232,33 +231,6 @@ def fill_variant_count(value_counts, length):
         except KeyError:
             variants_per_pos.append((col_pos, 0))
     return variants_per_pos
-
-
-def calculate_rvis(x, y):
-    """
-
-    :param x:
-    :param y:
-    :return:
-    """
-    # RVIS approx.
-    slope, intercept, r_value, p_value, slope_std_error = linregress(x, y)
-    predict_y = intercept + slope * x
-    pred_error = y - predict_y
-    rvis = tuple(pred_error / np.std(pred_error))
-
-    # # Proper RVIS
-    # x = x.reshape((len(x),1))
-    # y = y.reshape((len(y),1))
-    # regr = linear_model.LinearRegression()
-    # regr.fit(x, y)
-    # rvis_int_stud = residuals(regr, x, y, 'standardized')  # Different format...
-    # rvis_int_stud = tuple(rvis_int_stud.reshape((len(rvis_int_stud), )))
-    # rvis_ext_stud = tuple(residuals(regr, x, y, 'studentized'))
-    # write_jalview_annotation(rvis_int_stud, jalview_out_file, 'Int. Stud. RVIS', '', append=True)
-    # write_jalview_annotation(rvis_ext_stud, jalview_out_file, 'Ext. Stud. RVIS', '', append=True)
-
-    return pred_error, rvis
 
 
 def main(alignment, alignment_name, seq_id_filter, use_local_alignment, local_uniprot_index, write_filtered_alignment,

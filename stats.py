@@ -1,5 +1,6 @@
+import numpy as np
 import pandas as pd
-from scipy.stats import fisher_exact
+from scipy.stats import fisher_exact, linregress
 
 import logging
 
@@ -113,3 +114,30 @@ def _non_variant_sequences(alignment, variant_table):
     sequences_with_variants = list(variant_table['seq_id'].unique())
     non_variant_sequences = [a for a in all_sequence_ids if a not in sequences_with_variants]
     return non_variant_sequences
+
+
+def calculate_rvis(x, y):
+    """
+
+    :param x:
+    :param y:
+    :return:
+    """
+    # RVIS approx.
+    slope, intercept, r_value, p_value, slope_std_error = linregress(x, y)
+    predict_y = intercept + slope * x
+    pred_error = y - predict_y
+    rvis = tuple(pred_error / np.std(pred_error))
+
+    # # Proper RVIS
+    # x = x.reshape((len(x),1))
+    # y = y.reshape((len(y),1))
+    # regr = linear_model.LinearRegression()
+    # regr.fit(x, y)
+    # rvis_int_stud = residuals(regr, x, y, 'standardized')  # Different format...
+    # rvis_int_stud = tuple(rvis_int_stud.reshape((len(rvis_int_stud), )))
+    # rvis_ext_stud = tuple(residuals(regr, x, y, 'studentized'))
+    # write_jalview_annotation(rvis_int_stud, jalview_out_file, 'Int. Stud. RVIS', '', append=True)
+    # write_jalview_annotation(rvis_ext_stud, jalview_out_file, 'Ext. Stud. RVIS', '', append=True)
+
+    return pred_error, rvis
