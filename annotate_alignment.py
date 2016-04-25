@@ -206,20 +206,26 @@ def main(alignment, alignment_name, seq_id_filter, use_local_alignment, local_un
                             right_on=['UniProt_dbAccessionId', 'start'])
     merged_table.to_csv(alignment_name + '_merged_table.csv')
 
-    # Counting variants and writing Jalview annotations
     # TODO: does any of this need deduped?
+
+    # Useful variant masks
     is_missense = (merged_table['type'] == 'missense_variant') & \
                   (merged_table['from_aa'] != merged_table['to_aa_expanded'])
     is_ED = (merged_table['from_aa'] == 'E') & (merged_table['to_aa_expanded'] == 'D')
     is_DE = (merged_table['from_aa'] == 'D') & (merged_table['to_aa_expanded'] == 'E')
+
+    # Column variant counts
     total_variant_counts = merged_table['alignment_col_num'].value_counts(sort=False)
-    total_variants_per_column = fill_variant_count(total_variant_counts, alignment_length)
     missense_variant_counts = merged_table.loc[is_missense, 'alignment_col_num'].value_counts(sort=False)
-    missense_variants_per_column = fill_variant_count(missense_variant_counts, alignment_length)
     missense_exc_DE_counts = merged_table.loc[is_missense & ~(is_ED | is_DE), 'alignment_col_num'].value_counts(
         sort=False)
+
+    # Column ordered variant counts
+    total_variants_per_column = fill_variant_count(total_variant_counts, alignment_length)
+    missense_variants_per_column = fill_variant_count(missense_variant_counts, alignment_length)
     missense_exc_DE_per_column = fill_variant_count(missense_exc_DE_counts, alignment_length)
 
+    # Basic Jalview annotation tracks
     variant_counts = [zip(*total_variants_per_column)[1],
                       zip(*missense_variants_per_column)[1],
                       zip(*missense_exc_DE_per_column)[1]]
@@ -232,8 +238,9 @@ def main(alignment, alignment_name, seq_id_filter, use_local_alignment, local_un
     # write_jalview_annotation(variant_counts, jalview_out_file, titles, descriptions)
     write_jalview_annotation(variant_counts[1], jalview_out_file, titles[1], descriptions[1])
 
-    # RVIS calculation: need to count variants and format data.
     # TODO: This is a good scheme for classifying variants, use elsewhere?
+
+    # RVIS calculation: need to count variants and format data.
     is_common = merged_table['minor_allele_frequency'].notnull()
     is_bad_type = merged_table.type.apply(lambda x: x in worse_than('missense_variant'))
     is_mutant = merged_table['from_aa'] != merged_table['to_aa_expanded']
@@ -278,9 +285,9 @@ def main(alignment, alignment_name, seq_id_filter, use_local_alignment, local_un
         except:
             log.warning('Could not write pathogenic variants as features (possibly there are none).')
 
+    # TODO: %gap threshold? Where ignored columns given the worst value for jalview visualisation...
 
     # Calculate and write fisher test results to Jalview annotation file.
-    # TODO: This and other calcs could be run with %gap threshold, ignored columns given the worst value for jalview visualisation
     fisher_test_results = run_fisher_tests(filtered_alignment, is_missense, merged_table)
     missense_significance = tuple(1 - x for x in zip(*fisher_test_results)[1])
     phred_significance = tuple(-10 * math.log10(x) for x in zip(*fisher_test_results)[1])
@@ -318,10 +325,10 @@ if __name__ == '__main__':
     args = parser.parse_args()
 
     # Read alignment, initialise variables and run analysis
-    alignment = AlignIO.read(args.fasta_file, args.format)
-    alignment_name = args.fasta_file
-    seq_id_filter = args.seq_id_filter
-    use_local_alignment = args.use_local_alignment
+    msa = AlignIO.read(args.fasta_file, args.format)
+    msa_name = args.fasta_file
+    id_filter = args.seq_id_filter
+    use_local = args.use_local_alignment
     local_uniprot_file = args.local_uniprot_file
     if local_uniprot_file:
         if args.format != 'stockholm':
@@ -330,10 +337,10 @@ if __name__ == '__main__':
         local_uniprot_index = SeqIO.index(local_uniprot_file, 'swiss')
     else:
         local_uniprot_index = None
-    write_filtered_alignment = args.write_filtered_alignment
+    write_filtered = args.write_filtered_alignment
     downloads = args.downloads
-    merged_table, fisher_test_results = main(alignment, alignment_name, seq_id_filter, use_local_alignment,
-                                             local_uniprot_index, write_filtered_alignment, downloads)
+    merged_table, fisher_results = main(msa, msa_name, id_filter, use_local, local_uniprot_index, write_filtered,
+                                        downloads)
 
     if args.interpreter:
         code.interact(local=dict(globals(), **locals()))
