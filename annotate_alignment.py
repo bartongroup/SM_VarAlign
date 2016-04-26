@@ -15,6 +15,7 @@ from fetchers import fetch_uniprot_sequences, _fetch_variants
 from jalview_writers import write_jalview_annotation, append_jalview_variant_features, create_jalview_feature_file
 from stats import run_fisher_tests, calculate_rvis, fill_variant_count
 from utils import worse_than, parse_seq_name
+from config import defaults
 
 import logging
 
@@ -314,7 +315,7 @@ if __name__ == '__main__':
                         help='Alignment format.')
     parser.add_argument('--seq_id_filter', type=str,
                         help='An inclusive filter to process only a subset of sequences.')
-    parser.add_argument('--downloads', type=str, default='.VarAlign',
+    parser.add_argument('--downloads', type=str, default=defaults.db_root,
                         help='A directory to store downloaded files.')
     parser.add_argument('--interpreter', action='store_true',
                         help='Drop into interactive python session once analysis is complete.')
