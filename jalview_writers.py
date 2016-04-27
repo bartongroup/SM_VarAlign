@@ -6,7 +6,7 @@ import logging
 log = logging.getLogger(__name__)
 
 
-def write_jalview_annotation(ordered_values, file_name, title, description, append=False):
+def write_jalview_annotation(ordered_values, file_name, title, description, append=False, tooltips=None):
     """
     Create and/or append tracks to a Jalview alignment annotation file.
 
@@ -21,19 +21,22 @@ def write_jalview_annotation(ordered_values, file_name, title, description, appe
     if append:
         file_mode = 'a'
 
+    if not tooltips:
+        tooltips = ordered_values
+
     with open(file_name, file_mode) as results_file:
         if not append:
             results_file.write('JALVIEW_ANNOTATION\n')
         if isinstance(ordered_values, tuple) and all(map(lambda x: isinstance(x, str), [title, description])):
             results_file.write('BAR_GRAPH\t{}\t{}\t'.format(title, description) +
-                               '|'.join('{},,{}'.format(str(x), str(x)) for x in ordered_values))
+                               '|'.join('{},,{}'.format(str(x), str(y)) for x, y in zip(ordered_values, tooltips)))
             results_file.write('\n')
         elif all(map(lambda x: isinstance(x, list), [ordered_values, title, description])):
             arg_lengths = map(len, [ordered_values, title, description])
             if len(set(arg_lengths)) == 1:
-                for v, t, d in zip(ordered_values, title, description):
+                for v, vv, t, d in zip(ordered_values, tooltips, title, description):
                     results_file.write('BAR_GRAPH\t{}\t{}\t'.format(t, d) +
-                                       '|'.join('{},,{}'.format(str(x), str(x)) for x in v))
+                                       '|'.join('{},,{}'.format(str(x), str(y)) for x, y in zip(v, vv)))
                     results_file.write('\n')
             else:
                 log.error('List arguments must be of same length')

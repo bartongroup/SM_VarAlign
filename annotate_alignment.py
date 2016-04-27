@@ -264,9 +264,11 @@ def main(alignment, alignment_name, seq_id_filter, use_local_alignment, local_un
                             merged_table.loc[is_missense, 'clinical_significance'])
             pathogenic_variant_counts = clinical_significance_counts['pathogenic']
             pathogenic_column_counts = fill_variant_count(pathogenic_variant_counts, alignment_length)
+            tooltips = tuple(merged_table[merged_table['clinical_significance'] == 'pathogenic']['seq_id'].unique())
             write_jalview_annotation(zip(*pathogenic_column_counts)[1], jalview_out_file,
                                      'Pathogenic_missense_variants',
-                                     'Number of missense variants annotated pathogenic by ClinVar.', append=True)
+                                     'Number of missense variants annotated pathogenic by ClinVar.', append=True,
+                                     tooltips=tooltips)
         except:
             log.warning('Could not count pathogenic variants (possibly there are none).')
 
