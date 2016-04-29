@@ -306,7 +306,7 @@ def main(alignment, alignment_name, seq_id_filter, use_local_alignment, local_un
     # write_jalview_annotation(missense_ratio, jalview_out_file,
     #                          'Missense OR', '', append=True)
 
-    return merged_table, fisher_test_results
+    return merged_table, fisher_test_results, rvis
 
 
 if __name__ == '__main__':
@@ -344,8 +344,13 @@ if __name__ == '__main__':
         local_uniprot_index = None
     write_filtered = args.write_filtered_alignment
     downloads = args.downloads
-    merged_table, fisher_results = main(msa, msa_name, id_filter, use_local, local_uniprot_index, write_filtered,
-                                        downloads)
+    merged_table, fisher_results, rvis_scores = main(msa, msa_name, id_filter, use_local, local_uniprot_index,
+                                                     write_filtered, downloads)
+
+    scores = pd.DataFrame(fisher_results)
+    scores.columns = ['or', 'p']
+    scores['rvis'] = pd.Series(rvis_scores)
+    scores.to_csv(msa_name + '_scores.csv')
 
     if args.interpreter:
         code.interact(local=dict(globals(), **locals()))
