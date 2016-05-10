@@ -205,7 +205,6 @@ def main(alignment, alignment_name, seq_id_filter, use_local_alignment, local_un
     merged_table = pd.merge(mapped, germline_table,
                             left_on=['UniProt_ID', 'uniprot_res_num'],
                             right_on=['UniProt_dbAccessionId', 'start'])
-    merged_table.to_csv(alignment_name + '_merged_table.csv')
 
     # TODO: does any of this need deduped?
 
@@ -347,6 +346,7 @@ if __name__ == '__main__':
     merged_table, fisher_results, rvis_scores = main(msa, msa_name, id_filter, use_local, local_uniprot_index,
                                                      write_filtered, downloads)
 
+    merged_table.to_csv(msa_name + '_merged_table.csv')
     scores = pd.DataFrame(fisher_results)
     scores.columns = ['or', 'p']
     scores['rvis'] = pd.Series(rvis_scores)
