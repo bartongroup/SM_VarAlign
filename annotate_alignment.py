@@ -90,11 +90,11 @@ def map_columns_to_residues(alignment_column_numbers, alignment_residue_numbers)
     :param alignment_residue_numbers:
     :return:
     """
+    col_num_index, sequence_col_nums = zip(*alignment_column_numbers)
     mapped = []
     for seq_id, uniprot_seq_id, res_nums, seq_index in alignment_residue_numbers:
         log.debug('Mapping {}...'.format(seq_id))
-        ind = zip(*alignment_column_numbers)[0].index(seq_id)
-        col_nums = zip(*alignment_column_numbers)[1][ind]
+        col_nums = sequence_col_nums[col_num_index.index(seq_id)]  # Lookup sequence column numbers
         record = {'seq_id': seq_id, 'uniprot_seq_id': uniprot_seq_id, 'uniprot_res_num': res_nums,
                   'alignment_col_num': col_nums, 'sequence_index': seq_index}
         # TODO: This is messy due to dependency on uniprot_seq_id format in `alignment_residue_numbers`
@@ -104,13 +104,11 @@ def map_columns_to_residues(alignment_column_numbers, alignment_residue_numbers)
             prot_name = record['uniprot_seq_id']
         record.update({'UniProt_ID': prot_name})
 
-        mapped.append(record)
+        mapped.append(pd.DataFrame(record))
 
     # Create and concat mapping tables
-    mapped_df = pd.DataFrame()
     log.debug('Tabulating data...')
-    for i in mapped:
-        mapped_df = mapped_df.append(pd.DataFrame(i), ignore_index=True)
+    mapped_df = pd.concat(mapped, ignore_index=True)
 
     return mapped_df
 
