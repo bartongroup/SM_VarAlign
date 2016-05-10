@@ -2,6 +2,8 @@ import annotate_alignment
 import argparse
 from Bio import AlignIO, SeqIO  # Needs PR #768 #769 patched
 import logging
+from config import defaults
+
 
 log = logging.getLogger(__name__)
 
@@ -31,7 +33,7 @@ if __name__ == '__main__':
                         help='An inclusive filter to process only a subset of sequences.')
     parser.add_argument('--use_local_alignment', action='store_true',
                         help='Align sub-sequences to UniProt rather than enforcing exact match.')
-    parser.add_argument('--downloads', type=str, default='.VarAlign',
+    parser.add_argument('--downloads', type=str, default=defaults.db_root,
                         help='A directory to store downloaded files.')
     args = parser.parse_args()
 
