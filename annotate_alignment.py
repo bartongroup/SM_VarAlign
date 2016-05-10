@@ -92,21 +92,19 @@ def map_columns_to_residues(alignment_column_numbers, alignment_residue_numbers)
     """
     mapped = []
     for seq_id, uniprot_seq_id, res_nums, seq_index in alignment_residue_numbers:
+        log.debug('Mapping {}...'.format(seq_id))
         ind = zip(*alignment_column_numbers)[0].index(seq_id)
         col_nums = zip(*alignment_column_numbers)[1][ind]
         record = {'seq_id': seq_id, 'uniprot_seq_id': uniprot_seq_id, 'uniprot_res_num': res_nums,
                   'alignment_col_num': col_nums, 'sequence_index': seq_index}
-        log.debug('Mapping {}...'.format(seq_id))
-        mapped.append(record)
-
-    # TODO: This is messy due to dependency on uniprot_seq_id format in `alignment_residue_numbers`
-    for i in mapped:
-        if '|' in i['uniprot_seq_id']:
-            prot_name = i['uniprot_seq_id'].split('|')[1]  # UniProt ID
+        # TODO: This is messy due to dependency on uniprot_seq_id format in `alignment_residue_numbers`
+        if '|' in record['uniprot_seq_id']:
+            prot_name = record['uniprot_seq_id'].split('|')[1]  # UniProt ID
         else:
-            prot_name = i['uniprot_seq_id']
-        log.debug('Updating {}...'.format(prot_name))
-        i.update({'UniProt_ID': prot_name})
+            prot_name = record['uniprot_seq_id']
+        record.update({'UniProt_ID': prot_name})
+
+        mapped.append(record)
 
     # Create and concat mapping tables
     mapped_df = pd.DataFrame()
