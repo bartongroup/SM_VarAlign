@@ -91,13 +91,16 @@ def _fetch_variants(prots, downloads=None, save_name=None):
                 log.error('Could not retrieve variants for {}'.format(p))
 
         # Concatenate and process all those variant tables
+        log.debug('---Concatenating variant tables---')
         concat_table = pd.concat(tables, ignore_index=True)
         # Need to expand on 'to_aa' before dedupping
+        log.debug('---Expanding `to_aa` column---')
         concat_table['orig_index'] = concat_table.index
         concat_table = expand_dataframe(df=concat_table, expand_column='to_aa', id_column='orig_index')
         concat_table = concat_table.drop('orig_index', 1)
         # Fix or remove list columns
         concat_table = concat_table.drop('to_aa', 1)
+        log.debug('---Parsing `clinical_significance`---')
         concat_table['clinical_significance'] = concat_table['clinical_significance'].apply(lambda x: ';'.join(x))
         concat_table['clinical_significance'].fillna('')
         # And dedup, bearing in mind the same variant can pop up in different transcripts
