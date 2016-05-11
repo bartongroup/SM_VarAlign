@@ -13,7 +13,6 @@ from utils import urlopen_with_retry, query_uniprot, parse_seq_name
 import sys
 sys.path.extend(['/Users/smacgowan/PycharmProjects/ProteoFAV'])
 from proteofav.variants import select_uniprot_variants
-from proteofav.analysis.utils import expand_dataframe
 
 import logging
 
@@ -95,11 +94,14 @@ def _fetch_variants(prots, downloads=None, save_name=None):
         concat_table = pd.concat(tables, ignore_index=True)
         # Need to expand on 'to_aa' before dedupping
         log.debug('---Expanding `to_aa` column---')
-        concat_table['orig_index'] = concat_table.index
-        concat_table = expand_dataframe(df=concat_table, expand_column='to_aa', id_column='orig_index')
-        concat_table = concat_table.drop('orig_index', 1)
+        to_aa_columns = pd.DataFrame(concat_table.to_aa.tolist(), )
+        split = pd.concat([concat_table, to_aa_columns], axis=1)
+        concat_table = pd.melt(split, id_vars=list(concat_table.columns), value_name='to_aa_expanded')
+        concat_table = concat_table[concat_table.to_aa_expanded.notnull()]
+        concat_table = concat_table.drop('variable', 1)  # Remove melt variable
         # Fix or remove list columns
         concat_table = concat_table.drop('to_aa', 1)
+
         log.debug('---Parsing `clinical_significance`---')
         concat_table['clinical_significance'] = concat_table['clinical_significance'].apply(lambda x: ';'.join(x))
         concat_table['clinical_significance'].fillna('')
