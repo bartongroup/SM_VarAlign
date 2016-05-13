@@ -11,7 +11,7 @@ from Bio import AlignIO, SeqIO
 from config import defaults
 from fetchers import fetch_uniprot_sequences, _fetch_variants
 from jalview_writers import write_jalview_annotation, append_jalview_variant_features, create_jalview_feature_file
-from mapping import get_row_residue_numbers, get_sequence_column_numbers, map_columns_to_residues
+from mapping import get_row_residue_numbers, get_sequence_column_numbers, map_columns_to_res_nums
 from stats import run_fisher_tests, calculate_rvis, fill_variant_count
 from utils import worse_than, parse_seq_name, filter_alignment
 
@@ -40,9 +40,12 @@ def main(alignment, alignment_name, use_local_alignment, local_uniprot_index, do
 
     # Map alignment columns to sequence UniProt residue numbers
     uniprot_sequences = []
-    alignment_residue_numbers = []
-    alignment_column_numbers = []
+    mapped_records = []
     for seq in alignment:
+        # reset holders
+        columns = None
+        residues = None
+
         # Identify sequence and retrieve full UniProt
         seq_name = parse_seq_name(seq.id)
         if not local_uniprot_index:
@@ -63,7 +66,7 @@ def main(alignment, alignment_name, use_local_alignment, local_uniprot_index, do
 
         # Map alignment sequence to UniProt sequence
         try:
-            alignment_residue_numbers.append(get_row_residue_numbers(seq, uniprot_seq, use_local_alignment))
+            residues = get_row_residue_numbers(seq, uniprot_seq, use_local_alignment)
         except TypeError:
             # Maybe it's a different isoform
             canonical_uniprot = uniprot_seq[1].id.split('|')[1]
@@ -72,22 +75,27 @@ def main(alignment, alignment_name, use_local_alignment, local_uniprot_index, do
                     isoform = canonical_uniprot + suffix
                     print isoform
                     uniprot_seq = fetch_uniprot_sequences(isoform, downloads)
-                    alignment_residue_numbers.append(
-                        get_row_residue_numbers(seq, uniprot_seq, use_local_alignment))
+                    residues = get_row_residue_numbers(seq, uniprot_seq, use_local_alignment)
                     break
                 except TypeError:
                     continue
 
         # Map non-gap column numbers
-        alignment_column_numbers.append(get_sequence_column_numbers(seq))
+        columns = get_sequence_column_numbers(seq)
+
+        # Combined
+        if columns and residues:
+            col_num_index, sequence_col_nums = columns
+            mapped_records.append(map_columns_to_res_nums(sequence_col_nums, residues))
 
     # If we skipped all sequences, log and exit
     if len(uniprot_sequences) == 0:
         log.info('All sequences filtered or none mapped. Analysis of {} is not applicable. Exiting.'.format(alignment_name))
         return 1
 
-    # Map columns to residues
-    mapped = map_columns_to_residues(alignment_column_numbers, alignment_residue_numbers)
+    # Create and concat mapping tables
+    log.debug('Tabulating data...')
+    mapped = pd.concat(mapped_records, ignore_index=True)
 
     # Fetch variants
     protein_identifiers = zip(*uniprot_sequences)[0]  # Ensure prots contains UniProt IDs (could be protein names)

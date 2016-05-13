@@ -70,32 +70,26 @@ def get_sequence_column_numbers(sequence):
     return align_col_nums
 
 
-def map_columns_to_residues(alignment_column_numbers, alignment_residue_numbers):
+def map_columns_to_res_nums(col_nums, aligned_res_nums):
     """
     Map alignment columns to UniProt residue numbers.
 
-    :param alignment_column_numbers:
-    :param alignment_residue_numbers:
+    :param col_nums:
+    :param res_nums:
+    :param seq_id:
+    :param seq_index:
+    :param uniprot_seq_id:
     :return:
     """
-    col_num_index, sequence_col_nums = zip(*alignment_column_numbers)
-    mapped = []
-    for seq_id, uniprot_seq_id, res_nums, seq_index in alignment_residue_numbers:
-        log.debug('Mapping {}...'.format(seq_id))
-        col_nums = sequence_col_nums[col_num_index.index(seq_id)]  # Lookup sequence column numbers
-        record = {'seq_id': seq_id, 'uniprot_seq_id': uniprot_seq_id, 'uniprot_res_num': res_nums,
-                  'alignment_col_num': col_nums, 'sequence_index': seq_index}
-        # TODO: This is messy due to dependency on uniprot_seq_id format in `alignment_residue_numbers`
-        if '|' in record['uniprot_seq_id']:
-            prot_name = record['uniprot_seq_id'].split('|')[1]  # UniProt ID
-        else:
-            prot_name = record['uniprot_seq_id']
-        record.update({'UniProt_ID': prot_name})
+    seq_id, uniprot_seq_id, res_nums, seq_index = aligned_res_nums
+    log.debug('Mapping {}...'.format(seq_id))
+    record = {'seq_id': seq_id, 'uniprot_seq_id': uniprot_seq_id, 'uniprot_res_num': res_nums,
+              'alignment_col_num': col_nums, 'sequence_index': seq_index}
+    # TODO: This is messy due to dependency on uniprot_seq_id format in `alignment_residue_numbers`
+    if '|' in record['uniprot_seq_id']:
+        prot_name = record['uniprot_seq_id'].split('|')[1]  # UniProt ID
+    else:
+        prot_name = record['uniprot_seq_id']
+    record.update({'UniProt_ID': prot_name})
 
-        mapped.append(pd.DataFrame(record))
-
-    # Create and concat mapping tables
-    log.debug('Tabulating data...')
-    mapped_df = pd.concat(mapped, ignore_index=True)
-
-    return mapped_df
+    return pd.DataFrame(record)
