@@ -86,3 +86,31 @@ def filter_alignment(alignment, seq_id_filter):
     filtered_alignment = MultipleSeqAlignment(passing_seqs)
     filtered_alignment.annotations = alignment.annotations
     return filtered_alignment
+
+
+def is_missense_variant(variants):
+    """
+    Identify missense variants.
+
+    This is not automatically as trivial as `table.type == 'missense_variant'` because multiallelic variant are all
+    given the same 'type' if bundled in a single record.
+
+    :param variants: Variant table
+    :return: Boolean mask
+    """
+    mask = (variants['type'] == 'missense_variant') & \
+           (variants['from_aa'] != variants['to_aa_expanded'])
+    return mask
+
+
+def is_from_to_variant(native, mutant, variants):
+    """
+    Identify variants that are specific mutations.
+
+    :param native: Wild-type residue
+    :param mutant: Mutant resdiue
+    :param variants: Variant table
+    :return: Boolean mask
+    """
+    mask = (variants['from_aa'] == native) & (variants['to_aa_expanded'] == mutant)
+    return mask
