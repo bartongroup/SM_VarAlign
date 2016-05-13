@@ -124,3 +124,22 @@ def _fetch_variants(prots, downloads=None, save_name=None):
     germline_table = concat_table[is_germline]
 
     return germline_table
+
+
+def select_uniprot_sequence(UniProt_sequences_downloads, local_uniprot_index, seq):
+    # Identify sequence and retrieve full UniProt
+    seq_name = parse_seq_name(seq.id)
+    if not local_uniprot_index:
+        uniprot_seq = fetch_uniprot_sequences(seq_name, UniProt_sequences_downloads)
+        uniprot_id = uniprot_seq.id.split('|')[1]
+    else:
+        # TODO: Currently local lookup only working with Stockholm format that has AC annotations
+        accession_code = seq.annotations['accession'].split('.')[0]  # Dropping sequence version
+        if accession_code in local_uniprot_index:
+            uniprot_seq = local_uniprot_index[accession_code]
+            uniprot_id = accession_code
+        else:
+            uniprot_seq = None
+            uniprot_id = None
+
+    return seq_name, uniprot_id, uniprot_seq

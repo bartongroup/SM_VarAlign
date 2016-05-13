@@ -9,11 +9,11 @@ import pandas as pd
 from Bio import AlignIO, SeqIO
 
 from config import defaults
-from fetchers import fetch_uniprot_sequences, _fetch_variants
+from fetchers import fetch_uniprot_sequences, _fetch_variants, select_uniprot_sequence
 from jalview_writers import write_jalview_annotation, append_jalview_variant_features, create_jalview_feature_file
 from mapping import get_row_residue_numbers, get_sequence_column_numbers, map_columns_to_res_nums
 from stats import run_fisher_tests, calculate_rvis, fill_variant_count
-from utils import parse_seq_name, filter_alignment, is_missense_variant, is_from_to_variant, is_worse_than_type, \
+from utils import filter_alignment, is_missense_variant, is_from_to_variant, is_worse_than_type, \
     is_common_variant, is_non_synonomous
 
 log = logging.getLogger(__name__)
@@ -47,20 +47,8 @@ def main(alignment, alignment_name, use_local_alignment, local_uniprot_index, do
         columns = None
         residues = None
 
-        # Identify sequence and retrieve full UniProt
-        seq_name = parse_seq_name(seq.id)
-        if not local_uniprot_index:
-            uniprot_seq = fetch_uniprot_sequences(seq_name, UniProt_sequences_downloads)
-            uniprot_id = uniprot_seq.id.split('|')[1]
-        else:
-            # TODO: Currently local lookup only working with Stockholm format that has AC annotations
-            accession_code = seq.annotations['accession'].split('.')[0]  # Dropping sequence version
-            if accession_code in local_uniprot_index:
-                uniprot_seq = local_uniprot_index[accession_code]
-                uniprot_id = accession_code
-            else:
-                uniprot_seq = None
-                uniprot_id = None
+        seq_name, uniprot_id, uniprot_seq = select_uniprot_sequence(UniProt_sequences_downloads, local_uniprot_index,
+                                                                    seq)
 
         # Skip unknown sequences
         if uniprot_seq is None:
