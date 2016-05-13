@@ -1,23 +1,21 @@
 import argparse
 import code
+import logging
 import math
 import os.path
 
 import numpy as np
 import pandas as pd
 from Bio import AlignIO, SeqIO, pairwise2
-from Bio.Align import MultipleSeqAlignment
 from Bio.Seq import Seq
 from Bio.SeqRecord import SeqRecord
 from Bio.pairwise2 import format_alignment
 
+from config import defaults
 from fetchers import fetch_uniprot_sequences, _fetch_variants
 from jalview_writers import write_jalview_annotation, append_jalview_variant_features, create_jalview_feature_file
 from stats import run_fisher_tests, calculate_rvis, fill_variant_count
-from utils import worse_than, parse_seq_name
-from config import defaults
-
-import logging
+from utils import worse_than, parse_seq_name, filter_alignment
 
 log = logging.getLogger(__name__)
 
@@ -113,8 +111,7 @@ def map_columns_to_residues(alignment_column_numbers, alignment_residue_numbers)
     return mapped_df
 
 
-def main(alignment, alignment_name, seq_id_filter, use_local_alignment, local_uniprot_index, write_filtered_alignment,
-         downloads):
+def main(alignment, alignment_name, use_local_alignment, local_uniprot_index, downloads):
     """
     Fetch variants for identified protein sequences in an MSA, map to residues and columns and write Jalview feature
     files with key statistics.
@@ -134,23 +131,11 @@ def main(alignment, alignment_name, seq_id_filter, use_local_alignment, local_un
     # Alignment length if used repeatedly to store here
     alignment_length = alignment.get_alignment_length()
 
-    # Filter unwanted sequences
-    passing_seqs = []
-    for seq in alignment:
-        if seq_id_filter is not None and seq_id_filter not in seq.id:
-            log.info('Filtering sequence {}.'.format(seq.id))
-        else:
-            passing_seqs.append(seq)
-    filtered_alignment = MultipleSeqAlignment(passing_seqs)
-    filtered_alignment.annotations = alignment.annotations
-    if write_filtered_alignment:
-        AlignIO.write(filtered_alignment, alignment_name + '_filtered.sto', 'stockholm')
-
     # Map alignment columns to sequence UniProt residue numbers
     uniprot_sequences = []
     alignment_residue_numbers = []
     alignment_column_numbers = []
-    for seq in filtered_alignment:
+    for seq in alignment:
         # Identify sequence and retrieve full UniProt
         seq_name = parse_seq_name(seq.id)
         if not local_uniprot_index:
@@ -292,7 +277,7 @@ def main(alignment, alignment_name, seq_id_filter, use_local_alignment, local_un
     # TODO: %gap threshold? Where ignored columns given the worst value for jalview visualisation...
 
     # Calculate and write fisher test results to Jalview annotation file.
-    fisher_test_results = run_fisher_tests(filtered_alignment, is_missense, merged_table)
+    fisher_test_results = run_fisher_tests(alignment, is_missense, merged_table)
     missense_significance = tuple(1 - x for x in zip(*fisher_test_results)[1])
     phred_significance = tuple(-10 * math.log10(x) for x in zip(*fisher_test_results)[1])
     # missense_ratio = tuple(1./x for x in zip(*fisher_test_results)[0])
@@ -343,8 +328,14 @@ if __name__ == '__main__':
         local_uniprot_index = None
     write_filtered = args.write_filtered_alignment
     downloads = args.downloads
-    merged_table, fisher_results, rvis_scores = main(msa, msa_name, id_filter, use_local, local_uniprot_index,
-                                                     write_filtered, downloads)
+
+    # Filter unwanted sequences
+    if id_filter:
+        msa = filter_alignment(msa, id_filter)
+    if write_filtered:
+        AlignIO.write(msa, msa_name + '_filtered.sto', 'stockholm')
+
+    merged_table, fisher_results, rvis_scores = main(msa, msa_name, use_local, local_uniprot_index, downloads)
 
     merged_table.to_csv(msa_name + '_merged_table.csv')
     scores = pd.DataFrame(fisher_results)

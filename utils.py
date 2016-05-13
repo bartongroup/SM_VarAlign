@@ -4,6 +4,8 @@ Utility functions.
 import re
 import urllib2
 import requests
+from Bio.Align import MultipleSeqAlignment
+
 from retry import retry
 import logging
 
@@ -66,3 +68,21 @@ def parse_seq_name(seq_name):
     :return:
     """
     return re.search('\w*', seq_name).group().strip()
+
+
+def filter_alignment(alignment, seq_id_filter):
+    """
+
+    :param alignment:
+    :param seq_id_filter:
+    :return:
+    """
+    passing_seqs = []
+    for seq in alignment:
+        if seq_id_filter is not None and seq_id_filter not in seq.id:
+            log.info('Filtering sequence {}.'.format(seq.id))
+        else:
+            passing_seqs.append(seq)
+    filtered_alignment = MultipleSeqAlignment(passing_seqs)
+    filtered_alignment.annotations = alignment.annotations
+    return filtered_alignment

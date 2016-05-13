@@ -3,6 +3,7 @@ import argparse
 from Bio import AlignIO, SeqIO  # Needs PR #768 #769 patched
 import logging
 from config import defaults
+from utils import filter_alignment
 
 
 log = logging.getLogger(__name__)
@@ -18,7 +19,13 @@ def main(local_uniprot, local_pfam, seq_id_filter, use_local_alignment, download
     pfam = AlignIO.parse(local_pfam, 'stockholm')
 
     for alignment in pfam:
+
         alignment_name = alignment.annotations['GF']['AC'][0]
+
+        # Filter unwanted sequences
+        if seq_id_filter:
+            alignment = filter_alignment(alignment, seq_id_filter)
+
         if 'PF0000' in alignment_name:
             annotate_alignment.main(alignment, alignment_name, seq_id_filter, use_local_alignment, swissprot,
                                     False, downloads)
