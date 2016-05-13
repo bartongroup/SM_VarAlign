@@ -313,11 +313,13 @@ if __name__ == '__main__':
                         help='Write the alignment containing only the sequences that pass `seq_id_filter`')
     args = parser.parse_args()
 
-    # Read alignment, initialise variables and run analysis
+    # Initialise variables and parameters
     msa = AlignIO.read(args.fasta_file, args.format)
     msa_name = args.fasta_file
-    id_filter = args.seq_id_filter
     use_local = args.use_local_alignment
+    downloads = args.downloads
+
+    # Initialise local UniProt if provided
     local_uniprot_file = args.local_uniprot_file
     if local_uniprot_file:
         if args.format != 'stockholm':
@@ -326,17 +328,19 @@ if __name__ == '__main__':
         local_uniprot_index = SeqIO.index(local_uniprot_file, 'swiss')
     else:
         local_uniprot_index = None
-    write_filtered = args.write_filtered_alignment
-    downloads = args.downloads
 
-    # Filter unwanted sequences
+    # Filter unwanted sequences if required
+    id_filter = args.seq_id_filter
+    write_filtered = args.write_filtered_alignment
     if id_filter:
         msa = filter_alignment(msa, id_filter)
     if write_filtered:
         AlignIO.write(msa, msa_name + '_filtered.sto', 'stockholm')
 
+    # Run analysis
     merged_table, fisher_results, rvis_scores = main(msa, msa_name, use_local, local_uniprot_index, downloads)
 
+    # Write results
     merged_table.to_csv(msa_name + '_merged_table.csv')
     scores = pd.DataFrame(fisher_results)
     scores.columns = ['or', 'p']
