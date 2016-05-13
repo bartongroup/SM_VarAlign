@@ -9,9 +9,9 @@ import pandas as pd
 from Bio import AlignIO, SeqIO
 
 from config import defaults
-from fetchers import fetch_uniprot_sequences, _fetch_variants, select_uniprot_sequence
+from fetchers import _fetch_variants, select_uniprot_sequence
 from jalview_writers import write_jalview_annotation, append_jalview_variant_features, create_jalview_feature_file
-from mapping import get_row_residue_numbers, get_sequence_column_numbers, map_columns_to_res_nums
+from mapping import get_sequence_column_numbers, map_columns_to_res_nums, map_seq_resnums_or_try_isoforms
 from stats import run_fisher_tests, calculate_rvis, fill_variant_count
 from utils import filter_alignment, is_missense_variant, is_from_to_variant, is_worse_than_type, \
     is_common_variant, is_non_synonomous
@@ -56,21 +56,7 @@ def main(alignment, alignment_name, use_local_alignment, local_uniprot_index, do
             continue
 
         # Map alignment sequence to UniProt sequence
-        try:
-            residues = get_row_residue_numbers(seq, uniprot_seq, use_local_alignment)
-        except TypeError:
-            # Maybe it's a different isoform
-            canonical_uniprot = uniprot_seq[1].id.split('|')[1]
-            for suffix in ('-2', '-3'):
-                try:
-                    isoform = canonical_uniprot + suffix
-                    print isoform
-                    uniprot_seq = fetch_uniprot_sequences(isoform, downloads)
-                    residues = get_row_residue_numbers(seq, uniprot_seq, use_local_alignment)
-                    break
-                except TypeError:
-                    continue
-
+        residues, uniprot_seq = map_seq_resnums_or_try_isoforms(seq, uniprot_seq, use_local_alignment, downloads)
         # Map non-gap column numbers
         columns = get_sequence_column_numbers(seq)
 

@@ -5,6 +5,8 @@ from Bio.SeqRecord import SeqRecord
 from Bio.pairwise2 import format_alignment
 
 import logging
+
+from fetchers import fetch_uniprot_sequences
 from utils import parse_seq_name
 
 log = logging.getLogger(__name__)
@@ -93,3 +95,32 @@ def map_columns_to_res_nums(col_nums, aligned_res_nums):
     record.update({'UniProt_ID': prot_name})
 
     return pd.DataFrame(record)
+
+
+def map_seq_resnums_or_try_isoforms(seq, uniprot_seq, use_local_alignment, downloads):
+    """
+    Map sub-sequence to full UniProt sequence or try different isoforms.
+
+    :param seq: Sub-sequence
+    :param uniprot_seq: UniProt sequence
+    :param use_local_alignment: If True, perform local alignment instead of exact match
+    :param downloads: Local cache for UniProt sequences
+    :return: Mappings, mapped UniProt sequence (tuple)
+    """
+    #TODO: Fix messy control flow
+    try:
+        residues = get_row_residue_numbers(seq, uniprot_seq, use_local_alignment)
+    except TypeError:
+        # Maybe it's a different isoform
+        canonical_uniprot = uniprot_seq[1].id.split('|')[1]
+        for suffix in ('-2', '-3'):
+            try:
+                isoform = canonical_uniprot + suffix
+                print isoform
+                uniprot_seq = fetch_uniprot_sequences(isoform, downloads)
+                residues = get_row_residue_numbers(seq, uniprot_seq, use_local_alignment)
+                break
+            except TypeError:
+                continue
+
+    return residues, uniprot_seq
