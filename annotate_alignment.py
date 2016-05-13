@@ -60,7 +60,7 @@ def main(alignment, alignment_name, use_local_alignment, local_uniprot_index, do
         # Map non-gap column numbers
         columns = get_sequence_column_numbers(seq)
 
-        # Combined
+        # Map columns to residues
         if columns and residues:
             col_num_index, sequence_col_nums = columns
             mapped_records.append(map_columns_to_res_nums(sequence_col_nums, residues))
