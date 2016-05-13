@@ -13,7 +13,8 @@ from fetchers import fetch_uniprot_sequences, _fetch_variants
 from jalview_writers import write_jalview_annotation, append_jalview_variant_features, create_jalview_feature_file
 from mapping import get_row_residue_numbers, get_sequence_column_numbers, map_columns_to_res_nums
 from stats import run_fisher_tests, calculate_rvis, fill_variant_count
-from utils import worse_than, parse_seq_name, filter_alignment, is_missense_variant, is_from_to_variant
+from utils import parse_seq_name, filter_alignment, is_missense_variant, is_from_to_variant, is_worse_than_type, \
+    is_common_variant, is_non_synonomous
 
 log = logging.getLogger(__name__)
 
@@ -143,9 +144,9 @@ def main(alignment, alignment_name, use_local_alignment, local_uniprot_index, do
     # TODO: This is a good scheme for classifying variants, use elsewhere?
 
     # RVIS calculation: need to count variants and format data.
-    is_common = mapped_variants['minor_allele_frequency'].notnull()
-    is_bad_type = mapped_variants.type.apply(lambda x: x in worse_than('missense_variant'))
-    is_mutant = mapped_variants['from_aa'] != mapped_variants['to_aa_expanded']
+    is_common = is_common_variant(mapped_variants, maf=None)
+    is_bad_type = is_worse_than_type('missense_variant', mapped_variants)
+    is_mutant = is_non_synonomous(mapped_variants)
     is_functional = is_bad_type & is_mutant
     common_functional = mapped_variants.loc[is_common & is_functional, 'alignment_col_num'].value_counts(sort=False)
     common_functional_per_column = fill_variant_count(common_functional, alignment_length)

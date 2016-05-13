@@ -114,3 +114,42 @@ def is_from_to_variant(native, mutant, variants):
     """
     mask = (variants['from_aa'] == native) & (variants['to_aa_expanded'] == mutant)
     return mask
+
+
+def is_worse_than_type(type, variants):
+    """
+    Filter variants annotated with SO term worse than specified.
+
+    :param type: SO term
+    :param variants: Variant table
+    :return: Boolean mask
+    """
+    mask = variants.type.apply(lambda x: x in worse_than(type))
+    return mask
+
+
+def is_common_variant(variants, maf):
+    """
+    Classify variants according to population frequency.
+
+    :param variants: Variant table
+    :param maf: Minimum frequency to call common (float or None, such that non-singleton is common)
+    :return: Boolean mask
+    """
+    if not maf:
+        mask = variants['minor_allele_frequency'].notnull()
+    elif isinstance(maf, float):
+        mask = variants['minor_allele_frequency'] >= maf
+
+    return mask
+
+
+def is_non_synonomous(variants):
+    """
+    Identify non-synonymous variants.
+
+    :param variants: Variant table
+    :return: Boolean mask
+    """
+    mask = variants['from_aa'] != variants['to_aa_expanded']
+    return mask
