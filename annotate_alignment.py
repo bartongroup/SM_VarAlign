@@ -39,7 +39,7 @@ def main(alignment, alignment_name, use_local_alignment, local_uniprot_index, do
     alignment_length = alignment.get_alignment_length()
 
     # Map alignment columns to sequence UniProt residue numbers
-    uniprot_sequences = []
+    uniprot_ids = []
     mapped_records = []
     for seq in alignment:
         # reset holders
@@ -50,19 +50,21 @@ def main(alignment, alignment_name, use_local_alignment, local_uniprot_index, do
         seq_name = parse_seq_name(seq.id)
         if not local_uniprot_index:
             uniprot_seq = fetch_uniprot_sequences(seq_name, UniProt_sequences_downloads)
+            uniprot_id = uniprot_seq.id.split('|')[1]
         else:
             # TODO: Currently local lookup only working with Stockholm format that has AC annotations
             accession_code = seq.annotations['accession'].split('.')[0]  # Dropping sequence version
             if accession_code in local_uniprot_index:
-                uniprot_seq = accession_code, local_uniprot_index[accession_code]
+                uniprot_seq = local_uniprot_index[accession_code]
+                uniprot_id = accession_code
             else:
                 uniprot_seq = None
+                uniprot_id = None
 
         # Skip unknown sequences
         if uniprot_seq is None:
             log.error('Did not find UniProt sequence corresponding to {}. Skipping.'.format(seq_name))
             continue
-        uniprot_sequences.append(uniprot_seq)  # Keep for later too
 
         # Map alignment sequence to UniProt sequence
         try:
@@ -87,9 +89,10 @@ def main(alignment, alignment_name, use_local_alignment, local_uniprot_index, do
         if columns and residues:
             col_num_index, sequence_col_nums = columns
             mapped_records.append(map_columns_to_res_nums(sequence_col_nums, residues))
+            uniprot_ids.append(uniprot_id)
 
     # If we skipped all sequences, log and exit
-    if len(uniprot_sequences) == 0:
+    if len(uniprot_ids) == 0:
         log.info('All sequences filtered or none mapped. Analysis of {} is not applicable. Exiting.'.format(alignment_name))
         return 1
 
@@ -98,7 +101,7 @@ def main(alignment, alignment_name, use_local_alignment, local_uniprot_index, do
     mapped = pd.concat(mapped_records, ignore_index=True)
 
     # Fetch variants
-    protein_identifiers = zip(*uniprot_sequences)[0]  # Ensure prots contains UniProt IDs (could be protein names)
+    protein_identifiers = uniprot_ids  # Ensure prots contains UniProt IDs (could be protein names)
     germline_table = _fetch_variants(protein_identifiers, downloads, alignment_name + variant_table_suffix)
 
     # Merge variant table and key table

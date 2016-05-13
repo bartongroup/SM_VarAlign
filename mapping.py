@@ -25,11 +25,11 @@ def get_row_residue_numbers(subseq, uniprot_seq, use_local_alignment):
 
     if use_local_alignment:
         # Align input alignment sequences to UniProt Sequences
-        log.debug('Aligning sub-sequence: {} to UniProt sequence: {}'.format(subseq.id, uniprot_seq[1].id))
-        local_alignment = pairwise2.align.localxs(subseq.seq, uniprot_seq[1].seq, -.5, -.1)
+        log.debug('Aligning sub-sequence: {} to UniProt sequence: {}'.format(subseq.id, uniprot_seq.id))
+        local_alignment = pairwise2.align.localxs(subseq.seq, uniprot_seq.seq, -.5, -.1)
         for pairwise_alignment in local_alignment:
             log.debug('{}'.format('\n' + format_alignment(*pairwise_alignment)))
-        alignment = subseq.id, uniprot_seq[1].id, local_alignment
+        alignment = subseq.id, uniprot_seq.id, local_alignment
 
         # Build list of UniProt residue numbers for each non-gap for each sequence
         sub_seq_id, uniprot_seq_id, pairwise = alignment
@@ -39,16 +39,16 @@ def get_row_residue_numbers(subseq, uniprot_seq, use_local_alignment):
         align_res_nums = sub_seq_id, uniprot_seq_id, res_nums, seq_indexes
     else:
         str_seq = str(subseq.seq)
-        uniprot_str_seq = str(uniprot_seq[1].seq)
+        uniprot_str_seq = str(uniprot_seq.seq)
         if str_seq in uniprot_str_seq:
-            log.debug('Matching sub-sequence: {} to UniProt sequence: {}'.format(subseq.id, uniprot_seq[1].id))
+            log.debug('Matching sub-sequence: {} to UniProt sequence: {}'.format(subseq.id, uniprot_seq.id))
             start = uniprot_str_seq.find(str_seq) + 1
             end = start + len(str_seq)
             res_nums = range(start, end)
             seq_indexes = range(1, len(res_nums) + 1)
-            align_res_nums = subseq.id, uniprot_seq[1].id, res_nums, seq_indexes
+            align_res_nums = subseq.id, uniprot_seq.id, res_nums, seq_indexes
         else:
-            log.error('Sub-sequence: {} does not match UniProt sequence: {}'.format(subseq.id, uniprot_seq[1].id))
+            log.error('Sub-sequence: {} does not match UniProt sequence: {}'.format(subseq.id, uniprot_seq.id))
             log.error('Sub-sequence: {} does not match UniProt sequence: {}'.format(str_seq, uniprot_str_seq))
             raise TypeError
 

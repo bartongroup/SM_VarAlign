@@ -21,10 +21,11 @@ log = logging.getLogger(__name__)
 
 def fetch_uniprot_sequences(seq_name, downloads=None):
     """
-    Retrieve UniProt sequences.
+    Retrieve UniProt sequence.
 
-    :param protein_identifiers: List of protein identifiers (UniProt IDs or protein name)
-    :return: List of protein sequences.
+    :param seq_name: UniProt IDs or protein name
+    :param downloads: Path to local cache
+    :return: Protein sequence
     """
     url = 'http://www.uniprot.org/uniprot/'
     p = seq_name.strip()
@@ -53,9 +54,8 @@ def fetch_uniprot_sequences(seq_name, downloads=None):
     else:
         handle = open(fasta_file_name, 'r')
         seq_record = SeqIO.read(handle, "fasta")
-    p = seq_record.id.split('|')[1]  # Extract UniProt ID
-    uniprot_sequence = p, seq_record
-    return uniprot_sequence
+
+    return seq_record
 
 
 def _fetch_variants(prots, downloads=None, save_name=None):
