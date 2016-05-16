@@ -65,7 +65,7 @@ if __name__ == '__main__':
     log.info('Filtering alignment for sequences without "{}"'.format(seq_id_filter))
     if seq_id_filter:
         alignment = filter_alignment(alignment, seq_id_filter)
-        if alignment is None:
+        if len(alignment) == 0:
             log.warning('No sequences passed filter. Exiting.')
             raise SystemExit
 
