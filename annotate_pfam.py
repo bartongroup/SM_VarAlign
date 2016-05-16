@@ -29,12 +29,6 @@ if __name__ == '__main__':
     use_local_alignment = False
     downloads = args.downloads
 
-    # Check running on cluster
-    cod_task_id = os.environ.get('COD_TASK_ID')
-    if cod_task_id is None:
-        log.error('Not in Grid Engine array context. $COD_TASK_ID = {}.\n'.format(cod_task_id))
-        raise SystemExit
-
     # Load UniProt database
     log.info('Indexing local UniProt database: {}'.format(local_uniprot_path))
     local_uniprot_index = SeqIO.index(local_uniprot_path, 'swiss')
