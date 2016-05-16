@@ -71,8 +71,8 @@ if __name__ == '__main__':
 
     # Run analysis
     log.info('Processing alignment...')
-    merged_table, fisher_results, rvis_scores = annotate_alignment.main(local_uniprot_index, local_pfam, seq_id_filter,
-                                                                        use_local_alignment, downloads)
+    merged_table, fisher_results, rvis_scores = annotate_alignment.main(alignment, alignment_name, use_local_alignment,
+                                                                        local_uniprot_index, downloads)
 
     # Write results
     log.info('Writing results...')
