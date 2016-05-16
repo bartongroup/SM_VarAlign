@@ -1,5 +1,3 @@
-#!/sw/opt/python/2.7.3/bin/python
-
 import annotate_alignment
 import argparse
 from Bio import AlignIO, SeqIO  # Needs PR #768 #769 patched
