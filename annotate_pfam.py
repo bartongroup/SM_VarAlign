@@ -29,9 +29,16 @@ if __name__ == '__main__':
     use_local_alignment = False
     downloads = args.downloads
 
-    # Load UniProt database
-    log.info('Indexing local UniProt database: {}'.format(local_uniprot_path))
-    local_uniprot_index = SeqIO.index(local_uniprot_path, 'swiss')
+    # Initialise local UniProt if provided
+    local_uniprot_file = args.local_uniprot_file
+    if local_uniprot_file is not None:
+        if args.format != 'stockholm':
+            log.error('Can only use local UniProt with Stockholm alignments that have AC annotations.')
+            raise TypeError
+        log.info('Indexing local UniProt database: {}'.format(local_uniprot_path))
+        local_uniprot_index = SeqIO.index(local_uniprot_path, 'swiss')
+    else:
+        local_uniprot_index = None
 
     # Parse Pfam alignment
     log.info('Parsing PFAM: {}'.format(local_pfam))
