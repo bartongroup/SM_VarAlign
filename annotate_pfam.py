@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/sw/opt/python/2.7.3/bin/python
 
 import annotate_alignment
 import argparse
