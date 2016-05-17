@@ -59,7 +59,7 @@ if __name__ == '__main__':
 
     log.debug('Reading PFAM alignment ID.')
     alignment_name = alignment.annotations['GF']['AC'][0]  # This requires biopython patches #768 #769
-    alignment_name += local_pfam
+    alignment_name += '_' + local_pfam
     log.info('Found alignment: {}'.format(alignment_name))
 
     # Filter unwanted sequences
