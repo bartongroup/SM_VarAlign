@@ -116,6 +116,7 @@ def _fetch_variants(prots, downloads=None, save_name=None):
         # Write table to file
         concat_table.to_csv(table_file_name)
     else:
+        log.info('Re-loaded processed variant table from {}'.format(table_file_name))
         concat_table = pd.read_csv(table_file_name)
 
     # is_somatic = concat_table['variant_id'].apply(lambda x: x.startswith('COS'))  #TODO: include this?
