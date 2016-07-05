@@ -85,7 +85,7 @@ if __name__ == '__main__':
     pfam = AlignIO.parse(local_pfam, 'stockholm')
 
     # Identify array number and lookup Pfam list for corresponding AC
-    job_number = int(os.environ.get('SGE_TASK_ID'))
+    job_number = int(os.getenv('SGE_TASK_ID', 1))
     log.info('Array job number: {}'.format(job_number))
     with open(family_id_list, 'r') as ids:
         for i in xrange(job_number):
