@@ -125,7 +125,7 @@ if __name__ == '__main__':
         is_empty_column.append(all([x == '-' for x in family[:, column]]))
     orig_col_nums = [ind + 1 for ind, x in enumerate(is_empty_column) if not x]
     masked_alignment = apply_column_mask(family, is_empty_column)
-    masked_fasta = family_name + '_filtered_rmc.fa'
+    masked_fasta = family_name + '_filtered_no_empty.fa'
     log.info('Writing masked alignment to {}'.format(masked_fasta))
     with open(masked_fasta, 'wb') as output:
         AlignIO.write(masked_alignment, output, 'fasta')
@@ -136,7 +136,7 @@ if __name__ == '__main__':
     jabaws_server = args.jabaws_server
     AACons_presets = args.aacons_preset
     fasta_file = masked_fasta
-    scores_out = 'alignment_name_jabaws_scores.txt'
+    scores_out = family_name + '_jabaws_scores.txt'
     jabaws_cmd = ['java', '-jar', jabaws_jar,
                   '-h={}'.format(jabaws_server),
                   '-s=AAConWS',
