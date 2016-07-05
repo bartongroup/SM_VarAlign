@@ -10,8 +10,7 @@ import pandas as pd
 
 log = logging.getLogger(__name__)
 logging.captureWarnings(True)
-logging.basicConfig(level=9,
-                    format='%(asctime)s - %(levelname)s - %(message)s ')
+logging.basicConfig(level='INFO', format='%(asctime)s - %(levelname)s - %(message)s ')
 
 def apply_column_mask(alignment, column_mask):
     """
