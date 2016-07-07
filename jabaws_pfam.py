@@ -1,6 +1,7 @@
 import argparse
 from Bio import AlignIO, SeqIO  # Needs PR #768 #769 patched
 import logging
+import pfam_index
 from config import defaults
 from utils import filter_alignment
 from itertools import groupby, tee, izip
@@ -79,10 +80,6 @@ if __name__ == '__main__':
     seq_id_filter = args.seq_id_filter
     family_id_list = args.families
 
-    # Parse Pfam family
-    log.info('Parsing PFAM: {}'.format(local_pfam))
-    pfam = AlignIO.parse(local_pfam, 'stockholm')
-
     # Identify array number and lookup Pfam list for corresponding AC
     job_number = int(os.getenv('SGE_TASK_ID', 1))
     log.info('Array job number: {}'.format(job_number))
@@ -91,18 +88,20 @@ if __name__ == '__main__':
             desired_family = ids.readline().strip()
     log.info('Searching Pfam for family: {}'.format(desired_family))
 
-    # Iterate through Pfam until found desired family, and exit if out-of-range
-    log.info('Iterating through Pfam generator...')
-    for family in pfam:
-        try:
-            family = pfam.next()
-            family_name = family.annotations['GF']['AC'][0]  # This requires biopython patches #768 #769
-            log.debug('Read family {}...'.format(family_name))
-            if family_name.startswith(desired_family):
-                break
-        except StopIteration:
-            log.error('PFAM index out-of-range: could not find {} in {}.'.format(desired_family, local_pfam))
-            raise SystemExit
+    # Find family with Pfam index
+    index_path = local_pfam + '.idx'
+    if not os.path.isfile(index_path):
+        log.error('Pfam index file not found')
+        raise SystemExit
+
+    start = pfam_index.lookup_index(index_path, desired_family)
+    if start is None:
+        log.error('Pfam {} could not be found in the index'.format(desired_family))
+        raise SystemExit
+    family = pfam_index.read_family(local_pfam, start)
+    family_name = family.annotations['GF']['AC'][0]  # This requires biopython patches #768 #769
+    log.debug('Read family {}...'.format(family_name))
+
 
     # Store full family name
     log.info('Found family: {}'.format(family_name))
