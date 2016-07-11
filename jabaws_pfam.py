@@ -108,8 +108,8 @@ if __name__ == '__main__':
     family_name += '_' + os.path.basename(local_pfam)
 
     # Filter unwanted sequences
-    log.info('Filtering family for sequences without "{}"'.format(seq_id_filter))
-    if seq_id_filter:
+    if seq_id_filter is not None:
+        log.info('Filtering family for sequences without "{}"'.format(seq_id_filter))
         family = filter_alignment(family, seq_id_filter)
         if len(family) == 0:
             log.warning('No sequences passed filter. Exiting.')
