@@ -1,9 +1,10 @@
 import argparse
 from Bio import AlignIO, SeqIO  # Needs PR #768 #769 patched
+from Bio.Alphabet import IUPAC
 import logging
 import pfam_index
 from config import defaults
-from utils import filter_alignment
+from utils import filter_alignment, sanitise_alignment
 from itertools import groupby, tee, izip
 import os
 from subprocess import call
@@ -115,14 +116,26 @@ if __name__ == '__main__':
             log.warning('No sequences passed filter. Exiting.')
             raise SystemExit
 
-    # Remove empty columns from family and write
-    # Identify empty columns
-    log.info('Removing empty columns...')
+    # TODO: Alternatively could sanitise the sequences completely
+    # Some sanitisation is unambiguous
+    log.info('Sanitising columns...')
+    family = sanitise_alignment(family)
+
+    # Remove empty columns and those with unknown characters
+    log.info('Removing empty and unrecognised columns...')
+    allowed_chars = IUPAC.IUPACProtein.letters + '-'
     is_empty_column = []
+    contains_unk_chars = []
     for column in range(family.get_alignment_length()):
         is_empty_column.append(all([x == '-' for x in family[:, column]]))
-    orig_col_nums = [ind + 1 for ind, x in enumerate(is_empty_column) if not x]
+        contains_unk_chars.append(any([x not in allowed_chars for x in family[:, column]]))
+    log.info('Removed empty columns: {}'.format(','.join([str(i + 1) for i, x in enumerate(is_empty_column) if x])))
+    log.info('Removed malformed columns: {}'.format(','.join([str(i + 1) for i, x in enumerate(contains_unk_chars) if x])))
+    column_mask = [x | y for x, y in zip(is_empty_column, contains_unk_chars)]
+    orig_col_nums = [ind + 1 for ind, x in enumerate(column_mask) if not x]
     masked_alignment = apply_column_mask(family, is_empty_column)
+
+    # Write
     masked_fasta = family_name + '_filtered_no_empty.fa'
     log.info('Writing masked alignment to {}'.format(masked_fasta))
     with open(masked_fasta, 'wb') as output:

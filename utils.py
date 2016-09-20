@@ -5,6 +5,8 @@ import re
 import urllib2
 import requests
 from Bio.Align import MultipleSeqAlignment
+from Bio.Seq import Seq
+from Bio.Alphabet import IUPAC
 
 from retry import retry
 import logging
@@ -86,6 +88,54 @@ def filter_alignment(alignment, seq_id_filter):
     filtered_alignment = MultipleSeqAlignment(passing_seqs)
     filtered_alignment.annotations = alignment.annotations
     return filtered_alignment
+
+
+def sanitise_alignment(alignment):
+    """
+
+    :param alignment:
+    :return:
+    """
+    modified = {'lowercase': [], 'X': [], '.': [], 'Z': [], 'B': []}
+    for seqrec in alignment:
+        # Letter annotations have to be put aside before seq is mutated
+        annots = seqrec.letter_annotations
+        seqrec.letter_annotations = {}
+
+        # Mark problem residues for the log
+        modified['lowercase'].extend([str(i) for i, c in enumerate(str(seqrec.seq)) if c.islower()])
+        modified['X'].extend([str(i) for i, c in enumerate(str(seqrec.seq)) if c == 'X'])
+        modified['.'].extend([str(i) for i, c in enumerate(str(seqrec.seq)) if c == '.'])
+        modified['Z'].extend([str(i) for i, c in enumerate(str(seqrec.seq)) if c == 'Z'])
+        modified['B'].extend([str(i) for i, c in enumerate(str(seqrec.seq)) if c == 'B'])
+
+        # Sanitise seq string
+        new_seq_str = str(seqrec.seq).upper()
+        new_seq_str = new_seq_str.replace('X', 'G')  # Any AA
+        new_seq_str = new_seq_str.replace('Z', 'E')  # Glutamine or Glutamic acid
+        new_seq_str = new_seq_str.replace('B', 'D')  # Aspartic acid or Asparagine
+        new_seq_str = new_seq_str.replace('.', '-')
+
+        # Check if there's anything left weird
+        unk_chars = set(new_seq_str).difference(set(IUPAC.IUPACProtein.letters + '-'))
+        if unk_chars:
+            log.warning('Unrecognised characters ({}) remain in {}.'.format(''.join(unk_chars),
+                                                                            seqrec.id))
+
+        # Mutate seq
+        seqrec.seq = Seq(new_seq_str)
+
+        # Put back annotations
+        seqrec.letter_annotations = annots
+
+    # Log modified columns
+    log.info('Fixed columns with lowercase letters: {}'.format(','.join(set(modified['lowercase']))))
+    log.info('Replaced X with G in columns: {}'.format(','.join(set(modified['X']))))
+    log.info('Replaced . with - in columns: {}'.format(','.join(set(modified['.']))))
+    log.info('Replaced Z with E in columns: {}'.format(','.join(set(modified['Z']))))
+    log.info('Replaced B with D in columns: {}'.format(','.join(set(modified['B']))))
+
+    return alignment
 
 
 def is_missense_variant(variants):
