@@ -6,6 +6,7 @@ from config import defaults
 from utils import filter_alignment
 import os
 import pandas as pd
+import pfam_index
 
 
 log = logging.getLogger(__name__)
@@ -20,6 +21,7 @@ if __name__ == '__main__':
                         help='An inclusive filter to process only a subset of sequences.')
     parser.add_argument('--downloads', type=str, default=defaults.db_root,
                         help='A directory to store downloaded files.')
+    parser.add_argument('--families', type=str, help='Path to list of families.')
     args = parser.parse_args()
 
     # Arguments and parameters
@@ -28,6 +30,7 @@ if __name__ == '__main__':
     seq_id_filter = args.seq_id_filter
     use_local_alignment = False
     downloads = args.downloads
+    family_id_list = args.families
 
     # Initialise local UniProt if provided
     local_uniprot_file = args.local_uniprot_file
@@ -40,27 +43,31 @@ if __name__ == '__main__':
     else:
         local_uniprot_index = None
 
-    # Parse Pfam alignment
-    log.info('Parsing PFAM: {}'.format(local_pfam))
-    pfam = AlignIO.parse(local_pfam, 'stockholm')
-
-    # Identify array number
-    job_number = int(os.environ.get('SGE_TASK_ID'))
+    # Identify array number and lookup Pfam list for corresponding AC
+    job_number = int(os.getenv('SGE_TASK_ID', 1))
     log.info('Array job number: {}'.format(job_number))
+    with open(family_id_list, 'r') as ids:
+        for i in xrange(job_number):
+            desired_family = ids.readline().strip()
+    log.info('Searching Pfam for family: {}'.format(desired_family))
 
-    # Iterate correct number of times through Pfam, and exit if out-of-range
-    log.info('Iterating through PFAM generator.')
-    for i in xrange(job_number):
-        try:
-            alignment = pfam.next()
-        except StopIteration:
-            log.error('PFAM index out-of-range: less than {} alignments in PFAM file.'.format(job_number))
-            raise SystemExit
+    # Find family with Pfam index
+    index_path = local_pfam + '.idx'
+    if not os.path.isfile(index_path):
+        log.error('Pfam index file not found')
+        raise SystemExit
 
-    log.debug('Reading PFAM alignment ID.')
+    start = pfam_index.lookup_index(index_path, desired_family)
+    if start is None:
+        log.error('Pfam {} could not be found in the index'.format(desired_family))
+        raise SystemExit
+    alignment = pfam_index.read_family(local_pfam, start)
     alignment_name = alignment.annotations['GF']['AC'][0]  # This requires biopython patches #768 #769
-    alignment_name += '_' + local_pfam
-    log.info('Found alignment: {}'.format(alignment_name))
+    log.debug('Read family {}...'.format(alignment_name))
+
+    # Store full family name
+    log.info('Found family: {}'.format(alignment_name))
+    alignment_name += '_' + os.path.basename(local_pfam)
 
     # Filter unwanted sequences
     log.info('Filtering alignment for sequences without "{}"'.format(seq_id_filter))
