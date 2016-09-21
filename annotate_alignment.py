@@ -47,8 +47,12 @@ def main(alignment, alignment_name, use_local_alignment, local_uniprot_index, do
         columns = None
         residues = None
 
-        seq_name, uniprot_id, uniprot_seq = select_uniprot_sequence(UniProt_sequences_downloads, local_uniprot_index,
-                                                                    seq)
+        try:
+            seq_name, uniprot_id, uniprot_seq = select_uniprot_sequence(UniProt_sequences_downloads, local_uniprot_index,
+                                                                        seq)
+        except AttributeError:
+            log.warning('Error when retrieving sequence {}; it may be obsolete. Skipping.'.format(seq.id))
+            continue
 
         # Skip unknown sequences
         if uniprot_seq is None:
