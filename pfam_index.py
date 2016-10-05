@@ -20,7 +20,7 @@ def index_pfam(pfam_path):
             if line == '# STOCKHOLM 1.0\n':
                 alignment_starts.append(position)
             if line.startswith('#=GF AC'):
-                family_names.append(line.strip()[10:])  # [10:] strips field id
+                family_names.append(line.split()[-1].strip())
             position = pfam_file.tell()
 
     # Write the index
