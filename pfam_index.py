@@ -1,5 +1,6 @@
 from Bio import AlignIO
-import os
+import gzip
+import io
 import StringIO
 
 def index_pfam(pfam_path):
@@ -9,19 +10,27 @@ def index_pfam(pfam_path):
     :param pfam_path: Path to Pfam file.
     :return: None
     """
+    # Open file
+    if pfam_path.endswith('.gz'):
+        pfam_file = gzip.open(pfam_path, 'r')
+    else:
+        pfam_file = open(pfam_path, 'r')
+
     # Create the index
-    with open(pfam_path, 'r') as pfam_file:
-        position = 0
-        file_size = os.stat(pfam_path).st_size
-        alignment_starts = []
-        family_names = []
-        while position < file_size:
-            line = pfam_file.readline()
-            if line == '# STOCKHOLM 1.0\n':
-                alignment_starts.append(position)
-            if line.startswith('#=GF AC'):
-                family_names.append(line.split()[-1].strip())
-            position = pfam_file.tell()
+    position = 0
+    alignment_starts = []
+    family_names = []
+    while True:
+        line = pfam_file.readline()
+        if not line:
+            break
+        if line == '# STOCKHOLM 1.0\n':
+            alignment_starts.append(position)
+        if line.startswith('#=GF AC'):
+            family_names.append(line.split()[-1].strip())
+        position = pfam_file.tell()
+
+    pfam_file.close()
 
     # Write the index
     with open(pfam_path + '.idx', 'w') as index_file:
@@ -57,13 +66,20 @@ def read_family(pfam_path, start):
     :param start: Byte offset of alignment start.
     :return: Biopython multiple alignment.
     """
-    with open(pfam_path, 'r') as pfam:
-        pfam.seek(start)
-        alignment_handle = StringIO.StringIO()
-        for line in pfam:
-            alignment_handle.write(line)
-            if line == '//\n':
-                break
+    # Open file
+    if pfam_path.endswith('.gz'):
+        pfam = gzip.open(pfam_path, 'r')
+    else:
+        pfam = open(pfam_path, 'r')
+
+    pfam.seek(start)
+    alignment_handle = StringIO.StringIO()
+    for line in pfam:
+        alignment_handle.write(line)
+        if line == '//\n':
+            break
+    pfam.close()
+
     alignment_handle.seek(0)
     alignment = AlignIO.read(alignment_handle, 'stockholm')
     alignment_handle.close()
