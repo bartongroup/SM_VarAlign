@@ -15,7 +15,7 @@ import sys
 sys.path.extend(['/Users/smacgowan/PycharmProjects/ProteoFAV'])
 from proteofav.structures import sifts_best
 from annotate_alignment import parse_seq_name
-from utils import query_uniprot
+from utils import query_uniprot, parse_seq_name
 import os
 import re
 import logging
@@ -28,6 +28,21 @@ class alpha_select(ChainSelector):
     def accept_atom(self, atom):
         name = atom.get_id()
         if name == 'CA':
+            return 1
+        else:
+            return 0
+
+
+class in_range_or_zinc(ChainSelector):
+    def __init__(self, residue_range, *args):
+        super(ChainSelector,self).__init__(*args)
+        self.residue_range = residue_range
+    def accept_atom(self, atom, residue_range):
+        name = atom.get_id()
+        resid = atom.get_parent().get_id()[1]
+        atom_chain_id = atom.get_parent().get_parent().get_id()
+        if name.lower() == 'zn' or \
+                (resid in residue_range and atom_chain_id in chain_id):
             return 1
         else:
             return 0
@@ -134,10 +149,11 @@ def main(args):
             os.makedirs(output_dir)
         filename = os.path.join(output_dir, '_'.join([seq_name, structure.get_id(), chain_id, str(start) + '-' + str(end)]) + '.pdb')
         #extract(structure, chain_id, start, end, filename)
-        sel = alpha_select(chain_id, start, end)
-        io = PDBIO()
-        io.set_structure(structure)
-        io.save(filename, sel)
+        #sel = alpha_select(chain_id, start, end)
+        sel = in_range_or_zinc(chain_id=chain_id, residue_range=range(start, end + 1))
+        # io = PDBIO()
+        # io.set_structure(structure)
+        # io.save(filename, sel)
 
         output_pdb_files.append(filename)
         log.info('Successfully matched {} to {}.'.format(seq_name, pdb_id))
@@ -151,7 +167,7 @@ def main(args):
                           'REMARK       consecutevely)\n'
                           'REMARK   (3) each structure must be separated by "TER"\n'
                           'REMARK   (4) 20 residues or more.\n'
-                          'REMARK')
+                          'REMARK\n')
         mammoth_file.write(mammoth_header)
     with open('MAMMOTH_input.pdb', 'a') as mammoth_file:
         for pdb_file_path in output_pdb_files:
