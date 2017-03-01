@@ -75,20 +75,16 @@ def get_uniprot_fasta(uniprot_id):
         handle = open(local_path, 'r')
         return SeqIO.read(handle, "fasta")
     else:
-        # Unrevised sequences don't allow version number
+        # Format URL for sequence version retrieval
         if _has_version(uniprot_id):
-            version = _get_version(uniprot_id)
-            if version == '1':
-                current_version = _get_latest_revision_number(uniprot_id)
-                if current_version == 1:
-                    uniprot_id = _strip_version(uniprot_id)
-            else:
-                uniprot_id = _strip_version(uniprot_id)
-                history = _get_entry_history(uniprot_id)
-                matches = history['Sequence version'] == int(version)
-                most_recent = history[matches]['Entry version'].max()
-                uniprot_id = _strip_version(uniprot_id) + '.' + str(most_recent)
-
-        url = defaults.api_uniprot + uniprot_id + '.fasta'
+            sequence_version = _get_version(uniprot_id)
+            uniprot_id = _strip_version(uniprot_id)
+            # Match required sequence version to latest entry version that is equivalent
+            history = _get_entry_history(uniprot_id)
+            matches = history['Sequence version'] == int(sequence_version)
+            matched_entry_version = history[matches]['Entry version'].max()
+            url = defaults.api_uniprot + uniprot_id + '.fasta' + '?version=' + str(matched_entry_version)
+        else:
+            url = defaults.api_uniprot + uniprot_id + '.fasta'
         handle = urlopen_with_retry(url)
         return SeqIO.read(handle, "fasta")
