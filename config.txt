@@ -9,6 +9,9 @@ db_germline_variants = ...
 db_somatic_variants = ...
 db_root = /Users/smacgowan/Downloads
 
+[Downloads]
+uniprot_cache = /Users/smacgowan/Downloads
+
 [Addresses]
 api_pdbe = http://www.ebi.ac.uk/pdbe/api/
 api_rcsb = http://www.rcsb.org/pdb/rest/
