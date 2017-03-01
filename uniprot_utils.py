@@ -2,10 +2,12 @@ from Bio import SeqIO
 from config import defaults
 import pandas as pd
 import io
+import logging
 import os
 import requests
 from utils import urlopen_with_retry
 
+log = logging.getLogger(__name__)
 
 def _has_version(uniprot_id):
     """
@@ -72,6 +74,7 @@ def get_uniprot_fasta(uniprot_id):
     local_path = os.path.join(defaults.uniprot_cache, 'sequences', uniprot_id + '.fasta')
     if os.path.isfile(local_path):
         # Reload from cache
+        log.info('Loading {}...'.format(local_path))
         handle = open(local_path, 'r')
         return SeqIO.read(handle, "fasta")
     else:
@@ -87,4 +90,9 @@ def get_uniprot_fasta(uniprot_id):
         else:
             url = defaults.api_uniprot + uniprot_id + '.fasta'
         handle = urlopen_with_retry(url)
-        return SeqIO.read(handle, "fasta")
+        sequence = SeqIO.read(handle, "fasta")
+        # Write to cache
+        if not os.path.exists(os.path.dirname(local_path)):
+            os.makedirs(os.path.dirname(local_path))
+        SeqIO.write(sequence, local_path, "fasta")
+        return sequence
