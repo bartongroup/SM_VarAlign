@@ -8,6 +8,10 @@ import logging
 import sys
 
 
+log = logging.getLogger(__name__)
+log.setLevel('INFO')
+
+
 def _fetch_variants_for_uniprot(uniprot):
     """
     Retrieve variants from Gnomad given a UniProt ID.
@@ -19,6 +23,7 @@ def _fetch_variants_for_uniprot(uniprot):
     ensembl_gene = ensembl.get_xrefs(uniprot, features='gene')
     assert(len(ensembl_gene) == 1)  ## Check for unique mapping
     ensembl_range = ensembl.get_genomic_range(ensembl_gene[0])
+    log.info('Mapped {} to {} on chr: {}, {}-{}'.format(uniprot, ensembl_gene, *ensembl_range))
     # Lookup variants and parse VEP annotation
     variants = [x for x in gnomad.gnomad.fetch(*ensembl_range)]
     veps = [gnomad.get_vep_raw(x) for x in variants]
