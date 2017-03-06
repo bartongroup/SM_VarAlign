@@ -6,7 +6,7 @@ from config import defaults
 from utils import filter_alignment
 import os
 import pandas as pd
-import pfam_index
+import pfam
 
 
 log = logging.getLogger(__name__)
@@ -57,11 +57,11 @@ if __name__ == '__main__':
         log.error('Pfam index file not found')
         raise SystemExit
 
-    start = pfam_index.lookup_index(index_path, desired_family)
+    start = pfam.lookup_index(index_path, desired_family)
     if start is None:
         log.error('Pfam {} could not be found in the index'.format(desired_family))
         raise SystemExit
-    alignment = pfam_index.read_family(local_pfam, start)
+    alignment = pfam.read_family(local_pfam, start)
     alignment_name = alignment.annotations['GF']['AC'][0]  # This requires biopython patches #768 #769
     log.debug('Read family {}...'.format(alignment_name))
 

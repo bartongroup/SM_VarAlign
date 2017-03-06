@@ -2,7 +2,7 @@ import argparse
 from Bio import AlignIO, SeqIO  # Needs PR #768 #769 patched
 from Bio.Alphabet import IUPAC
 import logging
-import pfam_index
+import pfam
 from config import defaults
 from utils import filter_alignment, sanitise_alignment
 from itertools import groupby, tee, izip
@@ -95,11 +95,11 @@ if __name__ == '__main__':
         log.error('Pfam index file not found')
         raise SystemExit
 
-    start = pfam_index.lookup_index(index_path, desired_family)
+    start = pfam.lookup_index(index_path, desired_family)
     if start is None:
         log.error('Pfam {} could not be found in the index'.format(desired_family))
         raise SystemExit
-    family = pfam_index.read_family(local_pfam, start)
+    family = pfam.read_family(local_pfam, start)
     family_name = family.annotations['GF']['AC'][0]  # This requires biopython patches #768 #769
     log.debug('Read family {}...'.format(family_name))
 
