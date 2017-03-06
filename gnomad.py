@@ -1,11 +1,9 @@
-import os
+from config import defaults
 import pandas as pd
 import vcf
 
 
-gnomad_path = os.path.join('/homes/smacgowan/NOBACK/resources/gnomad',
-                           'gnomad.exomes.r2.0.1.sites.vcf.gz')
-gnomad = vcf.Reader(filename=gnomad_path)
+gnomad = vcf.Reader(filename=defaults.gnomad)
 
 CSQ_Format = gnomad.infos['CSQ'].desc.split(' Format: ')[1].split('|')
 
