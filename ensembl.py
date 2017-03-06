@@ -1,14 +1,15 @@
+from config import defaults
 import requests
 
 
-default_server = "http://grch37.rest.ensembl.org"
+default_server = defaults.api_ensembl
 
 
 def get_xrefs(query_id, species = 'homo_sapiens',
               features = ('gene', 'transcript', 'translation'),
               server = default_server):
     """
-    Loopup EnsEMBL xrefs for an external ID and get feature IDs.
+    Lookup EnsEMBL xrefs for an external ID and get feature IDs.
     """
     endpoint = "/xrefs/symbol"
     ext = '/'.join([endpoint, species, query_id]) + "?"
