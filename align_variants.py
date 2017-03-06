@@ -1,10 +1,33 @@
 import argparse
+import alignments
 from Bio import AlignIO, SeqIO
+import ensembl
+import gnomad
+import itertools
 import logging
 import sys
 
-sys.path.insert(0, '/homes/smacgowan/lib/python/TBB_ProteoFAV')
-import proteofav
+
+def _fetch_variants_for_uniprot(uniprot):
+    """
+    Retrieve variants from Gnomad given a UniProt ID.
+
+    :param sequence:
+    :return:
+    """
+    # Map UniProt to human genome
+    ensembl_gene = ensembl.get_xrefs(uniprot, features='gene')
+    assert(len(ensembl_gene) == 1)  ## Check for unique mapping
+    ensembl_range = ensembl.get_genomic_range(ensembl_gene[0])
+    # Lookup variants and parse VEP annotation
+    variants = [x for x in gnomad.gnomad.fetch(*ensembl_range)]
+    veps = [gnomad.get_vep_raw(x) for x in variants]
+    # filter variants on VEP
+    swissprot_index = gnomad.CSQ_Format.index('SWISSPROT')  ## TODO: Should check TREMBL as well (option?)
+    mask = [uniprot in zip(*x)[swissprot_index] for x in veps]
+    variants = [x for x, relevant in zip(variants, mask) if relevant]
+    return variants
+
 
 
 if __name__ == '__main__':
