@@ -5,6 +5,8 @@ import ensembl
 import gnomad
 import itertools
 import logging
+from operator import itemgetter
+import pandas as pd
 import sys
 
 
@@ -12,7 +14,7 @@ log = logging.getLogger(__name__)
 log.setLevel('INFO')
 
 
-def _fetch_variants_for_uniprot(uniprot):
+def _fetch_variants_for_uniprot(uniprot, canonical=True, consequences=('missense_variant', 'synonymous_variant')):
     """
     Retrieve variants from Gnomad given a UniProt ID.
 
@@ -27,11 +29,16 @@ def _fetch_variants_for_uniprot(uniprot):
     # Lookup variants and parse VEP annotation
     variants = [x for x in gnomad.gnomad.fetch(*ensembl_range)]
     veps = [gnomad.get_vep_raw(x) for x in variants]
+    variant_indices = [i for i, x in enumerate(veps) for _ in x]  # index each vep entry to the variant record
+    vep_table = pd.DataFrame(list(itertools.chain.from_iterable(veps)),
+                             columns=gnomad.CSQ_Format, index=variant_indices)
     # filter variants on VEP
-    swissprot_index = gnomad.CSQ_Format.index('SWISSPROT')  ## TODO: Should check TREMBL as well (option?)
-    mask = [uniprot in zip(*x)[swissprot_index] for x in veps]
-    variants = [x for x, relevant in zip(variants, mask) if relevant]
-    return variants
+    query = 'SWISSPROT == @uniprot & Consequence in @consequences'
+    if canonical:
+        query += ' & CANONICAL == "YES"'
+    vep_table.query(query, inplace=True)
+    variants = itemgetter(*vep_table.index)(variants)
+    return variants, vep_table
 
 
 
