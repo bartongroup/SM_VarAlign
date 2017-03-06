@@ -1,5 +1,6 @@
 from config import defaults
 import requests
+import sys
 
 
 default_server = defaults.api_ensembl
@@ -13,7 +14,7 @@ def get_xrefs(query_id, species = 'homo_sapiens',
     """
     endpoint = "/xrefs/symbol"
     ext = '/'.join([endpoint, species, query_id]) + "?"
-    r = requests.get(server+ext, headers={ "Content-Type" : "application/json"})
+    r = requests.get(server+ext, headers={"Content-Type": "application/json"})
 
     if not r.ok:
       r.raise_for_status()

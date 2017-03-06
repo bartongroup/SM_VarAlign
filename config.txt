@@ -8,7 +8,7 @@ db_validation = ...
 db_germline_variants = ...
 db_somatic_variants = ...
 db_root = /Users/smacgowan/Downloads
-gnomad = /homes/smacgowan/NOBACK/resources/gnomad/gnomad.exomes.r2.0.1.sites.vcf.gz
+gnomad = /Volumes/smacgowan/NOBACK/resources/gnomad/gnomad.exomes.r2.0.1.sites.vcf.gz
 
 [Downloads]
 uniprot_cache = /Users/smacgowan/Downloads
@@ -18,7 +18,7 @@ api_pdbe = http://www.ebi.ac.uk/pdbe/api/
 api_rcsb = http://www.rcsb.org/pdb/rest/
 api_uniprot = http://www.uniprot.org/uniprot/
 #api_ensembl = http://rest.ensembl.org/
-api_ensembl = "http://grch37.rest.ensembl.org"
+api_ensembl = http://grch37.rest.ensembl.org
 api_icgc = https://dcc.icgc.org/api/v1/genes/
 
 cif_fetch = http://www.ebi.ac.uk/pdbe/entry-files/
