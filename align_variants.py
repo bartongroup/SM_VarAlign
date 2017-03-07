@@ -1,14 +1,10 @@
 import argparse
-import alignments
-from Bio import AlignIO, SeqIO
-import ensembl
-import gnomad
-import itertools
 import logging
 from operator import itemgetter
-import pandas as pd
-import sys
 
+import ensembl
+import gnomad
+from gnomad import tabulate_variant_effects
 
 log = logging.getLogger(__name__)
 log.setLevel('INFO')
@@ -29,10 +25,7 @@ def _fetch_variants_for_uniprot(uniprot, canonical=True, consequences=('missense
     # Lookup variants and parse VEP annotation
     log.info('Retrieving variants...')
     variants = [x for x in gnomad.gnomad.fetch(*ensembl_range)]  # TODO: Add progress bar?
-    veps = [gnomad.get_vep_raw(x) for x in variants]
-    variant_indices = [i for i, x in enumerate(veps) for _ in x]  # index each vep entry to the variant record
-    vep_table = pd.DataFrame(list(itertools.chain.from_iterable(veps)),
-                             columns=gnomad.CSQ_Format, index=variant_indices)
+    vep_table = tabulate_variant_effects(variants)
     log.info('Found {} variants.'.format(len(variants)))
     # filter variants on VEP
     query = 'SWISSPROT == @uniprot & Consequence in @consequences'
@@ -44,7 +37,6 @@ def _fetch_variants_for_uniprot(uniprot, canonical=True, consequences=('missense
     assert len(variants) == len(vep_table)
     log.info('Returning {} variants after filtering.'.format(len(variants)))
     return variants, vep_table
-
 
 
 if __name__ == '__main__':
