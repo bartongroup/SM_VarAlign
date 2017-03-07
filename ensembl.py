@@ -29,7 +29,7 @@ def get_genomic_range(query_id, server=default_server):
     """
     endpoint = '/lookup/id'
     ext = '/'.join([endpoint, query_id]) + "?"
-    r = requests.get(server + ext, headers={"Content-Type": "application/json"})
+    r = requests.get(server+ext, headers={"Content-Type": "application/json"})
 
     if not r.ok:
         r.raise_for_status()
