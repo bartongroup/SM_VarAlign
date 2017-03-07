@@ -32,12 +32,14 @@ def _fetch_variants_for_uniprot(uniprot, canonical=True, consequences=('missense
     variant_indices = [i for i, x in enumerate(veps) for _ in x]  # index each vep entry to the variant record
     vep_table = pd.DataFrame(list(itertools.chain.from_iterable(veps)),
                              columns=gnomad.CSQ_Format, index=variant_indices)
+    log.info('Found {} variants.'.format(len(variants)))
     # filter variants on VEP
     query = 'SWISSPROT == @uniprot & Consequence in @consequences'
     if canonical:
         query += ' & CANONICAL == "YES"'
     vep_table.query(query, inplace=True)
     variants = itemgetter(*vep_table.index)(variants)
+    log.info('Returning {} variants after filtering.'.format(len(variants)))
     return variants, vep_table
 
 

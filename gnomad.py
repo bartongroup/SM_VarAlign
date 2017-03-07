@@ -1,8 +1,13 @@
 from config import defaults
+import logging
 import pandas as pd
-import vcf
+import vcf  ## Requires pysam functionality
 
 
+log = logging.getLogger(__name__)
+
+
+log.info('Loading %s...', defaults.gnomad)
 gnomad = vcf.Reader(filename=defaults.gnomad)
 
 CSQ_Format = gnomad.infos['CSQ'].desc.split(' Format: ')[1].split('|')
