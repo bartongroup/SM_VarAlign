@@ -40,6 +40,8 @@ def _fetch_variants_for_uniprot(uniprot, canonical=True, consequences=('missense
         query += ' & CANONICAL == "YES"'
     vep_table.query(query, inplace=True)
     variants = itemgetter(*vep_table.index)(variants)
+    vep_table.reset_index(drop=True, inplace=True)  # Reset index to match filtered variant list
+    assert len(variants) == len(vep_table)
     log.info('Returning {} variants after filtering.'.format(len(variants)))
     return variants, vep_table
 
