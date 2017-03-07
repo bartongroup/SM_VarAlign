@@ -27,7 +27,8 @@ def _fetch_variants_for_uniprot(uniprot, canonical=True, consequences=('missense
     ensembl_range = ensembl.get_genomic_range(ensembl_gene[0])
     log.info('Mapped {} to {} on chr: {}, {}-{}'.format(uniprot, ensembl_gene, *ensembl_range))
     # Lookup variants and parse VEP annotation
-    variants = [x for x in gnomad.gnomad.fetch(*ensembl_range)]
+    log.info('Retrieving variants...')
+    variants = [x for x in gnomad.gnomad.fetch(*ensembl_range)]  # TODO: Add progress bar?
     veps = [gnomad.get_vep_raw(x) for x in variants]
     variant_indices = [i for i, x in enumerate(veps) for _ in x]  # index each vep entry to the variant record
     vep_table = pd.DataFrame(list(itertools.chain.from_iterable(veps)),
