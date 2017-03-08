@@ -24,6 +24,7 @@ def _fetch_variants_for_uniprot(uniprot, canonical=True, consequences=('missense
     ensembl_ranges = [ensembl.get_genomic_range(x) for x in ensembl_genes]
     for i in range(len(ensembl_genes)):
         log.info('Mapped {} to {} on chr: {}, {}-{}'.format(uniprot, ensembl_genes[i], *ensembl_ranges[i]))
+    # Identify and remove non-standard sequence regions
     non_standard_ranges = [i for i, x in enumerate(ensembl_ranges) if x[0] not in ensembl.standard_regions]
     if len(non_standard_ranges) > 0:
         non_standard_ranges.sort(reverse=True)
@@ -35,9 +36,8 @@ def _fetch_variants_for_uniprot(uniprot, canonical=True, consequences=('missense
 
     # Lookup variants
     log.info('Retrieving variants...')
-    if len(ensembl_ranges) > 1:
-        log.warning('Using only first genomic mapping for variant lookup.')
-    variants = [x for x in gnomad.gnomad.fetch(*ensembl_ranges[0])]  # TODO: Add progress bar?
+    lookup_ranges = ensembl.merge_ranges(ensembl_ranges, min_gap=1000)
+    variants = [x for _range in lookup_ranges for x in gnomad.gnomad.fetch(*_range)]  # TODO: Add progress bar?
     log.info('Found {} variants.'.format(len(variants)))
 
     # filter variants on VEP
