@@ -23,7 +23,9 @@ def _fetch_variants_for_uniprot(uniprot, canonical=True, consequences=('missense
     assert(len(ensembl_genes) >= 1)  # Check for at least one mapping
     ensembl_ranges = [ensembl.get_genomic_range(x) for x in ensembl_genes]
     log.info('Mapped {} to {} on chr: {}, {}-{}'.format(uniprot, ensembl_genes, *ensembl_ranges))
+    ensembl_ranges = [x for x in ensembl_ranges if x[0] in ensembl.standard_regions]
     assert len(ensembl_ranges) >= 1
+    log.info('Filtered ranges: %s', ensembl_ranges)
 
     # Lookup variants
     log.info('Retrieving variants...')

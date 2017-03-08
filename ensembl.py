@@ -5,6 +5,10 @@ import sys
 
 default_server = defaults.api_ensembl
 
+standard_regions = ('1', '2', '3', '4', '5', '6', '7', '8', '9', '10',
+                    '11', '12', '13', '14', '15', '16', '17', '18', '19', '20',
+                    '21', '22', 'X', 'Y')
+
 
 def get_xrefs(query_id, species = 'homo_sapiens',
               features = ('gene', 'transcript', 'translation'),
