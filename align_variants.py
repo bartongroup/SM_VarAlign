@@ -19,19 +19,23 @@ def _fetch_variants_for_uniprot(uniprot, canonical=True, consequences=('missense
     :return:
     """
     # Map UniProt to human genome
-    ensembl_gene = ensembl.get_xrefs(uniprot, features='gene')
-    assert(len(ensembl_gene) == 1)  ## Check for unique mapping
-    ensembl_range = ensembl.get_genomic_range(ensembl_gene[0])
-    log.info('Mapped {} to {} on chr: {}, {}-{}'.format(uniprot, ensembl_gene, *ensembl_range))
+    ensembl_genes = ensembl.get_xrefs(uniprot, features='gene')
+    assert(len(ensembl_genes) >= 1)  # Check for at least one mapping
+    ensembl_ranges = [ensembl.get_genomic_range(x) for x in ensembl_genes]
+    log.info('Mapped {} to {} on chr: {}, {}-{}'.format(uniprot, ensembl_genes, *ensembl_ranges))
+    assert len(ensembl_ranges) >= 1
 
-    # Lookup variants and parse VEP annotation
+    # Lookup variants
     log.info('Retrieving variants...')
-    variants = [x for x in gnomad.gnomad.fetch(*ensembl_range)]  # TODO: Add progress bar?
+    if len(ensembl_ranges) > 1:
+        log.warning('Using only first genomic mapping for variant lookup.')
+    variants = [x for x in gnomad.gnomad.fetch(*ensembl_ranges[0])]  # TODO: Add progress bar?
     log.info('Found {} variants.'.format(len(variants)))
 
     # filter variants on VEP
     vep_table = tabulate_variant_effects(variants)
     query = 'SWISSPROT == @uniprot & Consequence in @consequences'
+    # TODO: Refactor optional filter query to config?
     if canonical:
         query += ' & CANONICAL == "YES"'
     if only_snvs:
