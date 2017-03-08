@@ -10,9 +10,7 @@ standard_regions = ('1', '2', '3', '4', '5', '6', '7', '8', '9', '10',
                     '21', '22', 'X', 'Y')
 
 
-def get_xrefs(query_id, species = 'homo_sapiens',
-              features = ('gene', 'transcript', 'translation'),
-              server = default_server):
+def get_xrefs(query_id, species='homo_sapiens', features=('gene', 'transcript', 'translation'), server=default_server):
     """
     Lookup EnsEMBL xrefs for an external ID and get feature IDs.
     """
@@ -21,8 +19,8 @@ def get_xrefs(query_id, species = 'homo_sapiens',
     r = requests.get(server+ext, headers={"Content-Type": "application/json"})
 
     if not r.ok:
-      r.raise_for_status()
-      sys.exit()
+        r.raise_for_status()
+        sys.exit()
 
     return [x['id'] for x in r.json() if x['type'] in features]
 
