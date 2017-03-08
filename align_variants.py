@@ -49,8 +49,11 @@ def _fetch_variants_for_uniprot(uniprot, canonical=True, consequences=('missense
     if only_snvs:
         query += ' & VARIANT_CLASS == "SNV"'
     vep_table.query(query, inplace=True)
-    assert not any(vep_table['Allele'].reset_index().duplicated())  # Assume this filter gives one effect per variant allele
-    variants = itemgetter(*vep_table.index)(variants)
+    if vep_table.empty:
+        raise ValueError('No variants pass filter.')
+    # Assume this filter gives one effect per variant allele
+    assert not any(vep_table['Allele'].reset_index().duplicated())
+    variants = itemgetter(*vep_table.index)(variants)  # Filter variant record by VEP filter
     vep_table.reset_index(drop=True, inplace=True)  # Reset index to match filtered variant list
     assert len(variants) == len(vep_table)
     log.info('Returning {} variants after filtering.'.format(len(variants)))
