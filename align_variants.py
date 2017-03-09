@@ -1,4 +1,5 @@
 import argparse
+from config import defaults
 import logging
 from operator import itemgetter
 
@@ -10,8 +11,18 @@ log = logging.getLogger(__name__)
 log.setLevel('INFO')
 
 
-def _fetch_variants_for_uniprot(uniprot, canonical=True, consequences=('missense_variant', 'synonymous_variant'),
-                                only_snvs=True):
+def _append_vep_filter(query='', canonical=True, consequences=defaults.consequences,
+                       additional_vep_filters=defaults.vep_filter):
+    if consequences != ['']:
+        query += '& Consequence in @consequences'
+    if canonical:
+        query += ' & CANONICAL == "YES"'
+    if additional_vep_filters != '':
+        query += '&'+additional_vep_filters
+    return query
+
+
+def _fetch_variants_for_uniprot(uniprot):
     """
     Retrieve variants from Gnomad given a UniProt ID.
 
@@ -42,12 +53,9 @@ def _fetch_variants_for_uniprot(uniprot, canonical=True, consequences=('missense
 
     # filter variants on VEP
     vep_table = tabulate_variant_effects(variants)
-    query = 'SWISSPROT == @uniprot & Consequence in @consequences'
-    # TODO: Refactor optional filter query to config?
-    if canonical:
-        query += ' & CANONICAL == "YES"'
-    if only_snvs:
-        query += ' & VARIANT_CLASS == "SNV"'
+    query = 'SWISSPROT == @uniprot'
+    query = _append_vep_filter(query)
+    log.info('Keeping variants where: %s', query)
     vep_table.query(query, inplace=True)
     if vep_table.empty:
         raise ValueError('No variants pass filter.')
