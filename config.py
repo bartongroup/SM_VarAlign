@@ -48,6 +48,11 @@ class Defaults(object):
             for var_name, var_par in self.__config.items(section):
                 if var_par == "...":
                     logger.warning("Update the config.txt file...")
+                # Format vep_filter for use in DataFrame queries
+                if var_name == "vep_filter":
+                    var_par = var_par.replace('\n', ' ')
+                if var_name == "consequences":
+                    var_par = var_par.split('\n')
                 setattr(self, var_name, var_par)
 
 defaults = Defaults()

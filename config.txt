@@ -8,7 +8,6 @@ db_validation = ...
 db_germline_variants = ...
 db_somatic_variants = ...
 db_root = /Users/smacgowan/Downloads
-gnomad = /Volumes/smacgowan/NOBACK/resources/gnomad/gnomad.exomes.r2.0.1.sites.vcf.gz
 
 [Downloads]
 uniprot_cache = /Users/smacgowan/Downloads
@@ -33,6 +32,18 @@ dssp_extension = .dssp
 sifts_extension = .xml.gz
 validation_extension = _validation.xml
 
+[Gnomad]
+gnomad = /Volumes/smacgowan/NOBACK/resources/gnomad/gnomad.exomes.r2.0.1.sites.vcf.gz
+#gnomad = /Users/smacgowan/Datasets/multisample_genotypes.recal_snp.vep.vcf.gz
+
+[VEP_Filter]
+# vep_filter is used to filter variant VEP tables via DataFrame.query
+vep_filter =
+    CANONICAL == "YES"
+    & VARIANT_CLASS == "SNV"
+consequences =
+    missense_variant
+    synonymous_variant
 
 # Not used at the moment
 #api_cath = http://www.cathdb.info/version/v4_0_0/api/rest/superfamily/
