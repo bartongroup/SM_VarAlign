@@ -71,8 +71,9 @@ def _fetch_variants_for_uniprot(uniprot):
     # Assume this filter gives one effect per variant allele
     assert not any(vep_table['Allele'].reset_index().duplicated())
     variants = itemgetter(*vep_table.index)(variants)  # Filter variant record by VEP filter
-    vep_table.reset_index(drop=True, inplace=True)  # Reset index to match filtered variant list
     assert len(variants) == len(vep_table)
+    vep_table.reset_index(drop=True, inplace=True)  # Reset index to match filtered variant list
+    variants = [gnomad.split_variant(variant, allele)[0] for variant, allele in zip(variants, vep_table.Allele)]
     log.info('Returning {} variants after filtering.'.format(len(variants)))
 
     return variants, vep_table
