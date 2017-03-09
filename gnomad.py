@@ -5,6 +5,7 @@ from copy import deepcopy
 import logging
 import pandas as pd
 import vcf  ## Requires pysam functionality
+from vcf.utils import trim_common_suffix
 
 
 log = logging.getLogger(__name__)
@@ -15,6 +16,9 @@ gnomad = vcf.Reader(filename=defaults.gnomad)
 
 # Parse VEP annotation format
 CSQ_Format = gnomad.infos['CSQ'].desc.split(' Format: ')[1].split('|')
+
+# Annotations that need special handling during variant allele expansion
+special_handling = {'INFO': ['AS_RF_POSITIVE_TRAIN', 'CSQ']}
 
 
 def get_vep_annotation(record, fields=CSQ_Format):
@@ -50,7 +54,7 @@ def tabulate_variant_effects(variants):
     return vep_table
 
 
-def split_variant(variant, alleles=[], exclude=('CSQ',)):
+def split_variant(variant, alleles=[], exclude=special_handling['INFO']):
     """
     Split a multiallelic variant.
 
@@ -76,7 +80,13 @@ def split_variant(variant, alleles=[], exclude=('CSQ',)):
         if isinstance(alleles, int):
             pass
         if isinstance(alleles[0], str):  # Will work with single string or list
-            alleles = [variant.ALT.index(x) for x in alleles]
+            try:
+                alleles = [variant.ALT.index(x) for x in alleles]
+            except ValueError:
+                # Happens when VEP allele doesn't match variant
+                # Could occur because a multiallelic site contains an indel, MNP, and/or a SNP
+                trimmed_alts = [trim_common_suffix(str(x), variant.REF)[0] for x in variant.ALT]
+                alleles = [trimmed_alts.index(x) for x in alleles]
 
     # Extract desired alleles
     allelic_records = []
