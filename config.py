@@ -49,7 +49,7 @@ class Defaults(object):
                 if var_par == "...":
                     logger.warning("Update the config.txt file...")
                 # Format vep_filter for use in DataFrame queries
-                if var_name == "vep_filter":
+                if var_name == "additional":
                     var_par = var_par.replace('\n', ' ')
                 if var_name == "consequences":
                     var_par = var_par.split('\n')

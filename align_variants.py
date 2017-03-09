@@ -12,7 +12,7 @@ log.setLevel('INFO')
 
 
 def _build_vep_filter(canonical=eval(defaults.canonical), consequences=defaults.consequences,
-                      additional=defaults.vep_filter):
+                      additional=defaults.additional):
     """
     Build a VEP filter string suitable for DataFrame.query().
 
