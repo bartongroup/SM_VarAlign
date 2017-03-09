@@ -11,15 +11,24 @@ log = logging.getLogger(__name__)
 log.setLevel('INFO')
 
 
-def _append_vep_filter(query='', canonical=True, consequences=defaults.consequences,
-                       additional_vep_filters=defaults.vep_filter):
+def _build_vep_filter(canonical=eval(defaults.canonical), consequences=defaults.consequences,
+                      additional=defaults.vep_filter):
+    """
+    Build a VEP filter string suitable for DataFrame.query().
+
+    :param canonical:
+    :param consequences:
+    :param additional:
+    :return:
+    """
+    query = []
     if consequences != ['']:
-        query += '& Consequence in @consequences'
+        query.append('Consequence in {}'.format(consequences))
     if canonical:
-        query += ' & CANONICAL == "YES"'
-    if additional_vep_filters != '':
-        query += '&'+additional_vep_filters
-    return query
+        query.append('CANONICAL == "YES"')
+    if additional != '':
+        query.append(additional)
+    return ' & '.join(query)
 
 
 def _fetch_variants_for_uniprot(uniprot):
@@ -53,8 +62,8 @@ def _fetch_variants_for_uniprot(uniprot):
 
     # filter variants on VEP
     vep_table = tabulate_variant_effects(variants)
-    query = 'SWISSPROT == @uniprot'
-    query = _append_vep_filter(query)
+    query = 'SWISSPROT == "{}"'.format(uniprot)
+    query += ' & '+_build_vep_filter()
     log.info('Keeping variants where: %s', query)
     vep_table.query(query, inplace=True)
     if vep_table.empty:

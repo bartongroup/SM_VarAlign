@@ -38,9 +38,8 @@ gnomad = /Volumes/smacgowan/NOBACK/resources/gnomad/gnomad.exomes.r2.0.1.sites.v
 
 [VEP_Filter]
 # vep_filter is used to filter variant VEP tables via DataFrame.query
-vep_filter =
-    CANONICAL == "YES"
-    & VARIANT_CLASS == "SNV"
+canonical = True
+vep_filter = VARIANT_CLASS == "SNV"
 consequences =
     missense_variant
     synonymous_variant
