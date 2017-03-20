@@ -31,7 +31,7 @@ def _build_vep_filter(canonical=eval(defaults.canonical), consequences=defaults.
     return ' & '.join(query)
 
 
-def _fetch_variants_for_uniprot(uniprot):
+def _fetch_variants_for_uniprot(uniprot, filter_swissprot=True):
     """
     Retrieve variants from Gnomad given a UniProt ID.
 
@@ -58,12 +58,13 @@ def _fetch_variants_for_uniprot(uniprot):
     log.info('Retrieving variants...')
     lookup_ranges = ensembl.merge_ranges(ensembl_ranges, min_gap=1000)
     variants = [x for _range in lookup_ranges for x in gnomad.gnomad.fetch(*_range)]  # TODO: Add progress bar?
-    log.info('Found {} variants.'.format(len(variants)))
+    log.info('Found {} variant sites.'.format(len(variants)))
 
     # filter variants on VEP
     vep_table = tabulate_variant_effects(variants)
-    query = 'SWISSPROT == "{}"'.format(uniprot)
-    query += ' & '+_build_vep_filter()
+    query = _build_vep_filter()
+    if filter_swissprot:
+        query += ' & SWISSPROT == "{}"'.format(uniprot)
     log.info('Keeping variants where: %s', query)
     vep_table.query(query, inplace=True)
     if vep_table.empty:
