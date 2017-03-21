@@ -14,11 +14,35 @@ log = logging.getLogger(__name__)
 log.info('Loading %s...', defaults.gnomad)
 gnomad = vcf.Reader(filename=defaults.gnomad)
 
+for k, v in gnomad.metadata.items():
+    log.info('Metadata entry: {} = {}'.format(k, v))
+
 # Parse VEP annotation format
 CSQ_Format = gnomad.infos['CSQ'].desc.split(' Format: ')[1].split('|')
+log.info('CSQ Format: {}'.format(CSQ_Format))
+
+# Parse INFO header
+info_header = pd.DataFrame([v for k, v in gnomad.infos.items()], dtype='str')
+info_flag_num = 0
+info_value_num = 1
+info_allele_num = -1
+log.info('INFO flags: {}'.format(str(list(info_header.query('num == @info_flag_num').id))))
+log.info('INFO value: {}'.format(str(list(info_header.query('num == @info_value_num').id))))
+log.info('INFO per allele: {}'.format(str(list(info_header.query('num == @info_allele_num').id))))
 
 # Annotations that need special handling during variant allele expansion
-special_handling = {'INFO': ['AS_RF_POSITIVE_TRAIN', 'CSQ']}
+standard_num_values = [info_flag_num, info_value_num, info_allele_num]
+special_handling = {'INFO': list(info_header.query('num not in @standard_num_values').id)}
+msg = 'The following INFO fields cannot be resolved to a variant and will be stripped when melting variants: {}'
+log.info(msg.format(str(special_handling['INFO'])))
+
+# Parse FORMAT header
+format_header = pd.DataFrame([v for k, v in gnomad.formats.items()], dtype='str')
+log.info('FORMAT fields: {}'.format(str(list(format_header.id))))
+
+# Parse FILTER header
+filter_header = pd.DataFrame([v for k, v in gnomad.filters.items()], dtype='str')
+log.info('FILTER flags: {}'.format(str(list(filter_header.id))))
 
 
 def get_vep_annotation(record, fields=CSQ_Format):
