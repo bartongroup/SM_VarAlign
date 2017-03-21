@@ -10,12 +10,11 @@ from vcf.utils import trim_common_suffix
 
 log = logging.getLogger(__name__)
 
-
+# Load the VCF and log some key metadata
 log.info('Loading %s...', defaults.gnomad)
 gnomad = vcf.Reader(filename=defaults.gnomad)
-
-for k, v in gnomad.metadata.items():
-    log.info('Metadata entry: {} = {}'.format(k, v))
+log.info('File format: {}'.format(gnomad.metadata.get('fileformat')))
+log.info('Reference: {}'.format(gnomad.metadata.get('reference')))
 
 # Parse VEP annotation format
 CSQ_Format = gnomad.infos['CSQ'].desc.split(' Format: ')[1].split('|')
