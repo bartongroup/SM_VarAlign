@@ -170,6 +170,17 @@ def main(alignment, alignment_name, use_local_alignment, local_uniprot_index, do
         except:
             log.warning('Could not write pathogenic variants as features (possibly there are none).')
 
+    # Label all variants with sequence features
+    missense_tables = mapped_variants[is_missense].groupby('seq_id')
+    missense_features_file = alignment_name + '_missense_features.txt'
+    create_jalview_feature_file({'missense_variant': 'blue'}, missense_features_file)
+    for seq_id, sub_table in missense_tables:
+        residue_indexes = list(sub_table['sequence_index'])
+        residue_indexes = [x - 1 + int(seq_id.split('/')[1].split('-')[0]) for x in residue_indexes]
+        variant_ids = list(sub_table['variant_id'])
+        append_jalview_variant_features(seq_id.split('/')[0], residue_indexes, variant_ids,
+                                        'missense_variant', missense_features_file)
+
     # TODO: %gap threshold? Where ignored columns given the worst value for jalview visualisation...
 
     # Calculate and write fisher test results to Jalview annotation file.
