@@ -35,28 +35,15 @@ def _fetch_variants_for_uniprot(uniprot, filter_swissprot=True):
     """
     Retrieve variants from Gnomad given a UniProt ID.
 
-    :param sequence:
+    :param uniprot:
+    :param filter_swissprot:
     :return:
     """
-    # Map UniProt to human genome
-    ensembl_genes = ensembl.get_xrefs(uniprot, features='gene')
-    assert(len(ensembl_genes) >= 1)  # Check for at least one mapping
-    ensembl_ranges = [ensembl.get_genomic_range(x) for x in ensembl_genes]
-    for i in range(len(ensembl_genes)):
-        log.info('Mapped {} to {} on chr: {}, {}-{}'.format(uniprot, ensembl_genes[i], *ensembl_ranges[i]))
-    # Identify and remove non-standard sequence regions
-    non_standard_ranges = [i for i, x in enumerate(ensembl_ranges) if x[0] not in ensembl.standard_regions]
-    if len(non_standard_ranges) > 0:
-        non_standard_ranges.sort(reverse=True)
-        [ensembl_genes.pop(i) for i in non_standard_ranges]
-        [ensembl_ranges.pop(i) for i in non_standard_ranges]
-        log.info('Removed %s non-standard sequence regions.', len(non_standard_ranges))
-    if len(ensembl_ranges) == 0:
-        raise ValueError('Could not map {} to the genome.'.format(uniprot))
+    # Map UniProt to genome
+    lookup_ranges = map_uniprot_to_genome(uniprot)
 
     # Lookup variants
     log.info('Retrieving variants...')
-    lookup_ranges = ensembl.merge_ranges(ensembl_ranges, min_gap=1000)
     variants = [x for _range in lookup_ranges for x in gnomad.gnomad.fetch(*_range)]  # TODO: Add progress bar?
     log.info('Found {} variant sites.'.format(len(variants)))
 
@@ -78,6 +65,36 @@ def _fetch_variants_for_uniprot(uniprot, filter_swissprot=True):
     log.info('Returning {} variants after filtering.'.format(len(variants)))
 
     return variants, vep_table
+
+
+def map_uniprot_to_genome(uniprot, collapse=True):
+    """
+    Map a UniProt entry to the genome.
+
+    :param uniprot:
+    :param collapse:
+    :return:
+    """
+    # Map to Gene IDs
+    ensembl_genes = ensembl.get_xrefs(uniprot, features='gene')  #TODO: This could be transcrpts or translations...
+    assert (len(ensembl_genes) >= 1)  # Check for at least one mapping
+    ensembl_ranges = [ensembl.get_genomic_range(x) for x in ensembl_genes]
+    for i in range(len(ensembl_genes)):
+        log.info('Mapped {} to {} on chr: {}, {}-{}'.format(uniprot, ensembl_genes[i], *ensembl_ranges[i]))
+    # Identify and remove non-standard sequence regions
+    non_standard_ranges = [i for i, x in enumerate(ensembl_ranges) if x[0] not in ensembl.standard_regions]
+    if len(non_standard_ranges) > 0:
+        non_standard_ranges.sort(reverse=True)
+        [ensembl_genes.pop(i) for i in non_standard_ranges]
+        [ensembl_ranges.pop(i) for i in non_standard_ranges]
+        log.info('Removed %s non-standard sequence regions.', len(non_standard_ranges))
+    # Check for no mapping
+    if len(ensembl_ranges) == 0:
+        raise ValueError('Could not map {} to the genome.'.format(uniprot))
+    # Collapse ranges if desired
+    if collapse:
+        ensembl_ranges = ensembl.merge_ranges(ensembl_ranges, min_gap=1000)
+    return ensembl_ranges
 
 
 if __name__ == '__main__':
