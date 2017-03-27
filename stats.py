@@ -1,6 +1,7 @@
 """
 This module contains functions that calculate column-wise statistics on aligned variant tables.
 """
+from collections import Counter
 import numpy as np
 import pandas as pd
 from scipy.stats import fisher_exact, linregress
@@ -8,6 +9,11 @@ from scipy.stats import fisher_exact, linregress
 import logging
 
 log = logging.getLogger(__name__)
+
+# From de Beer et al., 2013 for 1kG
+thornton_mutabilities = {'R': 0.0308, 'K': 0.0058, 'D': 0.0100, 'E': 0.0074, 'N': 0.0101, 'Q': 0.0059, 'S': 0.0084,
+                         'G': 0.0097, 'H': 0.0104, 'T': 0.0130, 'A': 0.0124, 'P': 0.0118, 'Y': 0.0074, 'V': 0.0129,
+                         'M': 0.0139, 'C': 0.0066, 'L': 0.0045, 'F': 0.0045, 'I': 0.0117, 'W': 0.0043}
 
 
 def run_fisher_tests(alignment, table_mask, merged_table):
@@ -81,6 +87,7 @@ def run_fisher_tests(alignment, table_mask, merged_table):
             log.debug('Counting variants for column {} using cross-table...'.format(col_num))
             variants_in_column = sum(cross_table.loc[:, col_num])
             non_variant_in_column = sum(cross_table.loc[:, col_num] == 0) + n_non_variant_sequences - n_gaps
+            # TODO: This the adjustment above for non-var seqs and gaps will be wrong if a non-var seq has a gap!
             variants_in_other = sum(cross_table.drop(col_num, axis=1).sum())
             non_variant_other = sum((cross_table.drop(col_num, axis=1) == 0).sum()) \
                                 + n_positions_in_non_variant_columns \
@@ -170,3 +177,28 @@ def fill_variant_count(value_counts, length):
         except KeyError:
             variants_per_pos.append((col_pos, 0))
     return variants_per_pos
+
+
+def column_mutability(alignment, mutabilities=thornton_mutabilities, gaps=0):
+    """
+    Calculate the average column mutability for an MSA.
+
+    Amino acid residues have different background mutabilities. In an family column, the column mutability can be
+    calculated by weighting standard mutabilities by the column amino acid frequencies.
+
+    :param alignment: MultipleSeqAlignment
+    :param mutabilities:
+    :param gaps: The mutability to assign to gaps. Recommended 0 or 1; default = 0.
+    :return: The column weighted mutabilities (List)
+    """
+    n = len(alignment)
+    mutabilities.update({'-': float(gaps)})  # Assign gap value
+    weighted_mutabilities = []
+    for c in range(alignment.get_alignment_length()):
+        seq_string = alignment[:, c]
+        proportions = Counter(seq_string)
+        summed_mutabilities = 0
+        for res, freq in proportions.items():
+            summed_mutabilities += mutabilities[res] * freq
+        weighted_mutabilities.append(summed_mutabilities / n)
+    return weighted_mutabilities
