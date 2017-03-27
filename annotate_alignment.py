@@ -13,6 +13,7 @@ from fetchers import _fetch_variants, select_uniprot_sequence
 from jalview import write_jalview_annotation, append_jalview_variant_features, create_jalview_feature_file
 from mapping import get_sequence_column_numbers, map_columns_to_res_nums, map_seq_resnums_or_try_isoforms
 from stats import run_fisher_tests, calculate_rvis, fill_variant_count
+import uniprot
 from utils import filter_alignment, is_missense_variant, is_from_to_variant, is_worse_than_type, \
     is_common_variant, is_non_synonomous
 
@@ -48,8 +49,9 @@ def main(alignment, alignment_name, use_local_alignment, local_uniprot_index, do
         residues = None
 
         try:
-            seq_name, uniprot_id, uniprot_seq = select_uniprot_sequence(UniProt_sequences_downloads, local_uniprot_index,
-                                                                        seq)
+            uniprot_id = seq.annotations['accession']
+            uniprot_seq = uniprot.get_uniprot_fasta(uniprot_id)
+            seq_name = uniprot_seq.name
         except AttributeError:
             log.warning('Error when retrieving sequence {}; it may be obsolete. Skipping.'.format(seq.id))
             continue
@@ -80,7 +82,7 @@ def main(alignment, alignment_name, use_local_alignment, local_uniprot_index, do
     sequence_mappings = pd.concat(mapped_records, ignore_index=True)
 
     # Fetch variants
-    protein_identifiers = uniprot_ids  # Ensure prots contains UniProt IDs (could be protein names)
+    protein_identifiers = [uniprot._strip_version(x) for x in uniprot_ids]  # Ensure prots contains UniProt IDs (could be protein names)
     germline_table = _fetch_variants(protein_identifiers, downloads, alignment_name + variant_table_suffix)
 
     # Merge variant table and key table
