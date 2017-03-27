@@ -1,10 +1,10 @@
 import argparse
-from config import defaults
 import logging
 from operator import itemgetter
 
 import ensembl
 import gnomad
+from config import defaults
 from gnomad import tabulate_variant_effects
 
 log = logging.getLogger(__name__)

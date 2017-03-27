@@ -1,14 +1,15 @@
 import argparse
-from Bio import AlignIO, SeqIO  # Needs PR #768 #769 patched
-from Bio.Alphabet import IUPAC
 import logging
-import pfam
-from config import defaults
-from utils import filter_alignment, sanitise_alignment
-from itertools import groupby, tee, izip
 import os
+from itertools import tee, izip
 from subprocess import call
+
 import pandas as pd
+from Bio import AlignIO  # Needs PR #768 #769 patched
+from Bio.Alphabet import IUPAC
+
+import pfam
+from utils import filter_alignment, sanitise_alignment
 
 log = logging.getLogger(__name__)
 logging.captureWarnings(True)

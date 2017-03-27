@@ -3,19 +3,18 @@ This module will take an alignment as input and provide PDB files stripped down 
 """
 
 import argparse
-from Bio import AlignIO, SeqIO, pairwise2
-from Bio.Seq import Seq
-from Bio.SeqRecord import SeqRecord
-from Bio.pairwise2 import format_alignment
-from Bio.Alphabet import generic_protein
-from Bio.PDB import *
-from Bio.PDB.Dice import ChainSelector, extract
 import code
 import sys
+
+from Bio import AlignIO
+from Bio.Alphabet import generic_protein
+from Bio.PDB import *
+from Bio.PDB.Dice import ChainSelector
+from Bio.Seq import Seq
+
 sys.path.extend(['/Users/smacgowan/PycharmProjects/ProteoFAV'])
 from proteofav.structures import sifts_best
-from annotate_alignment import parse_seq_name
-from utils import query_uniprot, parse_seq_name
+from varalign.utils import query_uniprot, parse_seq_name
 import os
 import re
 import logging

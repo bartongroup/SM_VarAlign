@@ -1,13 +1,14 @@
-import annotate_alignment
 import argparse
-from Bio import AlignIO, SeqIO  # Needs PR #768 #769 patched
 import logging
+import os
+
+import pandas as pd
+from Bio import SeqIO  # Needs PR #768 #769 patched
+
+import annotate_alignment
+import pfam
 from config import defaults
 from utils import filter_alignment
-import os
-import pandas as pd
-import pfam
-
 
 log = logging.getLogger(__name__)
 

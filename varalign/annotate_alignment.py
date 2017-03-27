@@ -8,12 +8,12 @@ import numpy as np
 import pandas as pd
 from Bio import AlignIO, SeqIO
 
+import uniprot
 from config import defaults
-from fetchers import _fetch_variants, select_uniprot_sequence
+from fetchers import _fetch_variants
 from jalview import write_jalview_annotation, append_jalview_variant_features, create_jalview_feature_file
 from mapping import get_sequence_column_numbers, map_columns_to_res_nums, map_seq_resnums_or_try_isoforms
 from stats import run_fisher_tests, calculate_rvis, fill_variant_count
-import uniprot
 from utils import filter_alignment, is_missense_variant, is_from_to_variant, is_worse_than_type, \
     is_common_variant, is_non_synonomous
 
