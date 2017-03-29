@@ -26,7 +26,7 @@ AttributeError: 'Defaults' object has no attribute 'email'"""
 from __future__ import print_function
 
 import logging
-from os import path
+import os
 from ConfigParser import ConfigParser
 
 __all__ = ["defaults", "Defaults"]
@@ -36,7 +36,7 @@ logger = logging.getLogger(__name__)
 
 class Defaults(object):
     def __init__(self, config_file=None):
-        default_config = path.join(path.dirname(__file__), "config.txt")
+        default_config = os.path.join(os.path.dirname(__file__), "config.txt")
         config = ConfigParser()
         config_default = config_file or default_config
         config.read(config_default)
@@ -55,4 +55,9 @@ class Defaults(object):
                     var_par = var_par.split('\n')
                 setattr(self, var_name, var_par)
 
-defaults = Defaults()
+
+user_config = os.path.join(os.getcwd(), "config.txt")
+if os.path.exists(user_config):
+    defaults = Defaults(config_file=user_config)
+else:
+    defaults = Defaults()
