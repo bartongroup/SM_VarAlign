@@ -19,13 +19,14 @@ def get_start_end(sequence):
 
 
 def index_seq_to_alignment(sequence, gap_chars=('-', '.'),
-                           zero_index=False):
+                           zero_index=False, reverse_mapping = False):
     """
     Index the residue numbers of a sequence to its alignment.
 
     :param sequence:
     :param gap_chars:
     :param zero_index:
+    :param reverse_mapping:
     :return:
     """
     adj_i = 1
@@ -35,4 +36,7 @@ def index_seq_to_alignment(sequence, gap_chars=('-', '.'),
     start, end = get_start_end(sequence)
     sequence_index = range(start, end+1)
     assert len(alignment_index) == len(sequence_index)
-    return zip(alignment_index, sequence_index)
+    if reverse_mapping:
+        return zip(sequence_index, alignment_index)
+    else:
+        return zip(alignment_index, sequence_index)
