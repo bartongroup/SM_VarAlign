@@ -87,7 +87,7 @@ def tabulate_variant_info(variants):
     return pd.DataFrame([x.INFO for x in variants])
 
 
-def split_variant(variant, alleles=[], exclude=special_handling['INFO']):
+def split_variant(variant, alleles=[], exclude=special_handling['INFO'], value_only=False):
     """
     Split a multiallelic variant.
 
@@ -103,7 +103,10 @@ def split_variant(variant, alleles=[], exclude=special_handling['INFO']):
         # INFO field
         info = new_variant.INFO
         [info.pop(x, 0) for x in exclude]  # Exclude ignored info fields
-        new_variant.INFO = {k: [v[allele_index], ] if isinstance(v, list) else v for k, v in info.items()}
+        if value_only:
+            new_variant.INFO = {k: v[allele_index] if isinstance(v, list) else v for k, v in info.items()}
+        else:
+            new_variant.INFO = {k: [v[allele_index], ] if isinstance(v, list) else v for k, v in info.items()}
         return new_variant
 
     # Work out alleles to process, either all or selection by ALT allele base or index
