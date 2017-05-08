@@ -77,6 +77,16 @@ def tabulate_variant_effects(variants):
     return vep_table
 
 
+def tabulate_variant_info(variants):
+    """
+    Efficiently parse INFO from a list of VCF records into a table.
+
+    :param variants: List of VCF records.
+    :return: DataFrame of INFO annotations indexed to variant list.
+    """
+    return pd.DataFrame([x.INFO for x in variants])
+
+
 def split_variant(variant, alleles=[], exclude=special_handling['INFO']):
     """
     Split a multiallelic variant.
