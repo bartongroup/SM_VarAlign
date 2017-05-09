@@ -25,9 +25,12 @@ info_header = pd.DataFrame([v for k, v in gnomad.infos.items()], dtype='str')
 info_flag_num = 0
 info_value_num = 1
 info_allele_num = -1
-log.info('INFO flags: {}'.format(str(list(info_header.query('num == @info_flag_num').id))))
-log.info('INFO value: {}'.format(str(list(info_header.query('num == @info_value_num').id))))
-log.info('INFO per allele: {}'.format(str(list(info_header.query('num == @info_allele_num').id))))
+info_flag_fields = info_header.query('num == @info_flag_num').id.tolist()
+info_value_fields = info_header.query('num == @info_value_num').id.tolist()
+info_allele_fields = info_header.query('num == @info_allele_num').id.tolist()
+log.info('INFO flags: {}'.format(str(info_flag_fields)))
+log.info('INFO value: {}'.format(str(info_value_fields)))
+log.info('INFO per allele: {}'.format(str(info_allele_fields)))
 
 # Annotations that need special handling during variant allele expansion
 standard_num_values = [info_flag_num, info_value_num, info_allele_num]
