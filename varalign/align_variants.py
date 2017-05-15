@@ -67,16 +67,17 @@ def _fetch_variants_for_uniprot(uniprot, filter_swissprot=True):
     return variants, vep_table
 
 
-def map_uniprot_to_genome(uniprot, collapse=True):
+def map_uniprot_to_genome(uniprot, species='homo_sapiens', collapse=True):
     """
     Map a UniProt entry to the genome.
 
     :param uniprot:
+    :param species:
     :param collapse:
     :return:
     """
     # Map to Gene IDs
-    ensembl_genes = ensembl.get_xrefs(uniprot, features='gene')  #TODO: This could be transcrpts or translations...
+    ensembl_genes = ensembl.get_xrefs(uniprot, species=species, features='gene')  #TODO: This could be transcrpts or translations...
     assert (len(ensembl_genes) >= 1)  # Check for at least one mapping
     ensembl_ranges = [ensembl.get_genomic_range(x) for x in ensembl_genes]
     for i in range(len(ensembl_genes)):
