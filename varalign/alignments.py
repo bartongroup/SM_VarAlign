@@ -1,11 +1,18 @@
-def get_accession(sequence):
+from uniprot import _strip_version
+
+
+def get_accession(sequence, strip_version=False):
     """
     Return sequence accession from annotations.
 
     :param sequence:
+    :param strip_version:
     :return:
     """
-    return sequence.annotations['accession']
+    accession = sequence.annotations['accession']
+    if strip_version:
+        accession = _strip_version(accession)
+    return accession
 
 
 def get_start_end(sequence):
