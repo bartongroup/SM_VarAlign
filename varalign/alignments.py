@@ -1,4 +1,5 @@
 from uniprot import _strip_version
+import pandas as pd
 
 
 def get_accession(sequence, strip_version=False):
@@ -47,3 +48,27 @@ def index_seq_to_alignment(sequence, gap_chars=('-', '.'),
         return zip(sequence_index, alignment_index)
     else:
         return zip(alignment_index, sequence_index)
+
+
+def alignment_info_table(alignment):
+    """
+    Build a table with key alignment info.
+    
+    Scan an alignment and return a Pandas DataFrame with sequence identifiers (seq.id, names and UniProts),
+    alignment index to sequence mappings and source species.
+    
+    :param alignment: 
+    :return: 
+    """
+    alignment_info = []
+    for sequence in alignment:
+        alignment_info.append((sequence.id,
+                               sequence.name,
+                               get_accession(sequence),
+                               get_start_end(sequence),
+                               index_seq_to_alignment(sequence)))
+    alignment_info = pd.DataFrame(alignment_info, columns=['seq_id', 'name', 'uniprot', 'start_end', 'mapping'])
+    alignment_info = alignment_info.assign(species=alignment_info['name'].str.split('_').str[1].values)
+    alignment_info = alignment_info.assign(uniprot_id=alignment_info['uniprot'].str.split('.').str[0].values)
+
+    return alignment_info
