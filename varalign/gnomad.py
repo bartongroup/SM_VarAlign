@@ -80,14 +80,32 @@ def tabulate_variant_effects(variants):
     return vep_table
 
 
-def tabulate_variant_info(variants):
+def tabulate_variant_info(variants, split=False):
     """
     Efficiently parse INFO from a list of VCF records into a table.
 
     :param variants: List of VCF records.
+    :param split: Whether to return seperate tables for site and allele annotations.
     :return: DataFrame of INFO annotations indexed to variant list.
     """
-    return pd.DataFrame([x.INFO for x in variants])
+    info_table = pd.DataFrame([x.INFO for x in variants])
+    if split:
+        return _split_info_table(info_table)
+
+    else:
+        return info_table
+
+
+def _split_info_table(info_table):
+    """
+    Split an INFO table into separate tables for site and allele level annotations.
+    :param info_table: 
+    :return: 
+    """
+    available = info_table.columns
+    allele_fields = [x for x in info_allele_fields if x in available]
+    site_fields = [x for x in info_value_fields + info_flag_fields if x in available]
+    return info_table[site_fields], info_table[allele_fields]
 
 
 def split_variant(variant, alleles=[], exclude=special_handling['INFO'], value_only=False):
