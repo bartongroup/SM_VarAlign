@@ -154,35 +154,43 @@ def split_variant(variant, alleles=[], exclude=special_handling['INFO'], value_o
     return allelic_records
 
 
-def vcf_row_to_table(variant):
+def vcf_row_to_table(variants):
     """
     Parse PyVCF Variant to a DataFrame.
     
     
-    :param variant: 
+    :param variants: 
     :return: 
     """
     # Build record table
     records = []
-    for alt in variant.ALT:
-        records.append([variant.ID, variant.CHROM, variant.POS, variant.REF, alt, variant.QUAL, variant.FILTER])
-    row_record = pd.DataFrame(records, columns=['ID', 'CHROM', 'POS', 'REF', 'ALT', 'QUAL', 'FILTER'])
-    row_record.index.name = 'ALLELE_NUM'
+    for site, variant in enumerate(variants):
+        for allele, alt in enumerate(variant.ALT):
+            records.append([site, allele, variant.ID, variant.CHROM, variant.POS, variant.REF, alt, variant.QUAL,
+                            variant.FILTER])
+    row_record = pd.DataFrame(records, columns=['SITE', 'ALLELE_NUM', 'ID', 'CHROM', 'POS', 'REF', 'ALT', 'QUAL',
+                                                'FILTER'])
+    row_record.set_index(['SITE', 'ALLELE_NUM'], inplace=True)
 
     # VEP table
-    vep_table = tabulate_variant_effects([variant])
+    vep_table = tabulate_variant_effects(variants)
     vep_table['ALLELE_NUM'] = vep_table['ALLELE_NUM'].astype(int)
     vep_table['ALLELE_NUM'] = vep_table['ALLELE_NUM'] - 1
-    vep_table.set_index(['ALLELE_NUM', 'Feature'], inplace=True)
+    vep_table.index.name = 'SITE'
+    vep_table.set_index('ALLELE_NUM', inplace=True, append=True)  # NB. Exclude 'Feature' to join on index later
 
     # INFO tables
-    site_info, allele_info = tabulate_variant_info([variant], split=True)
+    site_info, allele_info = tabulate_variant_info(variants, split=True)
     site_info.index.name = 'SITE'
     # Split allele INFO fields
-    fields, values = zip(*[(k, v) for k, v in variant.INFO.iteritems()
-                           if k in info_allele_fields])
-    split_allele_info = pd.DataFrame(zip(*values), columns=fields)
-    split_allele_info.index.name = 'ALLELE_NUM'
+    tables = []
+    for variant in variants:
+        fields, values = zip(*[(k, v) for k, v in variant.INFO.iteritems()
+                               if k in info_allele_fields])
+        variant_allele_info = pd.DataFrame(zip(*values), columns=fields)
+        variant_allele_info.index.name = 'ALLELE_NUM'
+        tables.append(variant_allele_info)
+    split_allele_info = pd.concat(tables, keys=range(len(tables)), names=['SITE'])
 
     # Create MultiIndex for sub-table columns
     row_record.columns = pd.MultiIndex.from_tuples([('Row', x) for x in row_record.columns],
@@ -195,16 +203,15 @@ def vcf_row_to_table(variant):
                                                           names=['Type', 'Field'])
 
     # Merge all the sub-tables
-    # 1. Merged at allele level
-    merged_variant_table = row_record.join(split_allele_info)
+    # 1. Merged at site level
+    merged_variant_table = row_record.join(site_info)
+    # 2. Merged at allele level
+    merged_variant_table = merged_variant_table.join(split_allele_info)
     merged_variant_table = merged_variant_table.join(vep_table)
-    # 2. Merged at site level
-    merged_variant_table['SITE'] = 0
-    merged_variant_table.set_index('SITE', append=True, inplace=True)
-    merged_variant_table = merged_variant_table.reorder_levels(['SITE', 'ALLELE_NUM', 'Feature'])
-    merged_variant_table.sort_index(inplace=True)
-    merged_variant_table = merged_variant_table.join(site_info)
-
-    merged_variant_table.reset_index('SITE', drop=True, inplace=True)
+    # 3. Add Feature to index
+    merged_variant_table.set_index(('VEP', 'Feature'), append=True, inplace=True)
+    merged_variant_table.index.set_names(['SITE', 'ALLELE_NUM', 'Feature'], inplace=True)
+    # merged_variant_table = merged_variant_table.reorder_levels(['SITE', 'ALLELE_NUM', 'Feature'])
+    # merged_variant_table.sort_index(inplace=True)
 
     return merged_variant_table
