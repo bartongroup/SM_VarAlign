@@ -152,3 +152,59 @@ def split_variant(variant, alleles=[], exclude=special_handling['INFO'], value_o
         allelic_records.append(new_variant)
 
     return allelic_records
+
+
+def vcf_row_to_table(variant):
+    """
+    Parse PyVCF Variant to a DataFrame.
+    
+    
+    :param variant: 
+    :return: 
+    """
+    # Build record table
+    records = []
+    for alt in variant.ALT:
+        records.append([variant.ID, variant.CHROM, variant.POS, variant.REF, alt, variant.QUAL, variant.FILTER])
+    row_record = pd.DataFrame(records, columns=['ID', 'CHROM', 'POS', 'REF', 'ALT', 'QUAL', 'FILTER'])
+    row_record.index.name = 'ALLELE_NUM'
+
+    # VEP table
+    vep_table = tabulate_variant_effects([variant])
+    vep_table['ALLELE_NUM'] = vep_table['ALLELE_NUM'].astype(int)
+    vep_table['ALLELE_NUM'] = vep_table['ALLELE_NUM'] - 1
+    vep_table.set_index(['ALLELE_NUM', 'Feature'], inplace=True)
+
+    # INFO tables
+    site_info, allele_info = tabulate_variant_info([variant], split=True)
+    site_info.index.name = 'SITE'
+    # Split allele INFO fields
+    fields, values = zip(*[(k, v) for k, v in variant.INFO.iteritems()
+                           if k in info_allele_fields])
+    split_allele_info = pd.DataFrame(zip(*values), columns=fields)
+    split_allele_info.index.name = 'ALLELE_NUM'
+
+    # Create MultiIndex for sub-table columns
+    row_record.columns = pd.MultiIndex.from_tuples([('Row', x) for x in row_record.columns],
+                                                   names=['Type', 'Field'])
+    vep_table.columns = pd.MultiIndex.from_tuples([('VEP', x) for x in vep_table.columns],
+                                                  names=['Type', 'Field'])
+    site_info.columns = pd.MultiIndex.from_tuples([('Site_INFO', x) for x in site_info.columns],
+                                                  names=['Type', 'Field'])
+    split_allele_info.columns = pd.MultiIndex.from_tuples([('Allele_INFO', x) for x in split_allele_info.columns],
+                                                          names=['Type', 'Field'])
+
+    # Merge all the sub-tables
+    # 1. Merged at allele level
+    merged_variant_table = row_record.join(split_allele_info)
+    merged_variant_table = merged_variant_table.join(vep_table)
+    # 2. Merged at site level
+    merged_variant_table['SITE'] = 0
+    merged_variant_table.set_index('SITE', append=True, inplace=True)
+    merged_variant_table = merged_variant_table.reorder_levels(['SITE', 'ALLELE_NUM', 'Feature'])
+    merged_variant_table.sort_index(inplace=True)
+    merged_variant_table = merged_variant_table.join(site_info)
+
+    merged_variant_table.reset_index('SITE', drop=True, inplace=True)
+
+    return merged_variant_table
