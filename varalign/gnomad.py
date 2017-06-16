@@ -184,13 +184,16 @@ def vcf_row_to_table(variants):
     site_info.index.name = 'SITE'
     # Split allele INFO fields
     tables = []
-    for variant in variants:
-        fields, values = zip(*[(k, v) for k, v in variant.INFO.iteritems()
-                               if k in info_allele_fields])
-        variant_allele_info = pd.DataFrame(zip(*values), columns=fields)
-        variant_allele_info.index.name = 'ALLELE_NUM'
-        tables.append(variant_allele_info)
-    split_allele_info = pd.concat(tables, keys=range(len(tables)), names=['SITE'])
+    for site_num, variant in enumerate(variants):
+        allele_info_records = {k: v for k, v in variant.INFO.iteritems()
+                               if k in info_allele_fields}
+        fields, both_allele_values = zip(*allele_info_records.items())
+        for allele_num, single_allele_values in enumerate(zip(*both_allele_values)):
+            allele_entry = dict(zip(fields, single_allele_values))
+            allele_entry['ALLELE_NUM'] = allele_num
+            allele_entry['SITE'] = site_num
+            tables.append(allele_entry)
+    split_allele_info = pd.DataFrame(tables).set_index(['SITE', 'ALLELE_NUM'])
 
     # Create MultiIndex for sub-table columns
     row_record.columns = pd.MultiIndex.from_tuples([('Row', x) for x in row_record.columns],
