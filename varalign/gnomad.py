@@ -185,8 +185,8 @@ def vcf_row_to_table(variants):
     # Split allele INFO fields
     tables = []
     for site_num, variant in enumerate(variants):
-        allele_info_records = {k: v for k, v in variant.INFO.iteritems()
-                               if k in info_allele_fields}
+        info_dict = variant.INFO
+        allele_info_records = {k: info_dict[k] for k in info_allele_fields if k in info_dict}
         fields, both_allele_values = zip(*allele_info_records.items())
         for allele_num, single_allele_values in enumerate(zip(*both_allele_values)):
             allele_entry = dict(zip(fields, single_allele_values))
