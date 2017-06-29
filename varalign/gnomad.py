@@ -162,7 +162,11 @@ def vcf_row_to_table(variants):
     :param variants: 
     :return: 
     """
+
+    print 'Processing {} variants...'.format(len(variants))
+
     # Build record table
+    print 'Constructing site record table...'
     records = []
     for site, variant in enumerate(variants):
         for allele, alt in enumerate(variant.ALT):
@@ -173,6 +177,7 @@ def vcf_row_to_table(variants):
     row_record.set_index(['SITE', 'ALLELE_NUM'], inplace=True)
 
     # VEP table
+    print 'Tabulating VEP records...'
     vep_table = tabulate_variant_effects(variants)
     vep_table['ALLELE_NUM'] = vep_table['ALLELE_NUM'].astype(int)
     vep_table['ALLELE_NUM'] = vep_table['ALLELE_NUM'] - 1
@@ -180,6 +185,7 @@ def vcf_row_to_table(variants):
     vep_table.set_index('ALLELE_NUM', inplace=True, append=True)  # NB. Exclude 'Feature' to join on index later
 
     # INFO tables
+    print 'Processing INFO fields...'
     site_info, allele_info = tabulate_variant_info(variants, split=True)
     site_info.index.name = 'SITE'
     # Split allele INFO fields
@@ -206,12 +212,14 @@ def vcf_row_to_table(variants):
                                                           names=['Type', 'Field'])
 
     # Merge all the sub-tables
+    print 'Joining sub-tables...'
     # 1. Merged at site level
     merged_variant_table = row_record.join(site_info)
     # 2. Merged at allele level
     merged_variant_table = merged_variant_table.join(split_allele_info)
     merged_variant_table = merged_variant_table.join(vep_table)
     # 3. Add Feature to index
+    print 'Formatting result...'
     merged_variant_table.set_index(('VEP', 'Feature'), append=True, inplace=True)
     merged_variant_table.index.set_names(['SITE', 'ALLELE_NUM', 'Feature'], inplace=True)
     # merged_variant_table = merged_variant_table.reorder_levels(['SITE', 'ALLELE_NUM', 'Feature'])
