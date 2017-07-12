@@ -2,20 +2,59 @@ from config import defaults
 import requests
 import requests_cache
 import sys
+import time
 
 
 default_server = defaults.api_ensembl
 requests_cache.install_cache('ensembl_cache')
+
+# Globals for rate-limiting
+reqs_per_sec = 15
+req_count = 0
+last_req = 0
+
 
 standard_regions = ('1', '2', '3', '4', '5', '6', '7', '8', '9', '10',
                     '11', '12', '13', '14', '15', '16', '17', '18', '19', '20',
                     '21', '22', 'X', 'Y')
 
 
+def ratelimit():
+    """
+    Check if we need to rate limit ourselves.
+
+    :return:
+    """
+    global req_count
+    global reqs_per_sec
+    global last_req
+    if req_count >= reqs_per_sec:
+        delta = time.time() - last_req
+        if delta < 1:
+            time.sleep(1 - delta)
+        last_req = time.time()
+        req_count = 0
+
+
+def update_ratelimit(response):
+    """
+    Update parameters used for ratelimiting after a request.
+
+    :param response:
+    :return:
+    """
+    # No need to increment if response taken from cache.
+    if not response.from_cache:
+        global req_count
+        req_count += 1
+
+
 def get_xrefs(query_id, species='homo_sapiens', features=('gene', 'transcript', 'translation'), server=default_server):
     """
     Lookup EnsEMBL xrefs for an external ID and get feature IDs.
     """
+    ratelimit()
+
     endpoint = "/xrefs/symbol"
     ext = '/'.join([endpoint, species, query_id]) + "?"
     r = requests.get(server+ext, headers={"Content-Type": "application/json"})
@@ -24,6 +63,8 @@ def get_xrefs(query_id, species='homo_sapiens', features=('gene', 'transcript', 
         r.raise_for_status()
         sys.exit()
 
+    update_ratelimit(r)
+
     return [x['id'] for x in r.json() if x['type'] in features]
 
 
@@ -31,6 +72,8 @@ def get_genomic_range(query_id, server=default_server):
     """
     Get the genomic range for an EnsEMBL gene or transcript.
     """
+    ratelimit()
+
     endpoint = '/lookup/id'
     ext = '/'.join([endpoint, query_id]) + "?"
     r = requests.get(server+ext, headers={"Content-Type": "application/json"})
@@ -40,6 +83,8 @@ def get_genomic_range(query_id, server=default_server):
         sys.exit()
 
     decoded = r.json()
+
+    update_ratelimit(r)
 
     return str(decoded['seq_region_name']), decoded['start'], decoded['end']
 
