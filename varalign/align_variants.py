@@ -155,7 +155,7 @@ def align_variants(alignment, species='HUMAN'):
     indexed_map_table = _mapping_table(alignment_info)
     # Coerce Protein_position to correct type
     filtered_variants.loc[:, ('VEP', 'Protein_position')] = pd.to_numeric(
-        filtered_variants[('VEP', 'Protein_position')],
+        filtered_variants.loc[:, ('VEP', 'Protein_position')],
         errors='coerce')
     # Set index for merge
     filtered_variants.reset_index(['SITE', 'ALLELE_NUM', 'Feature'], inplace=True)
