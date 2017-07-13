@@ -166,7 +166,7 @@ def align_variants(alignment, species='HUMAN'):
     alignment_variant_table = indexed_map_table.join(filtered_variants)  # Drops variants that map outside alignment
     alignment_variant_table.sort_index(inplace=True)
 
-    return alignment_variant_table
+    return alignment_info, alignment_variant_table
 
 
 def _default_variant_filter(variants_table):
