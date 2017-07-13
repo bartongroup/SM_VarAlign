@@ -134,29 +134,17 @@ def align_variants(alignment_info, species='HUMAN'):
         sequence_variant_lists.append((seq_id, [x for r in ranges for x in gnomad.gnomad.fetch(*r)]))
 
     # Parse Variants to table
-    all_variants = [variant for l in zip(*sequence_variant_lists)[1] for variant in l]
-    variants_table = gnomad.vcf_row_to_table(all_variants)
+    all_variants = [(variant, seq_id) for seq_id, l in sequence_variant_lists for variant in l]
+    variants_table = gnomad.vcf_row_to_table(*zip(*all_variants))
 
     # ----- Add source UniProt identifiers to the table -----
-    # Create UniProt name series that shares an index with the variant table
-    source_ids = pd.Series([x for x, y in sequence_variant_lists for i in y])
-    source_ids.name = ('External', 'SOURCE_IDS')
-    source_ids.index.name = 'SITE'
-
-    # Build equivalent series for UniProt IDs
-    source_uniprot_ids = alignment_info.set_index('seq_id').loc[source_ids, 'uniprot_id'].reset_index(drop=True)
+    # Create UniProt ID series that shares an index with the variant table
+    source_uniprot_ids = alignment_info.set_index('seq_id')['uniprot_id']
     source_uniprot_ids.name = ('External', 'SOURCE_ACCESSION')
-    source_uniprot_ids.index.name = 'SITE'
+    source_uniprot_ids.index.name = 'SOURCE_ID'
 
     # Add IDs to variant tables
-    variants_table = variants_table.join(source_ids)
     variants_table = variants_table.join(source_uniprot_ids)
-
-    # Add SOURCE_ID to the variant table index
-    variants_table.set_index(('External', 'SOURCE_IDS'), append=True, inplace=True)
-    variants_table.index.set_names(['SITE', 'ALLELE_NUM', 'Feature', 'SOURCE_ID'], inplace=True)
-    variants_table = variants_table.reorder_levels(['SOURCE_ID', 'SITE', 'ALLELE_NUM', 'Feature'])
-    variants_table.sort_index(inplace=True)
 
     # return variants_table
 
