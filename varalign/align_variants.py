@@ -37,7 +37,7 @@ def _build_vep_filter(canonical=eval(defaults.canonical), consequences=defaults.
     return ' & '.join(query)
 
 
-def map_uniprot_to_genome(uniprot, species='homo_sapiens', collapse=True):
+def _map_uniprot_to_genome(uniprot, species='homo_sapiens', collapse=True):
     """
     Map a UniProt entry to the genome.
 
@@ -83,7 +83,7 @@ def align_variants(alignment, species='HUMAN'):
     # ----- Map sequences to genome -----
     # TODO: If get transcript ID can use to filter variant table
     genomic_ranges = [
-        (row.seq_id, map_uniprot_to_genome(row.uniprot_id, species=species))
+        (row.seq_id, _map_uniprot_to_genome(row.uniprot_id, species=species))
         for row in tqdm(alignment_info.itertuples(), total=len(alignment_info))
     ]
     log.info("Mapped {} sequences to genome.".format(len(genomic_ranges)))
