@@ -177,20 +177,7 @@ def align_variants(alignment_info, species='HUMAN'):
     # return filtered_variants
 
     # ----- Map variants to columns -----
-    mapping_table = pd.DataFrame(alignment_info['mapping'].tolist(),
-                                 index=[alignment_info.index, alignment_info['seq_id']])  # From top of notebook
-    mapping_table.reset_index(inplace=True)
-    mapping_table = pd.melt(mapping_table, id_vars=['level_0', 'seq_id'])
-    mapping_table.dropna(subset=['value'], inplace=True)
-
-    # Used to include alignment row in index, see **aligned_variants_dev1**
-    indexed_map_table = pd.DataFrame(mapping_table['value'].tolist(),
-                                     columns=['Column', 'Protein_position'],
-                                     index=[mapping_table['seq_id']]).reset_index()
-    indexed_map_table = indexed_map_table.set_index(['seq_id', 'Protein_position']).sort_index()
-    indexed_map_table.index.rename(['SOURCE_ID', 'Protein_position'], inplace=True)
-    indexed_map_table.columns = pd.MultiIndex.from_tuples([('Alignment', x) for x in indexed_map_table.columns],
-                                                          names=['Type', 'Field'])
+    indexed_map_table = _mapping_table(alignment_info)
     # Coerce Protein_position
     filtered_variants.loc[:, ('VEP', 'Protein_position')] = pd.to_numeric(
         filtered_variants[('VEP', 'Protein_position')],
@@ -207,6 +194,28 @@ def align_variants(alignment_info, species='HUMAN'):
     alignment_variant_table.head()
 
     return alignment_variant_table
+
+
+def _mapping_table(alignment_info):
+    """
+    Construct a alignment column to sequence residue mapping table.
+
+    :param alignment_info:
+    :return:
+    """
+    mapping_table = pd.DataFrame(alignment_info['mapping'].tolist(),
+                                 index=[alignment_info.index, alignment_info['seq_id']])  # From top of notebook
+    mapping_table.reset_index(inplace=True)
+    mapping_table = pd.melt(mapping_table, id_vars=['level_0', 'seq_id'])
+    mapping_table.dropna(subset=['value'], inplace=True)
+    indexed_map_table = pd.DataFrame(mapping_table['value'].tolist(),
+                                     columns=['Column', 'Protein_position'],
+                                     index=[mapping_table['seq_id']]).reset_index()
+    indexed_map_table = indexed_map_table.set_index(['seq_id', 'Protein_position']).sort_index()
+    indexed_map_table.index.rename(['SOURCE_ID', 'Protein_position'], inplace=True)
+    indexed_map_table.columns = pd.MultiIndex.from_tuples([('Alignment', x) for x in indexed_map_table.columns],
+                                                          names=['Type', 'Field'])
+    return indexed_map_table
 
 
 if __name__ == '__main__':
