@@ -140,34 +140,29 @@ def align_variants(alignment_info, species='HUMAN'):
     source_uniprot_ids = alignment_info.set_index('seq_id')['uniprot_id']
     source_uniprot_ids.name = ('External', 'SOURCE_ACCESSION')
     source_uniprot_ids.index.name = 'SOURCE_ID'
-
     # Add IDs to variant tables
     variants_table = variants_table.join(source_uniprot_ids)
 
-    # return variants_table
-
+    # ----- Filter variant table -----
     filtered_variants = _default_variant_filter(variants_table)
     log.info('Redundant rows:\t{}'.format(sum(filtered_variants.reset_index('Feature').index.duplicated())))
     log.info('Total rows:\t{}'.format(len(filtered_variants)))
 
-    # return filtered_variants
-
     # ----- Map variants to columns -----
+    # Generate alignment column / sequence residue mapping table
     indexed_map_table = _mapping_table(alignment_info)
-    # Coerce Protein_position
+    # Coerce Protein_position to correct type
     filtered_variants.loc[:, ('VEP', 'Protein_position')] = pd.to_numeric(
         filtered_variants[('VEP', 'Protein_position')],
         errors='coerce')
-    # Set index
+    # Set index for merge
     filtered_variants.reset_index(['SITE', 'ALLELE_NUM', 'Feature'], inplace=True)
     filtered_variants.set_index(('VEP', 'Protein_position'), append=True, inplace=True)
     filtered_variants.index.set_names(['SOURCE_ID', 'Protein_position'], inplace=True)
     filtered_variants.sort_index(inplace=True)
-
-    # Merge
+    # Merge to map
     alignment_variant_table = indexed_map_table.join(filtered_variants)  # Drops variants that map outside alignment
     alignment_variant_table.sort_index(inplace=True)
-    alignment_variant_table.head()
 
     return alignment_variant_table
 
@@ -175,11 +170,10 @@ def align_variants(alignment_info, species='HUMAN'):
 def _default_variant_filter(variants_table):
     """
     Apply standard filters to a alignment derived variant table.
-    
+
     :param variants_table:
     :return:
     """
-    # ----- Filter variant table -----
     # See version 1 of notebook for other ideas (e.g. Protin_position in UniProt range...)
     # Reduce transcript duplication
     is_canonical = variants_table[('VEP', 'CANONICAL')] == 'YES'
