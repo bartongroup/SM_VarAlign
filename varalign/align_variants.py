@@ -37,42 +37,6 @@ def _build_vep_filter(canonical=eval(defaults.canonical), consequences=defaults.
     return ' & '.join(query)
 
 
-def _fetch_variants_for_uniprot(uniprot, filter_swissprot=True):
-    """
-    Retrieve variants from Gnomad given a UniProt ID.
-
-    :param uniprot:
-    :param filter_swissprot:
-    :return:
-    """
-    # Map UniProt to genome
-    lookup_ranges = map_uniprot_to_genome(uniprot)
-
-    # Lookup variants
-    log.info('Retrieving variants...')
-    variants = [x for _range in lookup_ranges for x in gnomad.gnomad.fetch(*_range)]  # TODO: Add progress bar?
-    log.info('Found {} variant sites.'.format(len(variants)))
-
-    # filter variants on VEP
-    vep_table = tabulate_variant_effects(variants)
-    query = _build_vep_filter()
-    if filter_swissprot:
-        query += ' & SWISSPROT == "{}"'.format(uniprot)
-    log.info('Keeping variants where: %s', query)
-    vep_table.query(query, inplace=True)
-    if vep_table.empty:
-        raise ValueError('No variants pass filter.')
-    # Assume this filter gives one effect per variant allele
-    assert not any(vep_table['Allele'].reset_index().duplicated())
-    variants = itemgetter(*vep_table.index)(variants)  # Filter variant record by VEP filter
-    assert len(variants) == len(vep_table)
-    vep_table.reset_index(drop=True, inplace=True)  # Reset index to match filtered variant list
-    variants = [gnomad.split_variant(variant, allele)[0] for variant, allele in zip(variants, vep_table.Allele)]
-    log.info('Returning {} variants after filtering.'.format(len(variants)))
-
-    return variants, vep_table
-
-
 def map_uniprot_to_genome(uniprot, species='homo_sapiens', collapse=True):
     """
     Map a UniProt entry to the genome.
