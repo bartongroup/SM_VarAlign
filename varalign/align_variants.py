@@ -78,7 +78,8 @@ def map_uniprot_to_genome(uniprot, species='homo_sapiens', collapse=True):
     """
     # Map to Gene IDs
     ensembl_genes = ensembl.get_xrefs(uniprot, species=species, features='gene')  #TODO: This could be transcrpts or translations...
-    assert (len(ensembl_genes) >= 1)  # Check for at least one mapping
+    if len(ensembl_genes) == 0:
+        return None  # no mapping
     ensembl_ranges = [ensembl.get_genomic_range(x) for x in ensembl_genes]
     for i in range(len(ensembl_genes)):
         log.info('Mapped {} to {} on chr: {}, {}-{}'.format(uniprot, ensembl_genes[i], *ensembl_ranges[i]))
