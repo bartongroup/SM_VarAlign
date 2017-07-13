@@ -2,17 +2,16 @@ import argparse
 import logging
 from operator import itemgetter
 
+import pandas as pd
+from Bio import AlignIO
+from numpy import vectorize
+from tqdm import tqdm
+
 import alignments
 import ensembl
 import gnomad
 from config import defaults
 from gnomad import tabulate_variant_effects
-from numpy import vectorize
-import pandas as pd
-from tqdm import tqdm
-from time import sleep
-
-from Bio import AlignIO, SeqIO
 
 log = logging.getLogger(__name__)
 log.setLevel('INFO')
