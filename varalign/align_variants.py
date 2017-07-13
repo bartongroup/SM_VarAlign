@@ -129,12 +129,10 @@ def align_variants(alignment_info, species='HUMAN'):
     alignment_info = alignment_info.merge(genomic_mapping_table, on=['uniprot_id', 'seq_id'], how='left')
 
     # ----- Fetch variants for the mapped genomic ranges -----
-    sequence_variant_lists = []
-    for uniprot_id, seq_id, ranges in tqdm(genomic_ranges):
-        sequence_variant_lists.append((seq_id, [x for r in ranges for x in gnomad.gnomad.fetch(*r)]))
-
-    # Parse Variants to table
-    all_variants = [(variant, seq_id) for seq_id, l in sequence_variant_lists for variant in l]
+    sequence_variant_lists = [(row.seq_id, (x for r in row.genomic_ranges for x in gnomad.gnomad.fetch(*r)))
+                              for row in alignment_info.dropna(subset=['genomic_ranges']).itertuples()]
+    all_variants = ((variant, seq_id) for seq_id, range_reader in tqdm(sequence_variant_lists)
+                    for variant in range_reader)
     variants_table = gnomad.vcf_row_to_table(*zip(*all_variants))
 
     # ----- Add source UniProt identifiers to the table -----
