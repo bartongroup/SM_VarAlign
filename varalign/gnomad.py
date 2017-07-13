@@ -154,7 +154,7 @@ def split_variant(variant, alleles=[], exclude=special_handling['INFO'], value_o
     return allelic_records
 
 
-def vcf_row_to_table(variants):
+def vcf_row_to_table(variants, source_ids=None):
     """
     Parse PyVCF Variant to a DataFrame.
     
@@ -164,6 +164,12 @@ def vcf_row_to_table(variants):
     """
 
     print 'Processing {} variants...'.format(len(variants))
+
+    # Build source_id table
+    if source_ids:
+        source_id_series = pd.Series(source_ids)
+        source_id_series.name = ('External', 'SOURCE_IDS')
+        source_id_series.index.name = 'SITE'
 
     # Build record table
     print 'Constructing site record table...'
@@ -215,14 +221,24 @@ def vcf_row_to_table(variants):
     print 'Joining sub-tables...'
     # 1. Merged at site level
     merged_variant_table = row_record.join(site_info)
+    if source_ids:
+        merged_variant_table = merged_variant_table.join(source_id_series)
     # 2. Merged at allele level
     merged_variant_table = merged_variant_table.join(split_allele_info)
     merged_variant_table = merged_variant_table.join(vep_table)
-    # 3. Add Feature to index
+    # 3. Add Feature [and source_ids] to index
     print 'Formatting result...'
     merged_variant_table.set_index(('VEP', 'Feature'), append=True, inplace=True)
-    merged_variant_table.index.set_names(['SITE', 'ALLELE_NUM', 'Feature'], inplace=True)
-    # merged_variant_table = merged_variant_table.reorder_levels(['SITE', 'ALLELE_NUM', 'Feature'])
-    # merged_variant_table.sort_index(inplace=True)
+    if not source_ids:
+        merged_variant_table.index.set_names(['SITE', 'ALLELE_NUM', 'Feature'], inplace=True)
+        # merged_variant_table = merged_variant_table.reorder_levels(['SITE', 'ALLELE_NUM', 'Feature'])
+        # merged_variant_table.sort_index(inplace=True)
+    else:
+        # Add SOURCE_ID to the variant table index
+        merged_variant_table.set_index(('External', 'SOURCE_IDS'), append=True, inplace=True)
+        merged_variant_table.index.set_names(['SITE', 'ALLELE_NUM', 'Feature', 'SOURCE_ID'], inplace=True)
+        merged_variant_table = merged_variant_table.reorder_levels(['SOURCE_ID', 'SITE', 'ALLELE_NUM', 'Feature'])
+        merged_variant_table.sort_index(inplace=True)
+
 
     return merged_variant_table
