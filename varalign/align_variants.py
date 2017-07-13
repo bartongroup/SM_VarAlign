@@ -117,18 +117,16 @@ def align_variants(alignment, species='HUMAN'):
     alignment_info = alignments.alignment_info_table(alignment, species)
 
     # ----- Map sequences to genome -----
-    data = alignment_info.loc[alignment_info['species'] == species, ['seq_id', 'uniprot_id']]
     # TODO: If get transcript ID can use to filter variant table
     genomic_ranges = [
-        (row.uniprot_id, row.seq_id, map_uniprot_to_genome(row.uniprot_id, species=species))
-        for row in tqdm(data.itertuples(), total=len(data))
+        (row.seq_id, map_uniprot_to_genome(row.uniprot_id, species=species))
+        for row in tqdm(alignment_info.itertuples(), total=len(alignment_info))
     ]
-    genomic_ranges = [x for x in genomic_ranges if x[2] is not None]  # Filter unmapped sequences
     log.info("Mapped {} sequences to genome.".format(len(genomic_ranges)))
 
     # Add ranges to alignment info
-    genomic_mapping_table = pd.DataFrame(genomic_ranges, columns=['uniprot_id', 'seq_id', 'genomic_ranges'])
-    alignment_info = alignment_info.merge(genomic_mapping_table, on=['uniprot_id', 'seq_id'], how='left')
+    genomic_mapping_table = pd.DataFrame(genomic_ranges, columns=['seq_id', 'genomic_ranges'])
+    alignment_info = alignment_info.merge(genomic_mapping_table, on=['seq_id'], how='left')
 
     # ----- Fetch variants for the mapped genomic ranges -----
     sequence_variant_lists = [(row.seq_id, (x for r in row.genomic_ranges for x in gnomad.gnomad.fetch(*r)))
