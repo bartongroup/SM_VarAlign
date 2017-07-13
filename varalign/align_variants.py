@@ -14,7 +14,6 @@ from time import sleep
 
 from Bio import AlignIO, SeqIO
 
-
 log = logging.getLogger(__name__)
 log.setLevel('INFO')
 
@@ -85,7 +84,8 @@ def map_uniprot_to_genome(uniprot, species='homo_sapiens', collapse=True):
     :return:
     """
     # Map to Gene IDs
-    ensembl_genes = ensembl.get_xrefs(uniprot, species=species, features='gene')  #TODO: This could be transcrpts or translations...
+    ensembl_genes = ensembl.get_xrefs(uniprot, species=species,
+                                      features='gene')  # TODO: This could be transcrpts or translations...
     if len(ensembl_genes) == 0:
         return None  # no mapping
     ensembl_ranges = [ensembl.get_genomic_range(x) for x in ensembl_genes]
