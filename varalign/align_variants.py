@@ -107,13 +107,16 @@ def map_uniprot_to_genome(uniprot, species='homo_sapiens', collapse=True):
     return ensembl_ranges
 
 
-def align_variants(alignment_info, species='HUMAN'):
+def align_variants(alignment, species='HUMAN'):
     """
 
     :param alignment_info:
     :param species:
     :return:
     """
+    # ----- Parse alignment info -----
+    alignment_info = alignments.alignment_info_table(alignment, species)
+
     # ----- Map sequences to genome -----
     data = alignment_info.loc[alignment_info['species'] == species, ['seq_id', 'uniprot_id']]
     # TODO: If get transcript ID can use to filter variant table
