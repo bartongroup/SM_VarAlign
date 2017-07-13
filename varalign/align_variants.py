@@ -146,31 +146,7 @@ def align_variants(alignment_info, species='HUMAN'):
 
     # return variants_table
 
-    # ----- Filter variant table -----
-    # See version 1 of notebook for other ideas (e.g. Protin_position in UniProt range...)
-    # Reduce transcript duplication
-    is_canonical = variants_table[('VEP', 'CANONICAL')] == 'YES'
-    is_ccds = variants_table[('VEP', 'CCDS')] != ''
-
-    # Only want those that can map to a residue
-    is_protein_coding = variants_table[('VEP', 'BIOTYPE')] == 'protein_coding'
-    at_protein_position = variants_table[('VEP', 'Protein_position')] != ''
-
-    # Filter least useful effects
-    is_not_modifier = variants_table[('VEP', 'IMPACT')] != 'MODIFIER'
-
-    # Source protein filter
-    swissprot_matches_source = (variants_table['External', 'SOURCE_ACCESSION'] == variants_table['VEP', 'SWISSPROT'])
-    vcontains = vectorize(lambda x, y: x in y)
-    trembl_matches_source = vcontains(variants_table[('External', 'SOURCE_ACCESSION')],
-                                      variants_table[('VEP', 'TREMBL')])
-
-    trembl_matches_source[:] = False  # OVERRIDE TREMBL TO KEEP ONLY SWISSPROT
-
-    # Apply filter
-    filtered_variants = variants_table[is_canonical & is_protein_coding & is_not_modifier & is_ccds &
-                                       (swissprot_matches_source | trembl_matches_source) &
-                                       at_protein_position]
+    filtered_variants = _default_variant_filter(variants_table)
     log.info('Redundant rows:\t{}'.format(sum(filtered_variants.reset_index('Feature').index.duplicated())))
     log.info('Total rows:\t{}'.format(len(filtered_variants)))
 
@@ -194,6 +170,36 @@ def align_variants(alignment_info, species='HUMAN'):
     alignment_variant_table.head()
 
     return alignment_variant_table
+
+
+def _default_variant_filter(variants_table):
+    """
+    Apply standard filters to a alignment derived variant table.
+    
+    :param variants_table:
+    :return:
+    """
+    # ----- Filter variant table -----
+    # See version 1 of notebook for other ideas (e.g. Protin_position in UniProt range...)
+    # Reduce transcript duplication
+    is_canonical = variants_table[('VEP', 'CANONICAL')] == 'YES'
+    is_ccds = variants_table[('VEP', 'CCDS')] != ''
+    # Only want those that can map to a residue
+    is_protein_coding = variants_table[('VEP', 'BIOTYPE')] == 'protein_coding'
+    at_protein_position = variants_table[('VEP', 'Protein_position')] != ''
+    # Filter least useful effects
+    is_not_modifier = variants_table[('VEP', 'IMPACT')] != 'MODIFIER'
+    # Source protein filter
+    swissprot_matches_source = (variants_table['External', 'SOURCE_ACCESSION'] == variants_table['VEP', 'SWISSPROT'])
+    vcontains = vectorize(lambda x, y: x in y)
+    trembl_matches_source = vcontains(variants_table[('External', 'SOURCE_ACCESSION')],
+                                      variants_table[('VEP', 'TREMBL')])
+    trembl_matches_source[:] = False  # OVERRIDE TREMBL TO KEEP ONLY SWISSPROT
+    # Apply filter
+    filtered_variants = variants_table[is_canonical & is_protein_coding & is_not_modifier & is_ccds &
+                                       (swissprot_matches_source | trembl_matches_source) &
+                                       at_protein_position]
+    return filtered_variants
 
 
 def _mapping_table(alignment_info):
