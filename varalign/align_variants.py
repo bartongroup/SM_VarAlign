@@ -70,6 +70,57 @@ def _map_uniprot_to_genome(uniprot, species='homo_sapiens', collapse=True):
     return ensembl_ranges
 
 
+def _default_variant_filter(variants_table):
+    """
+    Apply standard filters to a alignment derived variant table.
+
+    :param variants_table:
+    :return:
+    """
+    # See version 1 of notebook for other ideas (e.g. Protin_position in UniProt range...)
+    # Reduce transcript duplication
+    is_canonical = variants_table[('VEP', 'CANONICAL')] == 'YES'
+    is_ccds = variants_table[('VEP', 'CCDS')] != ''
+    # Only want those that can map to a residue
+    is_protein_coding = variants_table[('VEP', 'BIOTYPE')] == 'protein_coding'
+    at_protein_position = variants_table[('VEP', 'Protein_position')] != ''
+    # Filter least useful effects
+    is_not_modifier = variants_table[('VEP', 'IMPACT')] != 'MODIFIER'
+    # Source protein filter
+    swissprot_matches_source = (variants_table['External', 'SOURCE_ACCESSION'] == variants_table['VEP', 'SWISSPROT'])
+    vcontains = vectorize(lambda x, y: x in y)
+    trembl_matches_source = vcontains(variants_table[('External', 'SOURCE_ACCESSION')],
+                                      variants_table[('VEP', 'TREMBL')])
+    trembl_matches_source[:] = False  # OVERRIDE TREMBL TO KEEP ONLY SWISSPROT
+    # Apply filter
+    filtered_variants = variants_table[is_canonical & is_protein_coding & is_not_modifier & is_ccds &
+                                       (swissprot_matches_source | trembl_matches_source) &
+                                       at_protein_position]
+    return filtered_variants
+
+
+def _mapping_table(alignment_info):
+    """
+    Construct a alignment column to sequence residue mapping table.
+
+    :param alignment_info:
+    :return:
+    """
+    mapping_table = pd.DataFrame(alignment_info['mapping'].tolist(),
+                                 index=[alignment_info.index, alignment_info['seq_id']])  # From top of notebook
+    mapping_table.reset_index(inplace=True)
+    mapping_table = pd.melt(mapping_table, id_vars=['level_0', 'seq_id'])
+    mapping_table.dropna(subset=['value'], inplace=True)
+    indexed_map_table = pd.DataFrame(mapping_table['value'].tolist(),
+                                     columns=['Column', 'Protein_position'],
+                                     index=[mapping_table['seq_id']]).reset_index()
+    indexed_map_table = indexed_map_table.set_index(['seq_id', 'Protein_position']).sort_index()
+    indexed_map_table.index.rename(['SOURCE_ID', 'Protein_position'], inplace=True)
+    indexed_map_table.columns = pd.MultiIndex.from_tuples([('Alignment', x) for x in indexed_map_table.columns],
+                                                          names=['Type', 'Field'])
+    return indexed_map_table
+
+
 def align_variants(alignment, species='HUMAN'):
     """
 
@@ -129,57 +180,6 @@ def align_variants(alignment, species='HUMAN'):
     alignment_variant_table.sort_index(inplace=True)
 
     return alignment_info, alignment_variant_table
-
-
-def _default_variant_filter(variants_table):
-    """
-    Apply standard filters to a alignment derived variant table.
-
-    :param variants_table:
-    :return:
-    """
-    # See version 1 of notebook for other ideas (e.g. Protin_position in UniProt range...)
-    # Reduce transcript duplication
-    is_canonical = variants_table[('VEP', 'CANONICAL')] == 'YES'
-    is_ccds = variants_table[('VEP', 'CCDS')] != ''
-    # Only want those that can map to a residue
-    is_protein_coding = variants_table[('VEP', 'BIOTYPE')] == 'protein_coding'
-    at_protein_position = variants_table[('VEP', 'Protein_position')] != ''
-    # Filter least useful effects
-    is_not_modifier = variants_table[('VEP', 'IMPACT')] != 'MODIFIER'
-    # Source protein filter
-    swissprot_matches_source = (variants_table['External', 'SOURCE_ACCESSION'] == variants_table['VEP', 'SWISSPROT'])
-    vcontains = vectorize(lambda x, y: x in y)
-    trembl_matches_source = vcontains(variants_table[('External', 'SOURCE_ACCESSION')],
-                                      variants_table[('VEP', 'TREMBL')])
-    trembl_matches_source[:] = False  # OVERRIDE TREMBL TO KEEP ONLY SWISSPROT
-    # Apply filter
-    filtered_variants = variants_table[is_canonical & is_protein_coding & is_not_modifier & is_ccds &
-                                       (swissprot_matches_source | trembl_matches_source) &
-                                       at_protein_position]
-    return filtered_variants
-
-
-def _mapping_table(alignment_info):
-    """
-    Construct a alignment column to sequence residue mapping table.
-
-    :param alignment_info:
-    :return:
-    """
-    mapping_table = pd.DataFrame(alignment_info['mapping'].tolist(),
-                                 index=[alignment_info.index, alignment_info['seq_id']])  # From top of notebook
-    mapping_table.reset_index(inplace=True)
-    mapping_table = pd.melt(mapping_table, id_vars=['level_0', 'seq_id'])
-    mapping_table.dropna(subset=['value'], inplace=True)
-    indexed_map_table = pd.DataFrame(mapping_table['value'].tolist(),
-                                     columns=['Column', 'Protein_position'],
-                                     index=[mapping_table['seq_id']]).reset_index()
-    indexed_map_table = indexed_map_table.set_index(['seq_id', 'Protein_position']).sort_index()
-    indexed_map_table.index.rename(['SOURCE_ID', 'Protein_position'], inplace=True)
-    indexed_map_table.columns = pd.MultiIndex.from_tuples([('Alignment', x) for x in indexed_map_table.columns],
-                                                          names=['Type', 'Field'])
-    return indexed_map_table
 
 
 if __name__ == '__main__':
