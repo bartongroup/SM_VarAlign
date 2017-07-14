@@ -183,10 +183,15 @@ def align_variants(alignment, species='HUMAN'):
 
 
 if __name__ == '__main__':
-    parser = argparse.ArgumentParser(description='Create variant counts column wise for an alignment.')
+    # CLI
+    parser = argparse.ArgumentParser(description='Align variants to a Pfam alignment.')
     parser.add_argument('alignment', type=str, help='Path to the alignment.')
-    parser.add_argument('--format', type=str, default='stockholm',
-                        help='Alignment format.')
-    parser.add_argument('--filter', type=str,
-                        help='An inclusive sequence ID filter to process only a subset of sequences.')
     args = parser.parse_args()
+
+    # Run align variants pipeline
+    alignment = AlignIO.read(args.alignment, format='stockholm')
+    alignment_info, alignment_variant_table = align_variants(alignment=alignment)
+
+    # Write results
+    alignment_info.to_csv(args.alignment+'_info.csv')
+    alignment_variant_table.to_csv(args.alignment+'_variants.csv')
