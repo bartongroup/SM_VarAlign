@@ -7,6 +7,7 @@ import requests
 from Bio.Align import MultipleSeqAlignment
 from Bio.Seq import Seq
 from Bio.Alphabet import IUPAC
+import copy
 
 from retry import retry
 import logging
@@ -90,24 +91,25 @@ def filter_alignment(alignment, seq_id_filter):
     return filtered_alignment
 
 
-def sanitise_alignment(alignment):
+def sanitise_alignment(aln):
     """
 
     :param alignment:
     :return:
     """
-    modified = {'lowercase': [], 'X': [], '.': [], 'Z': [], 'B': []}
-    for seqrec in alignment:
+    alignment_copy = copy.deepcopy(aln)
+    modified = {}
+    for seqrec in alignment_copy:
         # Letter annotations have to be put aside before seq is mutated
         annots = seqrec.letter_annotations
         seqrec.letter_annotations = {}
 
         # Mark problem residues for the log
-        modified['lowercase'].extend([str(i) for i, c in enumerate(str(seqrec.seq)) if c.islower()])
-        modified['X'].extend([str(i) for i, c in enumerate(str(seqrec.seq)) if c == 'X'])
-        modified['.'].extend([str(i) for i, c in enumerate(str(seqrec.seq)) if c == '.'])
-        modified['Z'].extend([str(i) for i, c in enumerate(str(seqrec.seq)) if c == 'Z'])
-        modified['B'].extend([str(i) for i, c in enumerate(str(seqrec.seq)) if c == 'B'])
+        modified['lowercase'] = [str(i) for i, c in enumerate(str(seqrec.seq)) if c.islower()]
+        modified['X'] = [str(i) for i, c in enumerate(str(seqrec.seq)) if c == 'X']
+        modified['.'] = [str(i) for i, c in enumerate(str(seqrec.seq)) if c == '.']
+        modified['Z'] = [str(i) for i, c in enumerate(str(seqrec.seq)) if c == 'Z']
+        modified['B'] = [str(i) for i, c in enumerate(str(seqrec.seq)) if c == 'B']
 
         # Sanitise seq string
         new_seq_str = str(seqrec.seq).upper()
@@ -135,7 +137,7 @@ def sanitise_alignment(alignment):
     log.info('Replaced Z with E in columns: {}'.format(','.join(set(modified['Z']))))
     log.info('Replaced B with D in columns: {}'.format(','.join(set(modified['B']))))
 
-    return alignment
+    return alignment_copy
 
 
 def is_missense_variant(variants):
