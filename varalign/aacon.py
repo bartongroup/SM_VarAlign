@@ -42,11 +42,12 @@ def _reformat_alignment_for_aacon(aln):
     return aacon_alignment, orig_col_nums
 
 
-def _run_aacon(aln, aacon_jar_path='/homes/smacgowan/bin/compbio-conservation-1.1.jar'):
+def _run_aacon(aln, column_index=None, aacon_jar_path='/homes/smacgowan/bin/compbio-conservation-1.1.jar'):
     """
     Run standalone AACon on an alignment.
 
     :param aln: Alignment.
+    :param column_index: Additional column numbering to add to results table.
     :param aacon_jar_path: Path to AACon jar.
     :return:
     """
@@ -66,6 +67,18 @@ def _run_aacon(aln, aacon_jar_path='/homes/smacgowan/bin/compbio-conservation-1.
                          "-o={}".format(aacon_output)],
                         stdout=aacon_log, stderr=aacon_log)
 
+    # Read results and format
+    log.info('Formatting JABAWS results...')
+    aacon_table = pd.read_table('aacon_scores.out', sep=' ', comment='>', index_col=0, header=None)
+    aacon_table = aacon_table.transpose().dropna()  # Needed to add `dropna` as extra row...
+    aacon_table.columns = aacon_table.columns.str.replace('#', '')
+    aacon_table.columns = aacon_table.columns.str.lower()
+
+    if column_index:
+        aacon_table['column_index'] = column_index
+
+    return aacon_table
+
 
 if __name__ == '__main__':
     # CLI
@@ -77,15 +90,9 @@ if __name__ == '__main__':
 
     # Format for AACon and run
     aacon_alignment, orig_col_nums = _reformat_alignment_for_aacon(alignment)
-    _run_aacon(aacon_alignment)
-
-    # Index to orginal column numbers and reformat
-    log.info('Formatting JABAWS results...')
-    cons_scores_table = pd.read_table('aacon_scores.out', sep=' ', comment='>', index_col=0, header=None)
-    cons_scores_table = cons_scores_table.transpose().dropna()  # Needed to add `dropna` as extra row...
-    cons_scores_table['orig_col_nums'] = orig_col_nums
+    alignment_conservation = _run_aacon(aacon_alignment, orig_col_nums)
 
     # Save result
-    cons_scores_file = 'aacon_scores.out'.replace('out', 'csv')
+    cons_scores_file = 'aacon_scores.csv'
     log.info('Writing formatted AACons results to {}'.format(cons_scores_file))
-    cons_scores_table.to_csv(cons_scores_file)
+    alignment_conservation.to_csv(cons_scores_file)
