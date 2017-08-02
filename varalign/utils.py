@@ -133,11 +133,16 @@ def sanitise_alignment(aln):
         seqrec.letter_annotations = annots
 
     # Log modified columns
-    log.info('Fixed columns with lowercase letters: {}'.format(','.join(set(modified['lowercase']))))
-    log.info('Replaced X with G in columns: {}'.format(','.join(set(modified['X']))))
-    log.info('Replaced . with - in columns: {}'.format(','.join(set(modified['.']))))
-    log.info('Replaced Z with E in columns: {}'.format(','.join(set(modified['Z']))))
-    log.info('Replaced B with D in columns: {}'.format(','.join(set(modified['B']))))
+    if modified['lowercase']:
+        log.info('Fixed columns with lowercase letters: {}'.format(','.join(set(modified['lowercase']))))
+    if modified['X']:
+        log.info('Replaced X with G in columns: {}'.format(','.join(set(modified['X']))))
+    if modified['.']:
+        log.info('Replaced . with - in columns: {}'.format(','.join(set(modified['.']))))
+    if modified['Z']:
+        log.info('Replaced Z with E in columns: {}'.format(','.join(set(modified['Z']))))
+    if modified['B']:
+        log.info('Replaced B with D in columns: {}'.format(','.join(set(modified['B']))))
 
     return alignment_copy
 

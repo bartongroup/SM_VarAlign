@@ -20,8 +20,8 @@ def _reformat_alignment_for_aacon(aln):
     :param aln: Alignment
     :return:
     """
+    # Perform general sanitisation
     aacon_alignment = sanitise_alignment(aln)
-    log.info('Removing empty and unrecognised columns...')
 
     # Identify empty columns and those with unknown characters
     allowed_chars = IUPAC.IUPACProtein.letters + '-'
@@ -30,14 +30,17 @@ def _reformat_alignment_for_aacon(aln):
     for column in range(aacon_alignment.get_alignment_length()):
         is_empty_column.append(all([x == '-' for x in aacon_alignment[:, column]]))
         contains_unk_chars.append(any([x not in allowed_chars for x in aacon_alignment[:, column]]))
-    log.info('Empty columns: {}'.format(','.join([str(i + 1) for i, x in enumerate(is_empty_column) if x])))
-    log.info('Malformed columns: {}'.format(','.join([str(i + 1) for i, x in enumerate(contains_unk_chars) if x])))
 
     # Remove those columns
     column_mask = [x | y for x, y in zip(is_empty_column, contains_unk_chars)]
     orig_col_nums = [ind + 1 for ind, x in enumerate(column_mask) if not x]
     aacon_alignment = apply_column_mask(aacon_alignment, is_empty_column)
-    log.info('Empty and malformed columns removed.')
+
+    # Log modifications
+    if any(is_empty_column):
+        log.info('Removed empty columns: {}'.format(','.join([str(i + 1) for i, x in enumerate(is_empty_column) if x])))
+    if any(contains_unk_chars):
+        log.info('Removed malformed columns: {}'.format(','.join([str(i + 1) for i, x in enumerate(contains_unk_chars) if x])))
 
     return aacon_alignment, orig_col_nums
 
@@ -55,9 +58,9 @@ def _run_aacon(aln, column_index=None, aacon_jar_path='/homes/smacgowan/bin/comp
     aacon_output = 'aacon_scores.out'
 
     # Write alignment to disk as fasta
-    log.info('Writing alignment to {}...'.format(aacon_input))
     with open(aacon_input, 'wb') as output:
         AlignIO.write(aln, output, 'fasta')
+    log.info('AACon formatted alignment saved to {}'.format(aacon_input))
 
     # Run AACon on alignment
     log.info('Launcing AACon...')
@@ -68,7 +71,6 @@ def _run_aacon(aln, column_index=None, aacon_jar_path='/homes/smacgowan/bin/comp
                         stdout=aacon_log, stderr=aacon_log)
 
     # Read results and format
-    log.info('Formatting JABAWS results...')
     aacon_table = pd.read_table('aacon_scores.out', sep=' ', comment='>', index_col=0, header=None)
     aacon_table = aacon_table.transpose().dropna()  # Needed to add `dropna` as extra row...
     aacon_table.columns = aacon_table.columns.str.replace('#', '')
@@ -94,5 +96,6 @@ if __name__ == '__main__':
 
     # Save result
     cons_scores_file = 'aacon_scores.csv'
-    log.info('Writing formatted AACons results to {}'.format(cons_scores_file))
     alignment_conservation.to_csv(cons_scores_file)
+    log.info('Formatted AACons results saved to {}'.format(cons_scores_file))
+
