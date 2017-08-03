@@ -2,8 +2,10 @@
 
 def _aggregate_annotation(aligned_variant_table, annotation_column, aggregate_by=[('Alignment', 'Column')],
                           fill_value=0):
-    """
-    Create frequency table for a categorical column over other columns and/or index levels.
+    """Count category frequencies over a set of aggregation columns.
+
+    Create frequency table for a categorical column over other columns and/or index levels. Index names can only be used
+    in Pandas >= 0.20.1.
 
     :param aligned_variant_table: DataFrame
     :param annotation_column: Column name containing categories to count.
