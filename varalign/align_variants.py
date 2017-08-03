@@ -5,7 +5,7 @@ from operator import itemgetter
 import pandas as pd
 from Bio import AlignIO
 from numpy import vectorize
-from tqdm import tqdm
+import tqdm
 
 import alignments
 import ensembl
@@ -60,7 +60,7 @@ def _map_uniprot_to_genome(uniprot, species='homo_sapiens', collapse=True):
         non_standard_ranges.sort(reverse=True)
         [ensembl_genes.pop(i) for i in non_standard_ranges]
         [ensembl_ranges.pop(i) for i in non_standard_ranges]
-        log.info('Removed %s non-standard sequence regions.', len(non_standard_ranges))
+        log.info('Removed %s non-standard sequence regions from %s.', len(non_standard_ranges), uniprot)
     # Check for no mapping
     if len(ensembl_ranges) == 0:
         raise ValueError('Could not map {} to the genome.'.format(uniprot))
@@ -129,13 +129,15 @@ def align_variants(alignment, species='HUMAN'):
     :return:
     """
     # ----- Parse alignment info -----
+    log.info('Generating alignment info table...')
     alignment_info = alignments.alignment_info_table(alignment, species)
+    log.info('Alignment info table head:\n%s', alignment_info.head().to_string())
 
     # ----- Map sequences to genome -----
     # TODO: If get transcript ID can use to filter variant table
     genomic_ranges = [
         (row.seq_id, _map_uniprot_to_genome(row.uniprot_id, species=species))
-        for row in tqdm(alignment_info.itertuples(), total=len(alignment_info))
+        for row in tqdm.tqdm(alignment_info.itertuples(), total=len(alignment_info))
     ]
     log.info("Mapped {} sequences to genome.".format(len(genomic_ranges)))
 
@@ -146,7 +148,7 @@ def align_variants(alignment, species='HUMAN'):
     # ----- Fetch variants for the mapped genomic ranges -----
     sequence_variant_lists = [(row.seq_id, (x for r in row.genomic_ranges for x in gnomad.gnomad.fetch(*r)))
                               for row in alignment_info.dropna(subset=['genomic_ranges']).itertuples()]
-    all_variants = ((variant, seq_id) for seq_id, range_reader in tqdm(sequence_variant_lists)
+    all_variants = ((variant, seq_id) for seq_id, range_reader in tqdm.tqdm(sequence_variant_lists)
                     for variant in range_reader)
     variants_table = gnomad.vcf_row_to_table(*zip(*all_variants))
 
