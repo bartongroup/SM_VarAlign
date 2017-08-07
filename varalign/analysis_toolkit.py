@@ -1,5 +1,6 @@
 import pandas as pd
 from scipy import stats
+import seaborn as sns
 
 
 def _aggregate_annotation(aligned_variant_table, annotation_column, aggregate_by=[('Alignment', 'Column')],
@@ -69,3 +70,54 @@ def _column_variant_scores(column_variant_counts, variant_class='missense_varian
     # Parse to dataframe
     return pd.DataFrame(missense_scores, columns=['oddsratio', 'pvalue'], index=column_variant_counts.index)
 
+
+def _missense_per_residue_plot(aligned_variants_table, mapping_table):
+    """
+
+    :param aligned_variants_table:
+    :return:
+    """
+    residue_counts = aligned_variants_table.pipe(_aggregate_annotation,
+                                                 ('VEP', 'Consequence'),
+                                                 aggregate_by=['SOURCE_ID', 'Protein_position'])
+    residue_counts = residue_counts.reindex(mapping_table.index).fillna(0)  # Fill in residues with no variants
+    ax = residue_counts['missense_variant'].astype(int).value_counts().plot.bar(width=0.9, facecolor='black',
+                                                                                edgecolor='black')
+
+    return residue_counts.rename_axis('', 1)
+
+
+def _variant_per_protein_plot(aligned_variants_table):
+    """
+
+    :param aligned_variants_table:
+    :return:
+    """
+    protein_consequences = _aggregate_annotation(aligned_variants_table, ('VEP', 'Consequence'),
+                                                 aggregate_by=['SOURCE_ID'])
+    ax = protein_consequences.loc[:, protein_consequences.sum() > 100].hist(facecolor='black', edgecolor='black',
+                                                                            figsize=(10, 10))
+
+    return protein_consequences.rename_axis('', 1)
+
+
+def _varaints_vs_length_plot(protein_variant_counts, alignment_info):
+    """
+
+    :param protein_variant_counts:
+    :param alignment_info:
+    :return:
+    """
+    # Calculate sequence lengths
+    seq_lengths = alignment_info.set_index('seq_id')['start_end'].apply(lambda x: len(range(*x)) + 1)
+    seq_lengths.name = 'length'
+    protein_variant_counts = protein_variant_counts.join(seq_lengths)
+
+    # Plot
+    plot_data = pd.melt(protein_variant_counts.loc[:, protein_variant_counts.sum() > 100],
+                        id_vars=['length'],
+                        var_name='Variant_Effect', value_name='Count')
+    sns.lmplot(x='length', y='Count', col='Variant_Effect', hue='Variant_Effect',
+               data=plot_data, fit_reg=True, sharey=False, col_wrap=3)
+
+    return None
