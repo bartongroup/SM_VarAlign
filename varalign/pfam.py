@@ -1,3 +1,4 @@
+import argparse
 from Bio import AlignIO
 import gzip
 import io
@@ -84,3 +85,13 @@ def read_family(pfam_path, start):
     alignment = AlignIO.read(alignment_handle, 'stockholm')
     alignment_handle.close()
     return alignment
+
+
+if __name__ == '__main__':
+    # CLI
+    parser = argparse.ArgumentParser(description='Index Pfam alignments.')
+    parser.add_argument('pfam_file', type=str, help='Path to the Pfam file.')
+    args = parser.parse_args()
+
+    # Index Pfam file
+    index_pfam(args.pfam_file)
