@@ -74,4 +74,10 @@ def alignment_info_table(alignment, id_filter=''):
     alignment_info = alignment_info.assign(species=alignment_info['name'].str.split('_').str[1].values)
     alignment_info = alignment_info.assign(uniprot_id=alignment_info['uniprot'].str.split('.').str[0].values)
 
+    # Add sequence lengths
+    seq_lengths = alignment_info['start_end'].apply(lambda x: len(range(*x)) + 1)
+    seq_lengths.name = 'length'
+    alignment_info = alignment_info.join(seq_lengths)
+
     return alignment_info
+

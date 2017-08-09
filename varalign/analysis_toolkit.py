@@ -1,6 +1,6 @@
 import pandas as pd
-from scipy import stats
 import seaborn as sns
+from scipy import stats
 
 
 def _aggregate_annotation(aligned_variant_table, annotation_column, aggregate_by=[('Alignment', 'Column')],
@@ -109,9 +109,7 @@ def _varaints_vs_length_plot(protein_variant_counts, alignment_info):
     :return:
     """
     # Calculate sequence lengths
-    seq_lengths = alignment_info.set_index('seq_id')['start_end'].apply(lambda x: len(range(*x)) + 1)
-    seq_lengths.name = 'length'
-    protein_variant_counts = protein_variant_counts.join(seq_lengths)
+    protein_variant_counts = protein_variant_counts.join(alignment_info['lengths'])
 
     # Plot
     plot_data = pd.melt(protein_variant_counts.loc[:, protein_variant_counts.sum() > 100],
@@ -121,3 +119,5 @@ def _varaints_vs_length_plot(protein_variant_counts, alignment_info):
                data=plot_data, fit_reg=True, sharey=False, col_wrap=3)
 
     return None
+
+
