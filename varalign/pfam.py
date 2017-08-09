@@ -1,7 +1,10 @@
 import argparse
 from Bio import AlignIO
+from Bio.Align import MultipleSeqAlignment
 import gzip
 import io
+from itertools import count, groupby
+import pandas as pd
 import StringIO
 
 def index_pfam(pfam_path):
@@ -85,6 +88,56 @@ def read_family(pfam_path, start):
     alignment = AlignIO.read(alignment_handle, 'stockholm')
     alignment_handle.close()
     return alignment
+
+
+def filter_non_swissprot(aln, swissprot_id_file='/homes/smacgowan/NOBACK/resources/swissprot_ids.tab'):
+    """Return new Pfam alignment with only SwissProt sequences.
+
+    :param aln:
+    :param swissprot_id_file:
+    :return:
+    """
+    # Read list of Swissprot IDS
+    swissprot_ids = pd.read_csv(swissprot_id_file, sep='\t', header=0)
+    swissprot_seq_names = set(swissprot_ids['Entry name'].tolist())
+
+    # Filter alignment
+    # Test each sequence for SwissProt membership
+    passing_seqs = [seq for seq in aln if seq.name in swissprot_seq_names]
+
+    # Build new alignment for swissprot sequences
+    filtered_alignment = MultipleSeqAlignment(passing_seqs)
+    filtered_alignment.annotations = aln.annotations
+
+    # Identify occupied columns
+    occupied_cols = []
+    for i in xrange(aln.get_alignment_length()):
+        if not all([x == '-' for x in filtered_alignment[:, i]]):
+            occupied_cols.append(i)
+
+    # Convert to ranges
+    # Inspired by:
+    # https://stackoverflow.com/questions/3429510/pythonic-way-to-convert-a-list-of-integers-into-a-string-of-comma-separated-range/3430231#3430231
+    G = (list(x) for _, x in groupby(occupied_cols, lambda x, c=count(): next(c) - x))
+    occupied_ranges = [(g[0], g[-1])[:len(g)] for g in G]
+    occupied_ranges = [x if len(x) == 2 else x * 2 for x in occupied_ranges]
+
+    # Build list of continuous occupied sub-alignments
+    MSA_columns = []
+    for start, end in occupied_ranges:
+        MSA_columns.append(filtered_alignment[:, start:end + 1])
+
+    # Concatenate sub-alignments
+    degapped_alignment = filtered_alignment[:, 0:0]
+    for x in MSA_columns:
+        degapped_alignment = degapped_alignment + x
+    # NB. `reduce` could be faster...
+
+    # Add sequence annotations to new alignment
+    for new, old in zip(degapped_alignment, filtered_alignment):
+        new.annotations = old.annotations
+
+    return degapped_alignment
 
 
 if __name__ == '__main__':
