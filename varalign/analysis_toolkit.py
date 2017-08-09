@@ -101,7 +101,7 @@ def _variant_per_protein_plot(aligned_variants_table):
     return protein_consequences.rename_axis('', 1)
 
 
-def _varaints_vs_length_plot(protein_variant_counts, alignment_info):
+def _variants_vs_length_plot(protein_variant_counts, alignment_info):
     """
 
     :param protein_variant_counts:
