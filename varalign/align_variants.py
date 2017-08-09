@@ -195,5 +195,5 @@ if __name__ == '__main__':
     alignment_info, alignment_variant_table = align_variants(alignment=alignment)
 
     # Write results
-    alignment_info.to_csv(args.alignment+'_info.csv')
-    alignment_variant_table.to_csv(args.alignment+'_variants.csv')
+    alignment_info.to_pickle(args.alignment+'_info.p.gz')
+    alignment_variant_table.to_pickle(args.alignment+'_variants.p.gz')
