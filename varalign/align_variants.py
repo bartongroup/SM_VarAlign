@@ -12,6 +12,8 @@ import ensembl
 import gnomad
 from config import defaults
 from gnomad import tabulate_variant_effects
+from varalign.analysis_toolkit import _aggregate_annotation
+
 
 log = logging.getLogger(__name__)
 log.setLevel('INFO')
@@ -193,7 +195,28 @@ if __name__ == '__main__':
     # Run align variants pipeline
     alignment = AlignIO.read(args.alignment, format='stockholm')
     alignment_info, alignment_variant_table = align_variants(alignment=alignment)
-
-    # Write results
+    # Write data
     alignment_info.to_pickle(args.alignment+'_info.p.gz')
     alignment_variant_table.to_pickle(args.alignment+'_variants.p.gz')
+
+    # Column aggregations
+    # Count variants over columns
+    column_variant_counts = _aggregate_annotation(alignment_variant_table, ('VEP', 'Consequence'))
+    column_variant_counts.to_csv(args.alignment + '.col_var_counts.csv')
+
+    # Count *rare* variants over columns
+    rare_maf_threshold = 0.001
+    is_rare = alignment_variant_table[('Allele_INFO', 'AF_POPMAX')] < rare_maf_threshold
+    column_rare_counts = _aggregate_annotation(alignment_variant_table[is_rare], ('VEP', 'Consequence'))
+    column_rare_counts.to_csv(args.alignment + '.col_rare_counts.csv')
+
+    # Count ClinVar annotations for *missense* variants over columns
+    is_missense = alignment_variant_table[('VEP', 'Consequence')] == 'missense_variant'
+    column_missense_clinvar = _aggregate_annotation(alignment_variant_table[is_missense], ('VEP', 'CLIN_SIG'))
+    column_missense_clinvar.to_csv(args.alignment + '.col_mis_clinvar.csv')
+
+    # Count ClinVar annotations for *synonymous* variants over columns
+    is_synonymous = alignment_variant_table[('VEP', 'Consequence')] == 'synonymous_variant'
+    column_missense_clinvar = _aggregate_annotation(alignment_variant_table[is_synonymous], ('VEP', 'CLIN_SIG'))
+    column_missense_clinvar.to_csv(args.alignment + '.col_syn_clinvar.csv')
+    
