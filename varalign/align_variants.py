@@ -269,6 +269,17 @@ if __name__ == '__main__':
     pdf.savefig()
     plt.close()
 
+    # Plot 1
+    fig, axs = plt.subplots(1, 2, figsize=(10, 5), sharex=True, sharey=True)
+    column_summary.plot.scatter('occupancy', 'missense_variant', ax=axs[0])
+    column_summary.plot.scatter('occupancy', 'synonymous_variant', ax=axs[1])
+    axs[0].axvline(column_summary[subset_mask_gmm]['occupancy'].min())
+    axs[1].axvline(column_summary[subset_mask_gmm]['occupancy'].min())
+    plt.title('N Variants vs. Occupancy')
+    pdf.attach_note('N Variants vs. Occupancy')
+    pdf.savefig()
+    plt.close()
+
     # Other aggregations, some of these just produce the plot
     # Variants per sequence histogram
     protein_consequences = _aggregate_annotation(alignment_variant_table, ('VEP', 'Consequence'),
