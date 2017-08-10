@@ -247,6 +247,12 @@ if __name__ == '__main__':
     column_summary = column_variant_counts.join([column_missense_clinvar, column_occupancy, alignment_conservation])
     column_summary.to_csv(args.alignment + '.col_summary.csv')
 
+    # Occupancy GMM
+    gmms = occ_gmm._fit_mixture_models(column_summary['occupancy'])
+    M_best = occ_gmm._pick_best(gmms['models'], gmms['data'])
+    # M_best.means_
+    subset_mask_gmm = occ_gmm._core_column_mask(M_best, gmms['data'])
+
 
 
     # Plot output
@@ -256,12 +262,7 @@ if __name__ == '__main__':
     d['Title'] = 'Aligned Variant Diagnostics Plots for {}'.format(args.alignment)
     d['Author'] = 'align_variants.py'
 
-    # Occupancy GMM
-    gmms = occ_gmm._fit_mixture_models(column_summary['occupancy'])
-    M_best = occ_gmm._pick_best(gmms['models'], gmms['data'])
-    # M_best.means_
-    subset_mask_gmm = occ_gmm._core_column_mask(M_best, gmms['data'])
-    # Plot diagnostics
+    # Plot GMM diagnostics
     occ_gmm._gmm_plot(gmms['models'], gmms['data'])
     plt.title('Residue Occupancy GMM Diagnostics')
     pdf.attach_note('Residue Occupancy GMM Diagnostics')
