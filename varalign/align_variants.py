@@ -13,13 +13,14 @@ from Bio import AlignIO
 from numpy import vectorize
 import tqdm
 
+import aacon
 import alignments
 import ensembl
 import gnomad
 from config import defaults
 from gnomad import tabulate_variant_effects
 from varalign.analysis_toolkit import _aggregate_annotation
-
+from varalign import occ_gmm
 
 log = logging.getLogger(__name__)
 log.setLevel('INFO')
@@ -206,6 +207,16 @@ if __name__ == '__main__':
     alignment_info.to_pickle(args.alignment+'_info.p.gz')
     alignment_variant_table.to_pickle(args.alignment+'_variants.p.gz')
 
+    # Run aacon
+    # Format for AACon and run
+    aacon_alignment, orig_col_nums = aacon._reformat_alignment_for_aacon(alignment)
+    alignment_conservation = aacon._run_aacon(aacon_alignment, orig_col_nums)
+
+    # Save result
+    cons_scores_file = 'aacon_scores.csv'
+    alignment_conservation.to_csv(cons_scores_file)
+    log.info('Formatted AACons results saved to {}'.format(cons_scores_file))
+
     # Column aggregations
     # Count variants over columns
     column_variant_counts = _aggregate_annotation(alignment_variant_table, ('VEP', 'Consequence'))
@@ -224,41 +235,66 @@ if __name__ == '__main__':
 
     # Count ClinVar annotations for *synonymous* variants over columns
     is_synonymous = alignment_variant_table[('VEP', 'Consequence')] == 'synonymous_variant'
-    column_missense_clinvar = _aggregate_annotation(alignment_variant_table[is_synonymous], ('VEP', 'CLIN_SIG'))
-    column_missense_clinvar.to_csv(args.alignment + '.col_syn_clinvar.csv')
+    column_synonymous_clinvar = _aggregate_annotation(alignment_variant_table[is_synonymous], ('VEP', 'CLIN_SIG'))
+    column_synonymous_clinvar.to_csv(args.alignment + '.col_syn_clinvar.csv')
+
+    # Use mapping table to calculate human residue occupancy
+    # TODO: Adjust for unmapped seqs
+    column_occupancy = indexed_mapping_table[('Alignment', 'Column')].value_counts().sort_index()
+    column_occupancy.name = 'occupancy'
+
+    # Merge required data for further standard analyses
+    column_summary = column_variant_counts.join([column_missense_clinvar, column_occupancy, alignment_conservation])
+    column_summary.to_csv(args.alignment + '.col_summary.csv')
+
+
+
+    # Plot output
+    pdf = PdfPages(args.alignment + '.figures.pdf')
+    # PDF metadata
+    d = pdf.infodict()
+    d['Title'] = 'Aligned Variant Diagnostics Plots for {}'.format(args.alignment)
+    d['Author'] = 'align_variants.py'
+
+    # Occupancy GMM
+    gmms = occ_gmm._fit_mixture_models(column_summary['occupancy'])
+    M_best = occ_gmm._pick_best(gmms['models'], gmms['data'])
+    # M_best.means_
+    subset_mask_gmm = occ_gmm._core_column_mask(M_best, gmms['data'])
+    # Plot diagnostics
+    occ_gmm._gmm_plot(gmms['models'], gmms['data'])
+    plt.title('Residue Occupancy GMM Diagnostics')
+    pdf.attach_note('Residue Occupancy GMM Diagnostics')
+    pdf.savefig()
+    plt.close()
 
     # Other aggregations, some of these just produce the plot
+    # Variants per sequence histogram
+    protein_consequences = _aggregate_annotation(alignment_variant_table, ('VEP', 'Consequence'),
+                                                 aggregate_by=['SOURCE_ID'])
+    protein_consequences.hist(facecolor='black', edgecolor='black')
+    plt.title('Variants per Sequence')
+    pdf.attach_note('Distribution of variants over alignment sequences')
+    pdf.savefig()
+    plt.close()
 
-    with PdfPages(args.alignment+'.figures.pdf') as pdf:
-        # PDF metadata
-        d = pdf.infodict()
-        d['Title'] = 'Aligned Variant Diagnostics Plots for {}'.format(args.alignment)
-        d['Author'] = 'align_variants.py'
+    # Variants per residue histogram
+    residue_counts = alignment_variant_table.pipe(_aggregate_annotation,
+                                                  ('VEP', 'Consequence'),
+                                                  aggregate_by=['SOURCE_ID', 'Protein_position'])
+    residue_counts = residue_counts.reindex(indexed_mapping_table.index).fillna(0)  # Fill in residues with no variants
+    residue_counts['missense_variant'].astype(int).value_counts().plot.bar(width=0.9, facecolor='black',
+                                                                           edgecolor='black')
+    plt.title('Missense Variants per Residue')
+    pdf.attach_note('Distribution of variants over protein residues')
+    pdf.savefig()
+    plt.close()
 
-        # Variants per sequence histogram
-        protein_consequences = _aggregate_annotation(alignment_variant_table, ('VEP', 'Consequence'),
-                                                     aggregate_by=['SOURCE_ID'])
-        protein_consequences.hist(facecolor='black', edgecolor='black')
-        plt.title('Variants per Sequence')
-        pdf.attach_note('Distribution of variants over alignment sequences')
-        pdf.savefig()
-        plt.close()
+    # Variants per column histogram
+    column_variant_counts['missense_variant'].hist()
+    plt.title('Missense Variants per Column')
+    pdf.attach_note('Distribution of variants over alignment columns')
+    pdf.savefig()
+    plt.close()
 
-        # Variants per residue histogram
-        residue_counts = alignment_variant_table.pipe(_aggregate_annotation,
-                                                      ('VEP', 'Consequence'),
-                                                      aggregate_by=['SOURCE_ID', 'Protein_position'])
-        residue_counts = residue_counts.reindex(indexed_mapping_table.index).fillna(0)  # Fill in residues with no variants
-        residue_counts['missense_variant'].astype(int).value_counts().plot.bar(width=0.9, facecolor='black',
-                                                                               edgecolor='black')
-        plt.title('Missense Variants per Residue')
-        pdf.attach_note('Distribution of variants over protein residues')
-        pdf.savefig()
-        plt.close()
-
-        # Variants per column histogram
-        column_variant_counts['missense_variant'].hist()
-        plt.title('Missense Variants per Column')
-        pdf.attach_note('Distribution of variants over alignment columns')
-        pdf.savefig()
-        plt.close()
+    pdf.close()
