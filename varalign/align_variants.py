@@ -292,7 +292,9 @@ if __name__ == '__main__':
     plt.close()
 
     # Variants per column histogram
-    column_variant_counts['missense_variant'].hist()
+    fig, axes = plt.subplots(1, 2, sharex=True)
+    column_variant_counts['missense_variant'].hist(ax=axes[0])
+    column_summary.loc[subset_mask_gmm, 'missense_variant'].hist(ax=axes[1])
     plt.title('Missense Variants per Column')
     pdf.attach_note('Distribution of variants over alignment columns')
     pdf.savefig()
