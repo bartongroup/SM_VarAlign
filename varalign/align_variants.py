@@ -1,3 +1,9 @@
+# seems to be required at the top, otherwise get display error...
+import matplotlib as mpl
+mpl.use('Agg')
+import matplotlib.pyplot as plt
+from matplotlib.backends.backend_pdf import PdfPages
+
 import argparse
 import logging
 from operator import itemgetter
@@ -195,6 +201,7 @@ if __name__ == '__main__':
     # Run align variants pipeline
     alignment = AlignIO.read(args.alignment, format='stockholm')
     alignment_info, alignment_variant_table = align_variants(alignment=alignment)
+    indexed_mapping_table = _mapping_table(alignment_info)  # TODO: Should this be passed or returned by align_variants?
     # Write data
     alignment_info.to_pickle(args.alignment+'_info.p.gz')
     alignment_variant_table.to_pickle(args.alignment+'_variants.p.gz')
@@ -219,4 +226,39 @@ if __name__ == '__main__':
     is_synonymous = alignment_variant_table[('VEP', 'Consequence')] == 'synonymous_variant'
     column_missense_clinvar = _aggregate_annotation(alignment_variant_table[is_synonymous], ('VEP', 'CLIN_SIG'))
     column_missense_clinvar.to_csv(args.alignment + '.col_syn_clinvar.csv')
-    
+
+    # Other aggregations, some of these just produce the plot
+
+    with PdfPages(args.alignment+'.figures.pdf') as pdf:
+        # PDF metadata
+        d = pdf.infodict()
+        d['Title'] = 'Aligned Variant Diagnostics Plots for {}'.format(args.alignment)
+        d['Author'] = 'align_variants.py'
+
+        # Variants per sequence histogram
+        protein_consequences = _aggregate_annotation(alignment_variant_table, ('VEP', 'Consequence'),
+                                                     aggregate_by=['SOURCE_ID'])
+        protein_consequences.hist(facecolor='black', edgecolor='black')
+        plt.title('Variants per Sequence')
+        pdf.attach_note('Distribution of variants over alignment sequences')
+        pdf.savefig()
+        plt.close()
+
+        # Variants per residue histogram
+        residue_counts = alignment_variant_table.pipe(_aggregate_annotation,
+                                                      ('VEP', 'Consequence'),
+                                                      aggregate_by=['SOURCE_ID', 'Protein_position'])
+        residue_counts = residue_counts.reindex(indexed_mapping_table.index).fillna(0)  # Fill in residues with no variants
+        residue_counts['missense_variant'].astype(int).value_counts().plot.bar(width=0.9, facecolor='black',
+                                                                               edgecolor='black')
+        plt.title('Missense Variants per Residue')
+        pdf.attach_note('Distribution of variants over protein residues')
+        pdf.savefig()
+        plt.close()
+
+        # Variants per column histogram
+        column_variant_counts['missense_variant'].hist()
+        plt.title('Missense Variants per Column')
+        pdf.attach_note('Distribution of variants over alignment columns')
+        pdf.savefig()
+        plt.close()
