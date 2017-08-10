@@ -59,14 +59,14 @@ def _gmm_plot(models, x):
     #   2) AIC and BIC vs number of components
     #   3) probability that a point came from each component
 
-    fig = plt.figure(figsize=(15, 5))
+    fig = plt.figure(figsize=(10, 5))
     fig.subplots_adjust(left=0.12, right=0.97,
                         bottom=0.21, top=0.9, wspace=0.5)
 
     # plot 1: data + best-fit mixture
     best_model = _pick_best(models, x)
 
-    ax = fig.add_subplot(131)
+    ax = fig.add_subplot(121)
 
     grid = np.linspace(1, 300, 1000)  # Can't go from 0 because get p > 1 !!!
     grid = grid.reshape(-1, 1)
@@ -88,7 +88,7 @@ def _gmm_plot(models, x):
     # plot 2: AIC and BIC
     scores = _score_models(models, x)
 
-    ax = fig.add_subplot(132)
+    ax = fig.add_subplot(122)
     ax.plot(range(1, len(scores['AIC']) + 1), scores['AIC'], '-k', label='AIC')
     ax.plot(range(1, len(scores['BIC']) + 1), scores['BIC'], '--k', label='BIC')
     ax.set_xlabel('n. components')
