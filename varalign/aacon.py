@@ -78,6 +78,7 @@ def _run_aacon(aln, column_index=None, aacon_jar_path='/homes/smacgowan/bin/comp
 
     if column_index:
         aacon_table['column_index'] = column_index
+        aacon_table.set_index('column_index', inplace=True)
 
     return aacon_table
 
