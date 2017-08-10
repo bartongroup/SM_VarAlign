@@ -18,7 +18,7 @@ def _aggregate_annotation(aligned_variant_table, annotation_column, aggregate_by
     """
     groupby = aggregate_by + [annotation_column]
     grouped = aligned_variant_table.groupby(groupby)
-    return grouped.size().unstack(fill_value=fill_value)
+    return grouped.size().unstack(fill_value=fill_value).rename_axis('', 1)
 
 
 def _comparative_regression(column_variant_counts, filter_mask=None, regressor ='Human_res_occupancy'):
