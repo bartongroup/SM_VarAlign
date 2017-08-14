@@ -11,7 +11,7 @@ def _fit_mixture_models(s, max_gaussians=5):
     :param max_gaussians:
     :return:
     """
-    x = s.reshape(-1, 1)
+    x = s.values.reshape(-1, 1)
 
     # Fit GMM with a range of mixture components
     models = [mixture.GaussianMixture(n, n_init=3) for n in range(1, max_gaussians+1)]
