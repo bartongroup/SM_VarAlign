@@ -4,6 +4,8 @@ mpl.use('Agg')
 import matplotlib.pyplot as plt
 from matplotlib.backends.backend_pdf import PdfPages
 
+import seaborn as sns
+
 import argparse
 import logging
 from operator import itemgetter
@@ -297,6 +299,19 @@ if __name__ == '__main__':
     axs[1].axvline(column_summary[subset_mask_gmm]['occupancy'].min())
     plt.title('N Variants vs. Occupancy')
     pdf.attach_note('N Variants vs. Occupancy')
+    pdf.savefig()
+    plt.close()
+
+    # Conservation plane plot
+    fig, axs = plt.subplots(1, 2, figsize=(15, 5), sharex=True, sharey=True)
+    sns.regplot(x='shenkin', y='missense_variant', data=column_summary[subset_mask_gmm], ax=axs[0])
+    pd.plotting.table(axs[0], shenkin_regressions.loc[['missense', 'filtered_missense']].round(2),
+                      loc='upper right', colWidths=[0.12]*5, zorder=100)
+    sns.regplot(x='shenkin', y='synonymous_variant', data=column_summary[subset_mask_gmm], ax=axs[1])
+    pd.plotting.table(axs[1], shenkin_regressions.loc[['synonymous', 'filtered_synonymous']].round(2),
+                      loc='upper right', colWidths=[0.12]*5, zorder=100)
+    plt.title('N Variants vs. Shenkin')
+    pdf.attach_note('N Variants vs. Shenkin')
     pdf.savefig()
     plt.close()
 
