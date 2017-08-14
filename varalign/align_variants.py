@@ -15,6 +15,7 @@ import tqdm
 
 import aacon
 import alignments
+import analysis_toolkit
 import ensembl
 import gnomad
 from config import defaults
@@ -252,6 +253,25 @@ if __name__ == '__main__':
     M_best = occ_gmm._pick_best(gmms['models'], gmms['data'])
     # M_best.means_
     subset_mask_gmm = occ_gmm._core_column_mask(M_best, gmms['data'])
+
+    # Regression statistics
+
+    # This checks whether missense and synonymous variant counts are correlated with column occupancy before and
+    # after column filtering
+    variants_vs_occ = analysis_toolkit._comparative_regression(column_summary, subset_mask_gmm, 'occupancy')
+    variants_vs_occ.to_csv(args.alignment + '.variant_occ_regression.csv')
+    # TODO: Test variants_vs_occ.loc['filtered_missense', 'pvalue'] > 0.05
+
+    # Conservation plane with Shenkin score
+    shenkin_regressions = analysis_toolkit._comparative_regression(column_summary, subset_mask_gmm, 'shenkin')
+    shenkin_regressions.to_csv(args.alignment + '.variant_shenkin_regression.csv')
+
+    negative_control_p = shenkin_regressions.loc['filtered_synonymous', 'pvalue'] > 0.05
+    positive_control_p = shenkin_regressions.loc['filtered_missense', 'pvalue'] < 0.05
+    positive_control_m = shenkin_regressions.loc['filtered_missense', 'slope'] > 0
+    print 'Filtered synonymous vs. Shenkin (negative control)... {}'.format('PASS' if negative_control_p else 'FAIL')
+    print 'Filtered missense vs Shenkin (positive control)... {}'.format(
+        'PASS' if positive_control_p and positive_control_m else 'FAIL')
 
 
 
