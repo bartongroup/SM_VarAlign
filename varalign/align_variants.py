@@ -275,6 +275,12 @@ if __name__ == '__main__':
     print 'Filtered missense vs Shenkin (positive control)... {}'.format(
         'PASS' if positive_control_p and positive_control_m else 'FAIL')
 
+    # Column variant scores, for block columns only
+    missense_scores = analysis_toolkit._column_variant_scores(column_summary[subset_mask_gmm],
+                                                              variant_class='missense_variant',
+                                                              occupancy='occupancy')
+    missense_scores.to_csv(args.alignment + '.col_missense_scores.csv')
+    column_summary = column_summary.join(missense_scores)
 
 
     # Plot output
@@ -286,7 +292,6 @@ if __name__ == '__main__':
 
     # Plot GMM diagnostics
     occ_gmm._gmm_plot(gmms['models'], gmms['data'])
-    plt.title('Residue Occupancy GMM Diagnostics')
     pdf.attach_note('Residue Occupancy GMM Diagnostics')
     pdf.savefig()
     plt.close()
@@ -297,12 +302,12 @@ if __name__ == '__main__':
     column_summary.plot.scatter('occupancy', 'synonymous_variant', ax=axs[1])
     axs[0].axvline(column_summary[subset_mask_gmm]['occupancy'].min())
     axs[1].axvline(column_summary[subset_mask_gmm]['occupancy'].min())
-    plt.title('N Variants vs. Occupancy')
+    fig.suptitle('N Variants vs. Occupancy')
     pdf.attach_note('N Variants vs. Occupancy')
     pdf.savefig()
     plt.close()
 
-    # Conservation plane plot
+    # Conservation plane plot: Variant counts vs. Shenkin
     fig, axs = plt.subplots(1, 2, figsize=(15, 5), sharex=True, sharey=True)
     sns.regplot(x='shenkin', y='missense_variant', data=column_summary[subset_mask_gmm], ax=axs[0])
     pd.plotting.table(axs[0], shenkin_regressions.loc[['missense', 'filtered_missense']].round(2),
@@ -312,6 +317,18 @@ if __name__ == '__main__':
                       loc='upper right', colWidths=[0.12]*5, zorder=100)
     plt.title('N Variants vs. Shenkin')
     pdf.attach_note('N Variants vs. Shenkin')
+    pdf.savefig()
+    plt.close()
+
+    # Conservation plane plot: Missense Scores vs. Shenkin
+    plot_data = column_summary[subset_mask_gmm]
+    plot_data = plot_data.assign(pass_alpha=plot_data['pvalue'] < 0.05)
+    ax = plot_data.plot.scatter('shenkin', 'oddsratio', c='pass_alpha',  # Valdar is well correlated...
+                                colorbar=False,
+                                logy=True, figsize=(10, 10))
+    _ = plt.setp(ax.get_xticklabels(), visible=True)
+    plt.title('Missense Score vs. Shenkin')
+    pdf.attach_note('Missense Score vs. Shenkin')
     pdf.savefig()
     plt.close()
 
@@ -325,24 +342,20 @@ if __name__ == '__main__':
     pdf.savefig()
     plt.close()
 
-    # Variants per residue histogram
+    # Variants per residue and column histograms
+    fig, axes = plt.subplots(1, 2)
     residue_counts = alignment_variant_table.pipe(_aggregate_annotation,
                                                   ('VEP', 'Consequence'),
                                                   aggregate_by=['SOURCE_ID', 'Protein_position'])
     residue_counts = residue_counts.reindex(indexed_mapping_table.index).fillna(0)  # Fill in residues with no variants
-    residue_counts['missense_variant'].astype(int).value_counts().plot.bar(width=0.9, facecolor='black',
+    residue_counts['missense_variant'].astype(int).value_counts().plot.bar(ax=axes[0], width=1, facecolor='black',
                                                                            edgecolor='black')
-    plt.title('Missense Variants per Residue')
-    pdf.attach_note('Distribution of variants over protein residues')
-    pdf.savefig()
-    plt.close()
+    axes[0].set_title('Missense Variants per Residue')
 
-    # Variants per column histogram
-    fig, axes = plt.subplots(1, 2, sharex=True)
-    column_variant_counts['missense_variant'].hist(ax=axes[0])
-    column_summary.loc[subset_mask_gmm, 'missense_variant'].hist(ax=axes[1])
-    plt.title('Missense Variants per Column')
-    pdf.attach_note('Distribution of variants over alignment columns')
+    # column_variant_counts['missense_variant'].hist(ax=axes[0])
+    column_summary.loc[subset_mask_gmm, 'missense_variant'].hist(ax=axes[1], facecolor='black', edgecolor='black')
+    axes[1].set_title('Missense Variants per Column')
+    pdf.attach_note('Distribution of variants over residues and alignment columns')
     pdf.savefig()
     plt.close()
 
