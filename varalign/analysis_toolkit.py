@@ -49,7 +49,7 @@ def _comparative_regression(column_variant_counts, filter_mask=None, regressor =
     return results
 
 
-def _column_variant_scores(column_variant_counts, variant_class='missense_variant'):
+def _column_variant_scores(column_variant_counts, variant_class='missense_variant', occupancy='Human_res_occupancy'):
     """Calculate variation scores from a DataFrame of column variant totals.
 
     :param column_variant_counts:
@@ -57,13 +57,13 @@ def _column_variant_scores(column_variant_counts, variant_class='missense_varian
     :return:
     """
     # column_data.query('Human_res_occupancy >= 5', inplace=True)
-    alignment_totals = column_variant_counts.loc[:, [variant_class, 'Human_res_occupancy']].sum()
+    alignment_totals = column_variant_counts.loc[:, [variant_class, occupancy]].sum()
 
     # Calculate missense scores
     missense_scores = []
-    for mis_col, occ_col in column_variant_counts[[variant_class, 'Human_res_occupancy']].itertuples(index=False):
+    for mis_col, occ_col in column_variant_counts[[variant_class, occupancy]].itertuples(index=False):
         mis_other = alignment_totals[variant_class] - mis_col
-        occ_other = alignment_totals['Human_res_occupancy'] - occ_col
+        occ_other = alignment_totals[occupancy] - occ_col
         oddsratio, pvalue = stats.fisher_exact([[mis_col, mis_other], [occ_col, occ_other]])
         missense_scores.append((oddsratio, pvalue))
 
