@@ -105,9 +105,9 @@ def _default_variant_filter(variants_table):
                                       variants_table[('VEP', 'TREMBL')])
     trembl_matches_source[:] = False  # OVERRIDE TREMBL TO KEEP ONLY SWISSPROT
     # Apply filter
-    filtered_variants = variants_table[is_canonical & is_protein_coding & is_not_modifier & is_ccds &
-                                       (swissprot_matches_source | trembl_matches_source) &
-                                       at_protein_position]
+    filtered_variants = variants_table.loc[is_canonical & is_protein_coding & is_not_modifier & is_ccds &
+                                           (swissprot_matches_source | trembl_matches_source) &
+                                           at_protein_position].copy()
     return filtered_variants
 
 
