@@ -95,6 +95,8 @@ def _gmm_plot(models, x):
     ax.set_ylabel('information criterion')
     ax.legend(loc=2)
 
+    fig.suptitle('Residue Occupancy GMM Diagnostics')
+
     return None
 
 
