@@ -115,29 +115,39 @@ def filter_non_swissprot(aln, swissprot_id_file='/homes/smacgowan/NOBACK/resourc
         if not all([x == '-' for x in filtered_alignment[:, i]]):
             occupied_cols.append(i)
 
+    degapped_alignment = _mask_alignment(filtered_alignment, occupied_cols)
+
+    return degapped_alignment
+
+
+def _mask_alignment(aln, column_indexes):
+    """Return specified columns of an alignment.
+    
+    :param aln: 
+    :param column_indexes: 
+    :return: 
+    """
     # Convert to ranges
     # Inspired by:
     # https://stackoverflow.com/questions/3429510/pythonic-way-to-convert-a-list-of-integers-into-a-string-of-comma-separated-range/3430231#3430231
-    G = (list(x) for _, x in groupby(occupied_cols, lambda x, c=count(): next(c) - x))
-    occupied_ranges = [(g[0], g[-1])[:len(g)] for g in G]
-    occupied_ranges = [x if len(x) == 2 else x * 2 for x in occupied_ranges]
-
+    G = (list(x) for _, x in groupby(column_indexes, lambda x, c=count(): next(c) - x))
+    mask_ranges = [(g[0], g[-1])[:len(g)] for g in G]
+    mask_ranges = [x if len(x) == 2 else x * 2 for x in mask_ranges]
     # Build list of continuous occupied sub-alignments
     MSA_columns = []
-    for start, end in occupied_ranges:
-        MSA_columns.append(filtered_alignment[:, start:end + 1])
+    for start, end in mask_ranges:
+        MSA_columns.append(aln[:, start:end + 1])
 
     # Concatenate sub-alignments
-    degapped_alignment = filtered_alignment[:, 0:0]
+    masked_alignment = aln[:, 0:0]
     for x in MSA_columns:
-        degapped_alignment = degapped_alignment + x
+        masked_alignment = masked_alignment + x
     # NB. `reduce` could be faster...
-
     # Add sequence annotations to new alignment
-    for new, old in zip(degapped_alignment, filtered_alignment):
+    for new, old in zip(masked_alignment, aln):
         new.annotations = old.annotations
 
-    return degapped_alignment
+    return masked_alignment
 
 
 if __name__ == '__main__':
