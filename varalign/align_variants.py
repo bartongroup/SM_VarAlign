@@ -246,9 +246,8 @@ if __name__ == '__main__':
     column_occupancy = indexed_mapping_table[('Alignment', 'Column')].value_counts().sort_index()
     column_occupancy.name = 'occupancy'
 
-    # Merge required data for further standard analyses
+    # Merge required data for further standard analyses; this is saved after missense scores are added
     column_summary = column_variant_counts.join([column_missense_clinvar, column_occupancy, alignment_conservation])
-    column_summary.to_csv(args.alignment + '.col_summary.csv')
 
     # Occupancy GMM
     gmms = occ_gmm._fit_mixture_models(column_summary['occupancy'])
@@ -281,6 +280,7 @@ if __name__ == '__main__':
                                                               occupancy='occupancy')
     missense_scores.to_csv(args.alignment + '.col_missense_scores.csv')
     column_summary = column_summary.join(missense_scores)
+    column_summary.to_csv(args.alignment + '.col_summary.csv')
 
 
     # Plot output
