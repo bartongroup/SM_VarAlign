@@ -360,3 +360,16 @@ if __name__ == '__main__':
     plt.close()
 
     pdf.close()
+
+    # Pick extreme columns and identify residues (useful for follow-up)
+    column_summary = column_summary.join(column_summary.loc[subset_mask_gmm, 'shenkin'].rank(pct=True),
+                                         rsuffix='_percentile')
+    umd = column_summary.query('shenkin_percentile > 0.75 & oddsratio < 1 & pvalue < 0.1').index
+    ume = column_summary.query('shenkin_percentile > 0.75 & oddsratio > 1 & pvalue < 0.1').index
+    cmd = column_summary.query('shenkin_percentile < 0.25 & oddsratio < 1 & pvalue < 0.1').index
+    cme = column_summary.query('shenkin_percentile < 0.25 & oddsratio > 1 & pvalue < 0.1').index
+    # Save residues in selection
+    indexed_mapping_table.reset_index().set_index(('Alignment', 'Column')).loc[umd].to_csv(args.alignment+'.umdres.csv')
+    indexed_mapping_table.reset_index().set_index(('Alignment', 'Column')).loc[ume].to_csv(args.alignment+'.umeres.csv')
+    indexed_mapping_table.reset_index().set_index(('Alignment', 'Column')).loc[cmd].to_csv(args.alignment+'.cmdres.csv')
+    indexed_mapping_table.reset_index().set_index(('Alignment', 'Column')).loc[cme].to_csv(args.alignment+'.cmeres.csv')
