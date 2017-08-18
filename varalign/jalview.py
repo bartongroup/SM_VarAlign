@@ -78,3 +78,23 @@ def create_jalview_feature_file(feature_dict, file_name):
     with open(file_name, 'w') as output:
         for feature, colour in feature_dict.items():
             output.write('{}\t{}\n'.format(feature, colour))
+
+
+def marked_columns_track(mask, title, description, filename):
+    """Write NO_GRAPH jalview track for a mask with '*' for True and '' for False.
+
+    :param mask:
+    :param title:
+    :param description:
+    :param filename:
+    :return:
+    """
+    values = mask.copy()
+    values.loc[mask] = '*'
+    values.loc[~mask] = ''
+
+    with open(filename, 'wb') as f:
+        f.write('JALVIEW_ANNOTATION\n')
+        f.write('NO_GRAPH\t{}\t{}\t'.format(title, description) + '|'.join(values.tolist()))
+        f.write('\n')
+

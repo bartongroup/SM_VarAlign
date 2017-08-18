@@ -20,6 +20,7 @@ import alignments
 import analysis_toolkit
 import ensembl
 import gnomad
+import jalview
 from config import defaults
 from gnomad import tabulate_variant_effects
 from varalign.analysis_toolkit import _aggregate_annotation
@@ -322,7 +323,7 @@ if __name__ == '__main__':
 
     # Conservation plane plot: Missense Scores vs. Shenkin
     plot_data = column_summary[subset_mask_gmm]
-    plot_data = plot_data.assign(pass_alpha=plot_data['pvalue'] < 0.05)
+    plot_data = plot_data.assign(pass_alpha=plot_data['pvalue'] < 0.1)
     ax = plot_data.plot.scatter('shenkin', 'oddsratio', c='pass_alpha',  # Valdar is well correlated...
                                 colorbar=False,
                                 logy=True, figsize=(10, 10))
@@ -364,12 +365,34 @@ if __name__ == '__main__':
     # Pick extreme columns and identify residues (useful for follow-up)
     column_summary = column_summary.join(column_summary.loc[subset_mask_gmm, 'shenkin'].rank(pct=True),
                                          rsuffix='_percentile')
-    umd = column_summary.query('shenkin_percentile > 0.75 & oddsratio < 1 & pvalue < 0.1').index
-    ume = column_summary.query('shenkin_percentile > 0.75 & oddsratio > 1 & pvalue < 0.1').index
-    cmd = column_summary.query('shenkin_percentile < 0.25 & oddsratio < 1 & pvalue < 0.1').index
-    cme = column_summary.query('shenkin_percentile < 0.25 & oddsratio > 1 & pvalue < 0.1').index
+    umd_mask = column_summary.eval('shenkin_percentile > 0.75 & oddsratio < 1 & pvalue < 0.1')
+    ume_mask = column_summary.eval('shenkin_percentile > 0.75 & oddsratio > 1 & pvalue < 0.1')
+    cmd_mask = column_summary.eval('shenkin_percentile < 0.25 & oddsratio < 1 & pvalue < 0.1')
+    cme_mask = column_summary.eval('shenkin_percentile < 0.25 & oddsratio > 1 & pvalue < 0.1')
+    # Get columns from masks
+    umd = umd_mask[umd_mask].index
+    ume = ume_mask[ume_mask].index
+    cmd = cmd_mask[cmd_mask].index
+    cme = cme_mask[cme_mask].index
+
     # Save residues in selection
     indexed_mapping_table.reset_index().set_index(('Alignment', 'Column')).loc[umd].to_csv(args.alignment+'.umdres.csv')
     indexed_mapping_table.reset_index().set_index(('Alignment', 'Column')).loc[ume].to_csv(args.alignment+'.umeres.csv')
     indexed_mapping_table.reset_index().set_index(('Alignment', 'Column')).loc[cmd].to_csv(args.alignment+'.cmdres.csv')
     indexed_mapping_table.reset_index().set_index(('Alignment', 'Column')).loc[cme].to_csv(args.alignment+'.cmeres.csv')
+
+    # Write marking jalview tracks
+    alignment_column_index = range(1, alignment.get_alignment_length() + 1)
+    jalview.marked_columns_track(umd_mask.reindex(alignment_column_index, fill_value=False), 'UMD',
+                                 'UMD columns at Shenkin PCR > 0.75 and missense OR < 1, p < 0.1',
+                                 args.alignment+'.umd.ann')
+    jalview.marked_columns_track(ume_mask.reindex(alignment_column_index, fill_value=False), 'UME',
+                                 'UME columns at Shenkin PCR > 0.75 and missense OR > 1, p < 0.1',
+                                 args.alignment+'.ume.ann')
+    jalview.marked_columns_track(cmd_mask.reindex(alignment_column_index, fill_value=False), 'CMD',
+                                 'CMD columns at Shenkin PCR < 0.25 and missense OR < 1, p < 0.1',
+                                 args.alignment+'.cmd.ann')
+    jalview.marked_columns_track(cme_mask.reindex(alignment_column_index, fill_value=False), 'CME',
+                                 'CME columns at Shenkin PCR < 0.25 and missense OR > 1, p < 0.1',
+                                 args.alignment+'.cme.ann')
+
