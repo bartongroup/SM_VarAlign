@@ -201,6 +201,8 @@ if __name__ == '__main__':
     # CLI
     parser = argparse.ArgumentParser(description='Align variants to a Pfam alignment.')
     parser.add_argument('alignment', type=str, help='Path to the alignment.')
+    parser.add_argument('--max_gaussians', type=int, default=5, help='Maximum number of Gaussians for occupancy fitting.')
+    parser.add_argument('--n_groups', type=int, default=1, help='Top Gaussians to select after occupancy fitting.')
     args = parser.parse_args()
 
     # Run align variants pipeline
@@ -251,10 +253,10 @@ if __name__ == '__main__':
     column_summary = column_variant_counts.join([column_missense_clinvar, column_occupancy, alignment_conservation])
 
     # Occupancy GMM
-    gmms = occ_gmm._fit_mixture_models(column_summary['occupancy'])
+    gmms = occ_gmm._fit_mixture_models(column_summary['occupancy'], args.max_gaussians)
     M_best = occ_gmm._pick_best(gmms['models'], gmms['data'])
     # M_best.means_
-    subset_mask_gmm = occ_gmm._core_column_mask(M_best, gmms['data'])
+    subset_mask_gmm = occ_gmm._core_column_mask(M_best, gmms['data'], args.n_groups)
 
     # Regression statistics
 

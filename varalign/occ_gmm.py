@@ -1,5 +1,6 @@
 from matplotlib import pyplot as plt
 import numpy as np
+import pandas as pd
 from sklearn import mixture
 
 
@@ -100,12 +101,12 @@ def _gmm_plot(models, x):
     return None
 
 
-def _core_column_mask(model, x):
+def _core_column_mask(model, x, n_groups=1):
     """Return a row mask indicating membership of most occupied column set.
 
     :param model:
     :param x:
     :return:
     """
-    return model.predict(x) == np.argsort(model.means_.reshape(-1))[-1]
+    return pd.Series(model.predict(x)).isin(np.argsort(model.means_.reshape(-1))[-n_groups:]).values
 
