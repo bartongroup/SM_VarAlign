@@ -387,14 +387,14 @@ if __name__ == '__main__':
     alignment_column_index = range(1, alignment.get_alignment_length() + 1)
     jalview.marked_columns_track(umd_mask.reindex(alignment_column_index, fill_value=False), 'UMD',
                                  'UMD columns at Shenkin PCR > 0.75 and missense OR < 1, p < 0.1',
-                                 args.alignment+'.umd.ann')
+                                 args.alignment+'.corners.ann')
     jalview.marked_columns_track(ume_mask.reindex(alignment_column_index, fill_value=False), 'UME',
                                  'UME columns at Shenkin PCR > 0.75 and missense OR > 1, p < 0.1',
-                                 args.alignment+'.ume.ann')
+                                 args.alignment+'.corners.ann', append=True)
     jalview.marked_columns_track(cmd_mask.reindex(alignment_column_index, fill_value=False), 'CMD',
                                  'CMD columns at Shenkin PCR < 0.25 and missense OR < 1, p < 0.1',
-                                 args.alignment+'.cmd.ann')
+                                 args.alignment+'.corners.ann', append=True)
     jalview.marked_columns_track(cme_mask.reindex(alignment_column_index, fill_value=False), 'CME',
                                  'CME columns at Shenkin PCR < 0.25 and missense OR > 1, p < 0.1',
-                                 args.alignment+'.cme.ann')
+                                 args.alignment+'.corners.ann', append=True)
 
