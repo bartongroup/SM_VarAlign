@@ -69,7 +69,7 @@ def _gmm_plot(models, x):
 
     ax = fig.add_subplot(121)
 
-    grid = np.linspace(1, 300, 1000)  # Can't go from 0 because get p > 1 !!!
+    grid = np.linspace(1, max(x), 1000)  # Can't go from 0 because get p > 1 !!!
     grid = grid.reshape(-1, 1)
 
     logprob = best_model.score_samples(grid)
