@@ -109,7 +109,7 @@ def _variants_vs_length_plot(protein_variant_counts, alignment_info):
     :return:
     """
     # Calculate sequence lengths
-    protein_variant_counts = protein_variant_counts.join(alignment_info['lengths'])
+    protein_variant_counts = protein_variant_counts.join(alignment_info['length'])
 
     # Plot
     plot_data = pd.melt(protein_variant_counts.loc[:, protein_variant_counts.sum() > 100],
