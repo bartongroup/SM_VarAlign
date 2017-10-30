@@ -212,6 +212,7 @@ if __name__ == '__main__':
     # Write data
     alignment_info.to_pickle(args.alignment+'_info.p.gz')
     alignment_variant_table.to_pickle(args.alignment+'_variants.p.gz')
+    indexed_mapping_table.to_pickle(args.alignment+'_mappings.p.gz')
 
     # Run aacon
     # Format for AACon and run
