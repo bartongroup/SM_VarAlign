@@ -21,7 +21,8 @@ def _aggregate_annotation(aligned_variant_table, annotation_column, aggregate_by
     return grouped.size().unstack(fill_value=fill_value).rename_axis('', 1)
 
 
-def _comparative_regression(column_variant_counts, filter_mask=None, regressor ='Human_res_occupancy'):
+def _comparative_regression(column_variant_counts, regressor='Human_res_occupancy', filter_mask=None,
+                            confounder_variable=None):
     """Return table of regression parameters for missense / synonymous counts vs. a regressor.
 
     :param column_variant_counts:
@@ -43,6 +44,14 @@ def _comparative_regression(column_variant_counts, filter_mask=None, regressor =
         regressions.append(stats.linregress(x=column_variant_counts[filter_mask][regressor],
                                             y=column_variant_counts[filter_mask]['synonymous_variant'])._asdict())
         row_names += ['filtered_missense', 'filtered_synonymous']
+
+    if confounder_variable is not None:
+        # Regressions including confounder
+        regressions.append(stats.linregress(x=column_variant_counts[[regressor, confounder_variable]],
+                                            y=column_variant_counts['missense_variant'])._asdict())
+        regressions.append(stats.linregress(x=column_variant_counts[[regressor, confounder_variable]],
+                                            y=column_variant_counts['synonymous_variant'])._asdict())
+        row_names += ['_missense', 'filtered_synonymous']
 
     results = pd.DataFrame(regressions, index=row_names)
     results.columns.name = regressor

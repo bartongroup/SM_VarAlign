@@ -263,12 +263,13 @@ if __name__ == '__main__':
 
     # This checks whether missense and synonymous variant counts are correlated with column occupancy before and
     # after column filtering
-    variants_vs_occ = analysis_toolkit._comparative_regression(column_summary, subset_mask_gmm, 'occupancy')
+    variants_vs_occ = analysis_toolkit._comparative_regression(column_summary, 'occupancy', filter_mask=subset_mask_gmm)
     variants_vs_occ.to_csv(args.alignment + '.variant_occ_regression.csv')
     # TODO: Test variants_vs_occ.loc['filtered_missense', 'pvalue'] > 0.05
 
     # Conservation plane with Shenkin score
-    shenkin_regressions = analysis_toolkit._comparative_regression(column_summary, subset_mask_gmm, 'shenkin')
+    shenkin_regressions = analysis_toolkit._comparative_regression(column_summary, 'shenkin',
+                                                                   filter_mask=subset_mask_gmm)
     shenkin_regressions.to_csv(args.alignment + '.variant_shenkin_regression.csv')
 
     negative_control_p = shenkin_regressions.loc['filtered_synonymous', 'pvalue'] > 0.05
