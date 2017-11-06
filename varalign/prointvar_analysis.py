@@ -186,4 +186,6 @@ if __name__ == '__main__':
     structure_table = _sort_ab_contacts(structure_table)
 
     # Write structure table
+    log.info('Writing {} atom-atom records to file...'.format(len(structure_table)))
     structure_table.to_pickle(args.alignment+'_prointvar_structure_table.p.gz')
+    log.info('DONE.')
