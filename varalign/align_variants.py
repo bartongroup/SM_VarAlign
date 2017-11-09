@@ -26,6 +26,8 @@ from gnomad import tabulate_variant_effects
 from varalign.analysis_toolkit import _aggregate_annotation
 from varalign import occ_gmm
 
+import os
+
 log = logging.getLogger(__name__)
 log.setLevel('INFO')
 
@@ -205,6 +207,15 @@ if __name__ == '__main__':
     parser.add_argument('--n_groups', type=int, default=1, help='Top Gaussians to select after occupancy fitting.')
     args = parser.parse_args()
 
+    # Results will be written in this folder, data will be saved in working directory
+    output_path = 'results'
+    try:
+        os.makedirs(output_path)
+    except OSError:
+        if not os.path.isdir(output_path):
+            raise
+    results_prefix = os.path.join(output_path, args.alignment)
+
     # Run align variants pipeline
     alignment = AlignIO.read(args.alignment, format='stockholm')
     alignment_info, alignment_variant_table = align_variants(alignment=alignment)
@@ -220,30 +231,30 @@ if __name__ == '__main__':
     alignment_conservation = aacon._run_aacon(aacon_alignment, orig_col_nums)
 
     # Save result
-    cons_scores_file = 'aacon_scores.csv'
+    cons_scores_file = results_prefix + 'aacon_scores.csv'
     alignment_conservation.to_csv(cons_scores_file)
     log.info('Formatted AACons results saved to {}'.format(cons_scores_file))
 
     # Column aggregations
     # Count variants over columns
     column_variant_counts = _aggregate_annotation(alignment_variant_table, ('VEP', 'Consequence'))
-    column_variant_counts.to_csv(args.alignment + '.col_var_counts.csv')
+    column_variant_counts.to_csv(results_prefix + '.col_var_counts.csv')
 
     # Count *rare* variants over columns
     rare_maf_threshold = 0.001
     is_rare = alignment_variant_table[('Allele_INFO', 'AF_POPMAX')] < rare_maf_threshold
     column_rare_counts = _aggregate_annotation(alignment_variant_table[is_rare], ('VEP', 'Consequence'))
-    column_rare_counts.to_csv(args.alignment + '.col_rare_counts.csv')
+    column_rare_counts.to_csv(results_prefix + '.col_rare_counts.csv')
 
     # Count ClinVar annotations for *missense* variants over columns
     is_missense = alignment_variant_table[('VEP', 'Consequence')] == 'missense_variant'
     column_missense_clinvar = _aggregate_annotation(alignment_variant_table[is_missense], ('VEP', 'CLIN_SIG'))
-    column_missense_clinvar.to_csv(args.alignment + '.col_mis_clinvar.csv')
+    column_missense_clinvar.to_csv(results_prefix + '.col_mis_clinvar.csv')
 
     # Count ClinVar annotations for *synonymous* variants over columns
     is_synonymous = alignment_variant_table[('VEP', 'Consequence')] == 'synonymous_variant'
     column_synonymous_clinvar = _aggregate_annotation(alignment_variant_table[is_synonymous], ('VEP', 'CLIN_SIG'))
-    column_synonymous_clinvar.to_csv(args.alignment + '.col_syn_clinvar.csv')
+    column_synonymous_clinvar.to_csv(results_prefix + '.col_syn_clinvar.csv')
 
     # Use mapping table to calculate human residue occupancy
     # TODO: Adjust for unmapped seqs
@@ -264,13 +275,13 @@ if __name__ == '__main__':
     # This checks whether missense and synonymous variant counts are correlated with column occupancy before and
     # after column filtering
     variants_vs_occ = analysis_toolkit._comparative_regression(column_summary, 'occupancy', filter_mask=subset_mask_gmm)
-    variants_vs_occ.to_csv(args.alignment + '.variant_occ_regression.csv')
+    variants_vs_occ.to_csv(results_prefix + '.variant_occ_regression.csv')
     # TODO: Test variants_vs_occ.loc['filtered_missense', 'pvalue'] > 0.05
 
     # Conservation plane with Shenkin score
     shenkin_regressions = analysis_toolkit._comparative_regression(column_summary, 'shenkin',
                                                                    filter_mask=subset_mask_gmm)
-    shenkin_regressions.to_csv(args.alignment + '.variant_shenkin_regression.csv')
+    shenkin_regressions.to_csv(results_prefix + '.variant_shenkin_regression.csv')
 
     negative_control_p = shenkin_regressions.loc['filtered_synonymous', 'pvalue'] > 0.05
     positive_control_p = shenkin_regressions.loc['filtered_missense', 'pvalue'] < 0.05
@@ -283,13 +294,13 @@ if __name__ == '__main__':
     missense_scores = analysis_toolkit._column_variant_scores(column_summary[subset_mask_gmm],
                                                               variant_class='missense_variant',
                                                               occupancy='occupancy')
-    missense_scores.to_csv(args.alignment + '.col_missense_scores.csv')
+    missense_scores.to_csv(results_prefix + '.col_missense_scores.csv')
     column_summary = column_summary.join(missense_scores)
-    column_summary.to_csv(args.alignment + '.col_summary.csv')
+    column_summary.to_csv(results_prefix + '.col_summary.csv')
 
 
     # Plot output
-    pdf = PdfPages(args.alignment + '.figures.pdf')
+    pdf = PdfPages(results_prefix + '.figures.pdf')
     # PDF metadata
     d = pdf.infodict()
     d['Title'] = 'Aligned Variant Diagnostics Plots for {}'.format(args.alignment)
@@ -380,23 +391,23 @@ if __name__ == '__main__':
     cme = cme_mask[cme_mask].index
 
     # Save residues in selection
-    indexed_mapping_table.reset_index().set_index(('Alignment', 'Column')).loc[umd].to_csv(args.alignment+'.umdres.csv')
-    indexed_mapping_table.reset_index().set_index(('Alignment', 'Column')).loc[ume].to_csv(args.alignment+'.umeres.csv')
-    indexed_mapping_table.reset_index().set_index(('Alignment', 'Column')).loc[cmd].to_csv(args.alignment+'.cmdres.csv')
-    indexed_mapping_table.reset_index().set_index(('Alignment', 'Column')).loc[cme].to_csv(args.alignment+'.cmeres.csv')
+    indexed_mapping_table.reset_index().set_index(('Alignment', 'Column')).loc[umd].to_csv(results_prefix+'.umdres.csv')
+    indexed_mapping_table.reset_index().set_index(('Alignment', 'Column')).loc[ume].to_csv(results_prefix+'.umeres.csv')
+    indexed_mapping_table.reset_index().set_index(('Alignment', 'Column')).loc[cmd].to_csv(results_prefix+'.cmdres.csv')
+    indexed_mapping_table.reset_index().set_index(('Alignment', 'Column')).loc[cme].to_csv(results_prefix+'.cmeres.csv')
 
     # Write marking jalview tracks
     alignment_column_index = range(1, alignment.get_alignment_length() + 1)
     jalview.marked_columns_track(umd_mask.reindex(alignment_column_index, fill_value=False), 'UMD',
                                  'UMD columns at Shenkin PCR > 0.75 and missense OR < 1, p < 0.1',
-                                 args.alignment+'.corners.ann')
+                                 results_prefix+'.corners.ann')
     jalview.marked_columns_track(ume_mask.reindex(alignment_column_index, fill_value=False), 'UME',
                                  'UME columns at Shenkin PCR > 0.75 and missense OR > 1, p < 0.1',
-                                 args.alignment+'.corners.ann', append=True)
+                                 results_prefix+'.corners.ann', append=True)
     jalview.marked_columns_track(cmd_mask.reindex(alignment_column_index, fill_value=False), 'CMD',
                                  'CMD columns at Shenkin PCR < 0.25 and missense OR < 1, p < 0.1',
-                                 args.alignment+'.corners.ann', append=True)
+                                 results_prefix+'.corners.ann', append=True)
     jalview.marked_columns_track(cme_mask.reindex(alignment_column_index, fill_value=False), 'CME',
                                  'CME columns at Shenkin PCR < 0.25 and missense OR > 1, p < 0.1',
-                                 args.alignment+'.corners.ann', append=True)
+                                 results_prefix+'.corners.ann', append=True)
 
