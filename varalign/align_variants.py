@@ -411,3 +411,4 @@ if __name__ == '__main__':
                                  'CME columns at Shenkin PCR < 0.25 and missense OR > 1, p < 0.1',
                                  results_prefix+'.corners.ann', append=True)
 
+    log.info('DONE.')
