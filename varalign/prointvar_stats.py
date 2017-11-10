@@ -22,16 +22,23 @@ def _column_ligand_contacts(aligned_prointvar_table):
     return pd.concat([protein_ligand_interactions, pdb_ligand_interactions], axis=1).fillna(0)
 
 
-def _pdb_protein_coverage(aligned_prointvar_table):
+def _column_total_contacts(aligned_prointvar_table):
+    """
+    Calculate total number of interactions observed at each alignment column. Gives both total counts and number of
+    sequences with at least one interaction.
+
+    :param aligned_prointvar_table:
+    :return:
+    """
     # Count coverage at each column
-    structure_cov = \
+    column_contacts = \
         aligned_prointvar_table.groupby(['SOURCE_ID_A', 'Alignment_column_A']).size().groupby('Alignment_column_A')
-    protein_structure_cov = structure_cov.size()
-    pdb_structure_cov = structure_cov.sum()
+    column_sequence_contacts = column_contacts.size()
+    column_total_contacts = column_contacts.sum()
     # Format results and return DataFrame
-    protein_structure_cov.name = 'protein_structure_coverage'
-    pdb_structure_cov.name = 'total_structure_coverage'
-    return pd.concat([protein_structure_cov, pdb_structure_cov], axis=1).fillna(0)
+    column_sequence_contacts.name = 'sequences_with_contacts'
+    column_total_contacts.name = 'total_contacts'
+    return pd.concat([column_sequence_contacts, column_total_contacts], axis=1).fillna(0)
 
 
 def _interpolate_index(table):
