@@ -159,10 +159,10 @@ if __name__ == '__main__':
     # Read data produced by `align_variants.py`
     aln_info = pd.read_pickle(args.alignment+'_info.p.gz')
     indexed_mapping_table = pd.read_pickle(args.alignment+'_mappings.p.gz')
-    column_stats = pd.read_csv(args.alignment + '.col_summary.csv')
+    column_stats = pd.read_csv(os.path.join('results', args.alignment) + '.col_summary.csv')
 
     # Get SIFTS best and download for all proteins in alignment
-    download_logfile = args.alignment + '_prointvar_download.log'
+    download_logfile = args.alignment + '_prointvar_download'
     status, downloaded = _download_structure_data(aln_info, download_logfile)
 
     # Process all downloaded structural data with ProIntVar
