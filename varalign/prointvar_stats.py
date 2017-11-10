@@ -32,3 +32,14 @@ def _pdb_protein_coverage(aligned_prointvar_table):
     protein_structure_cov.name = 'protein_structure_coverage'
     pdb_structure_cov.name = 'total_structure_coverage'
     return pd.concat([protein_structure_cov, pdb_structure_cov], axis=1).fillna(0)
+
+
+def _interpolate_index(table):
+    """
+    Re-index an interger indexed table to include missing values within the range of the original index.
+
+    :param table:
+    :return:
+    """
+    idx = pd.Index(range(int(table.index.min()), int(table.index.max())))
+    return table.reindex(idx)
