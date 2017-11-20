@@ -8,6 +8,7 @@ import argparse
 import logging
 import matplotlib.pyplot as plt
 import multiprocessing
+import numpy as np
 import os
 import pandas as pd
 from prointvar import merger
@@ -149,6 +150,105 @@ def _filter_extra_domain_contacts(prointvar_table, alignment_info):
     return prointvar_table
 
 
+def _classify_contacts(prointvar_table, residue=True, protein=True, polymer=True,
+                       domain=['Pfam', 'CATH', 'SCOP']):
+    """
+    Classify contacts based on a few topological characteristics.
+
+    :param prointvar_table:
+    :param residue:
+    :param protein:
+    :param polymer:
+    :param domain:
+    :return:
+    """
+    def _new_series(name):
+        return pd.Series([np.nan] * len(prointvar_table), name=name, index=prointvar_table.index)
+
+    def _query_mask(query):
+        return prointvar_table.eval(query).values
+
+    def _classify(query, classification):
+        pass
+
+    # ATOM_B classification
+    if residue:
+        residue = _new_series('interaction_type')
+        residue[_query_mask('group_PDB_B == "HETATM" & ATOM_B != "HOH"')] = 'Protein-Ligand'  # TODO: Picks up modified residues, e.g. MSE
+        residue[_query_mask('group_PDB_B == "HETATM" & ATOM_B == "HOH"')] = 'Protein-Water'
+        residue[_query_mask('group_PDB_A == "ATOM" & group_PDB_B == "ATOM"')] = 'Protein-Protein'  # TODO: Would Residue-Residue be better?
+    else:
+        residue = None
+
+    # Protein topology
+    if protein:
+        protein = _new_series('protein_topology')
+        protein[
+            _query_mask('UniProt_dbAccessionId_A != UniProt_dbAccessionId_B')] = 'Heteroprotein'
+        protein[_query_mask('UniProt_dbAccessionId_A == UniProt_dbAccessionId_B')] = 'Homoprotein'
+        protein[_query_mask('UniProt_dbAccessionId_B != UniProt_dbAccessionId_B')] = np.nan
+    else:
+        protein = None
+
+    # Domain topology (Can use Pfam, CATH, etc)
+    if isinstance(domain, list):
+        domain = [x.lower() for x in domain]
+    elif isinstance(domain, str):
+        domain = [domain.lower()]
+    if 'pfam' in domain:
+        # Because we are missing some Pfam mappings from SIFTS,
+        # will also use alignment column mappings as proxy for Pfam membership
+        pfam = _new_series('pfam_domain_topology')
+        # adding 'Alignment_column_B != Alignment_column_B' prevents homodomain contacts being overwritten as heterodomain
+        pfam[_query_mask(
+            'Pfam_dbAccessionId_A != Pfam_dbAccessionId_B & Alignment_column_B != Alignment_column_B')] = 'Heterodomain'
+        # originally tested 'Pfam_dbAccessionId_A == Pfam_dbAccessionId_B' but we know ATOM_A is always in the domain of
+        # interest, so if ATOM_B is mapped to a column, its a homodomain interaction. This identified ~60K more in PF00104
+        # example (swissprot only).
+        pfam[_query_mask('Alignment_column_B == Alignment_column_B')] = 'Homodomain'
+        # For PFAM, we can also differentiate self interactions
+        pfam[_query_mask('SOURCE_ID_A == SOURCE_ID_B')] = 'Homodomain (Self)'
+        # adding 'Alignment_column_B != Alignment_column_B' prevents homodomain contacts being overwritten as nan
+        pfam[_query_mask(
+            'Pfam_dbAccessionId_B != Pfam_dbAccessionId_B & Alignment_column_B != Alignment_column_B')] = np.nan
+    else:
+        pfam = None
+
+    # TODO: CATH and SCOP can be further analysed based on the hierarchy
+    # CATH domain topology
+    if 'cath' in domain:
+        cath = _new_series('cath_domain_topology')
+        cath[_query_mask('CATH_dbAccessionId_A != CATH_dbAccessionId_B')] = 'Heterodomain'
+        cath[_query_mask('CATH_dbAccessionId_A == CATH_dbAccessionId_B')] = 'Homodomain'
+        cath[_query_mask(
+            'CATH_dbAccessionId_A != CATH_dbAccessionId_A | CATH_dbAccessionId_B != CATH_dbAccessionId_B')] = np.nan
+    else:
+        cath = None
+
+    # SCOP domain topology
+    if 'scop' in domain:
+        scop = _new_series('scop_domain_topology')
+        scop[_query_mask('SCOP_dbAccessionId_A != SCOP_dbAccessionId_B')] = 'Heterodomain'
+        scop[_query_mask('SCOP_dbAccessionId_A == SCOP_dbAccessionId_B')] = 'Homodomain'
+        scop[_query_mask(
+            'SCOP_dbAccessionId_A != SCOP_dbAccessionId_A | SCOP_dbAccessionId_B != SCOP_dbAccessionId_B')] = np.nan
+    else:
+        scop = None
+
+    # Polymer topology
+    if polymer:
+        polymer = _new_series('polymer_topology')
+        polymer[_query_mask(
+            'label_asym_id_A != label_asym_id_B | label_entity_id_A != label_entity_id_B')] = 'Interpolymer'
+        polymer[_query_mask(
+            'label_asym_id_A == label_asym_id_B & label_entity_id_A == label_entity_id_B')] = 'Intrapolymer'
+    else:
+        polymer = None
+
+    return pd.concat([residue, protein, pfam, cath, scop, polymer], axis=1)
+
+
+
 if __name__ == '__main__':
     # CLI
     parser = argparse.ArgumentParser(description='Structural properties of alignment columns.')
@@ -191,6 +291,10 @@ if __name__ == '__main__':
     # Sort A/B contact
     log.info('Sorting contacts so that alignment column atom A <= that of atom B...')
     structure_table = _sort_ab_contacts(structure_table)
+
+    # Classify contacts
+    log.info('Classifying contact residue topology...')
+    structure_table = pd.concat([structure_table, _classify_contacts(structure_table)], axis=1)
 
     # Write structure table
     log.info('Writing {} atom-atom records to file...'.format(len(structure_table)))
