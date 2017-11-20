@@ -10,7 +10,7 @@ def _column_ligand_contacts(aligned_prointvar_table):
     :return:
     """
     # Select ligand interactions from structure table
-    ligand_contacts = aligned_prointvar_table.query('group_PDB_B == "HETATM" & ATOM_B != "HOH"')
+    ligand_contacts = aligned_prointvar_table.query('interaction_type == "Protein-Ligand"')
     # Count interactions at each column
     ligand_evidence = \
         ligand_contacts.groupby(['SOURCE_ID_A', 'Alignment_column_A']).size().groupby('Alignment_column_A')
