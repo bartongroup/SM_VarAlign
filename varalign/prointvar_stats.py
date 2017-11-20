@@ -71,3 +71,13 @@ def _interpolate_index(table):
     """
     idx = pd.Index(range(int(table.index.min()), int(table.index.max())))
     return table.reindex(idx)
+
+
+def _count_nan(table):
+    """
+    Count the number of NaNs in all columns of a DataFrame.
+
+    :param table:
+    :return:
+    """
+    return {col: table.eval('{0} != {0}'.format(col)).sum() for col in table}
