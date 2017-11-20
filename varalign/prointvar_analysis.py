@@ -176,19 +176,28 @@ if __name__ == '__main__':
     log.info('{} atom-atom records created.'.format(len(structure_table)))  # Shouldn't this be even?
 
     # Filter non-alignment residues from the table
+    log.info('Filtering extra-domain contacts (i.e. neither atom maps to the alignment)...')
     structure_table = _filter_extra_domain_contacts(structure_table, aln_info)
 
     # Remove each contact's duplicate row
+    log.info('Removing contact duplicates...')
     structure_table = _dedupe_ab_contacts(structure_table)
 
     # Add alignment columns to table
+    log.info('Mapping contact residues to alignment...')
     aln_mappings = _format_mapping_table(aln_info, indexed_mapping_table)
     structure_table = _merge_alignment_columns_to_contacts(aln_mappings, structure_table)
 
-    # Sort A/B contacts
+    # Sort A/B contact
+    log.info('Sorting contacts so that alignment column atom A <= that of atom B...')
     structure_table = _sort_ab_contacts(structure_table)
 
     # Write structure table
     log.info('Writing {} atom-atom records to file...'.format(len(structure_table)))
     structure_table.to_pickle(args.alignment+'_prointvar_structure_table.p.gz')
+
+    # Log head of table
+    table_head = structure_table.head().to_string()
+    table_head = '### '.join(('\n'+table_head).splitlines(keepends=True))[1:]  # Prepend "### "
+    log.info('Alignment contacts table head:\n%s', table_head)
     log.info('DONE.')
