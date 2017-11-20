@@ -183,10 +183,10 @@ def _classify_contacts(prointvar_table, residue=True, protein=True, polymer=True
     # Protein topology
     if protein:
         protein = _new_series('protein_topology')
-        protein[
-            _query_mask('UniProt_dbAccessionId_A != UniProt_dbAccessionId_B')] = 'Heteroprotein'
-        protein[_query_mask('UniProt_dbAccessionId_A == UniProt_dbAccessionId_B')] = 'Homoprotein'
-        protein[_query_mask('UniProt_dbAccessionId_B != UniProt_dbAccessionId_B')] = np.nan
+        protein_id_fields = ['UniProt_dbAccessionId_A', 'UniProt_dbAccessionId_B']
+        protein[_query_mask('{0} != {1}'.format(*protein_id_fields))] = 'Heteroprotein'
+        protein[_query_mask('{0} == {1}'.format(*protein_id_fields))] = 'Homoprotein'
+        protein[_query_mask('{1} != {1}'.format(*protein_id_fields))] = np.nan
     else:
         protein = None
 
@@ -218,30 +218,33 @@ def _classify_contacts(prointvar_table, residue=True, protein=True, polymer=True
     # CATH domain topology
     if 'cath' in domain:
         cath = _new_series('cath_domain_topology')
-        cath[_query_mask('CATH_dbAccessionId_A != CATH_dbAccessionId_B')] = 'Heterodomain'
-        cath[_query_mask('CATH_dbAccessionId_A == CATH_dbAccessionId_B')] = 'Homodomain'
-        cath[_query_mask(
-            'CATH_dbAccessionId_A != CATH_dbAccessionId_A | CATH_dbAccessionId_B != CATH_dbAccessionId_B')] = np.nan
+        cath_id_fields = ['CATH_dbAccessionId_A', 'CATH_dbAccessionId_B']
+        cath[_query_mask('{0}!={1} & {0}=={0} & {1}=={1}'.format(*cath_id_fields))] = 'Heterodomain'
+        cath[_query_mask('{0}=={1} & {0}=={0} & {1}=={1}'.format(*cath_id_fields))] = 'Homodomain'
+        cath[_query_mask('{0}=={0} & {1}!={1}'.format(*cath_id_fields))] = 'Domain-NaN'
+        cath[_query_mask('{0}!={0} & {1}=={1}'.format(*cath_id_fields))] = 'NaN-Domain'
+        cath[_query_mask('{0}!={0} & {1}!={1}'.format(*cath_id_fields))] = np.nan
     else:
         cath = None
 
     # SCOP domain topology
     if 'scop' in domain:
         scop = _new_series('scop_domain_topology')
-        scop[_query_mask('SCOP_dbAccessionId_A != SCOP_dbAccessionId_B')] = 'Heterodomain'
-        scop[_query_mask('SCOP_dbAccessionId_A == SCOP_dbAccessionId_B')] = 'Homodomain'
-        scop[_query_mask(
-            'SCOP_dbAccessionId_A != SCOP_dbAccessionId_A | SCOP_dbAccessionId_B != SCOP_dbAccessionId_B')] = np.nan
+        scop_id_fields = ['SCOP_dbAccessionId_A', 'SCOP_dbAccessionId_B']
+        scop[_query_mask('{0}!={1} & {0}=={0} & {1}=={1}'.format(*scop_id_fields))] = 'Heterodomain'
+        scop[_query_mask('{0}=={1} & {0}=={0} & {1}=={1}'.format(*scop_id_fields))] = 'Homodomain'
+        scop[_query_mask('{0}=={0} & {1}!={1}'.format(*scop_id_fields))] = 'Domain-NaN'
+        scop[_query_mask('{0}!={0} & {1}=={1}'.format(*scop_id_fields))] = 'NaN-Domain'
+        scop[_query_mask('{0}!={0} & {1}!={1}'.format(*scop_id_fields))] = np.nan
     else:
         scop = None
 
     # Polymer topology
     if polymer:
         polymer = _new_series('polymer_topology')
-        polymer[_query_mask(
-            'label_asym_id_A != label_asym_id_B | label_entity_id_A != label_entity_id_B')] = 'Interpolymer'
-        polymer[_query_mask(
-            'label_asym_id_A == label_asym_id_B & label_entity_id_A == label_entity_id_B')] = 'Intrapolymer'
+        polymer_id_fields = ['label_asym_id_A', 'label_asym_id_B', 'label_entity_id_A', 'label_entity_id_B']
+        polymer[_query_mask('{0} != {1} | {2} != {3}'.format(*polymer_id_fields))] = 'Interpolymer'
+        polymer[_query_mask('{0} == {1} & {2} == {3}'.format(*polymer_id_fields))] = 'Intrapolymer'
     else:
         polymer = None
 
