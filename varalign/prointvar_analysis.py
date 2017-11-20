@@ -151,7 +151,7 @@ def _filter_extra_domain_contacts(prointvar_table, alignment_info):
 
 
 def _classify_contacts(prointvar_table, residue=True, protein=True, polymer=True,
-                       domain=['Pfam', 'CATH', 'SCOP']):
+                       domain=['Pfam', 'CATH', 'SCOP'], cath_hierarchy=True):
     """
     Classify contacts based on a few topological characteristics.
 
@@ -227,6 +227,19 @@ def _classify_contacts(prointvar_table, residue=True, protein=True, polymer=True
     else:
         cath = None
 
+    if cath_hierarchy:
+        # Figure out what level of the CATH hierarchy a match occurs, if any
+        cath_id_fields = ['CATH_dbAccessionId_A', 'CATH_dbAccessionId_B']
+        match = prointvar_table[cath_id_fields[0]].str.split('.', expand=True) == \
+                prointvar_table[cath_id_fields[1]].str.split('.', expand=True)
+        hierarchy = _new_series('cath_hierarchical_topology')
+        hierarchy[match[0]] = 'level_1'
+        hierarchy[match[[0, 1]].all(1)] = 'level_2'
+        hierarchy[match[[0, 1, 2]].all(1)] = 'level_3'
+        hierarchy[match[[0, 1, 2, 3]].all(1)] = 'level_4'
+    else:
+        hierarchy = None
+
     # SCOP domain topology
     if 'scop' in domain:
         scop = _new_series('scop_domain_topology')
@@ -248,7 +261,7 @@ def _classify_contacts(prointvar_table, residue=True, protein=True, polymer=True
     else:
         polymer = None
 
-    return pd.concat([residue, protein, pfam, cath, scop, polymer], axis=1)
+    return pd.concat([residue, protein, pfam, cath, hierarchy, scop, polymer], axis=1)
 
 
 
