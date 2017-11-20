@@ -41,6 +41,27 @@ def _column_total_contacts(aligned_prointvar_table):
     return pd.concat([column_sequence_contacts, column_total_contacts], axis=1).fillna(0)
 
 
+def _column_protein_contacts(aligned_prointvar_table):
+    """
+    Calculate frequency of protein-protein interactions over alignment columns. Gives both total counts and number of
+    sequences with evidence of a protein-protein interaction.
+
+    :param aligned_prointvar_table:
+    :return:
+    """
+    # Select ligand interactions from structure table
+    protein_contacts = aligned_prointvar_table.query('interaction_type == "Protein-Protein" & polymer_topology == "Interpolymer"')
+    # Count interactions at each column
+    protein_evidence = \
+        protein_contacts.groupby(['SOURCE_ID_A', 'Alignment_column_A']).size().groupby('Alignment_column_A')
+    protein_protein_interactions = protein_evidence.size()
+    pdb_protein_interactions = protein_evidence.sum()
+    # Format results and return DataFrame
+    protein_protein_interactions.name = 'protein_protein_interactions'
+    pdb_protein_interactions.name = 'total_protein_interactions'
+    return pd.concat([protein_protein_interactions, pdb_protein_interactions], axis=1).fillna(0)
+
+
 def _interpolate_index(table):
     """
     Re-index an interger indexed table to include missing values within the range of the original index.
