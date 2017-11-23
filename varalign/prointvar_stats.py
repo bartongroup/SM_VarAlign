@@ -3,6 +3,33 @@ import pandas as pd
 from scipy import stats
 
 
+def _structure_column_counts(aligned_prointvar_table, query, unique_sequences_name, total_interactions_name):
+    """
+
+    :param aligned_prointvar_table:
+    :param query:
+    :param unique_proteins_name:
+    :param total_interactions_name:
+    :return:
+    """
+    # Subset structure table with query if specified
+    if query:
+        sub_table = aligned_prointvar_table.query(query)
+    else:
+        sub_table = aligned_prointvar_table
+
+    # Group interactions at each column and summarise
+    grouped = sub_table.groupby(['SOURCE_ID_A', 'Alignment_column_A']).size().groupby('Alignment_column_A')
+    n_unique_sequences = grouped.size()  # How many unique sequences have interactions?
+    n_interactions = grouped.sum()  # How many interactions are there in total?
+    # Format results
+    n_unique_sequences.name = unique_sequences_name
+    n_interactions.name = total_interactions_name
+
+    # Return as DataFrame
+    return pd.concat([n_unique_sequences, n_interactions], axis=1).fillna(0)
+
+
 def _column_ligand_contacts(aligned_prointvar_table):
     """
     Calculate frequency of ligand interactions over alignment columns. Gives both total counts and number of sequences
@@ -11,17 +38,9 @@ def _column_ligand_contacts(aligned_prointvar_table):
     :param aligned_prointvar_table:
     :return:
     """
-    # Select ligand interactions from structure table
-    ligand_contacts = aligned_prointvar_table.query('interaction_type == "Protein-Ligand"')
-    # Count interactions at each column
-    ligand_evidence = \
-        ligand_contacts.groupby(['SOURCE_ID_A', 'Alignment_column_A']).size().groupby('Alignment_column_A')
-    protein_ligand_interactions = ligand_evidence.size()
-    pdb_ligand_interactions = ligand_evidence.sum()
-    # Format results and return DataFrame
-    protein_ligand_interactions.name = 'protein_ligand_interactions'
-    pdb_ligand_interactions.name = 'total_ligand_interactions'
-    return pd.concat([protein_ligand_interactions, pdb_ligand_interactions], axis=1).fillna(0)
+    return _structure_column_counts(aligned_prointvar_table, query='interaction_type == "Protein-Ligand"',
+                                    unique_sequences_name='protein_ligand_interactions',
+                                    total_interactions_name='total_ligand_interactions')
 
 
 def _column_total_contacts(aligned_prointvar_table):
@@ -32,15 +51,9 @@ def _column_total_contacts(aligned_prointvar_table):
     :param aligned_prointvar_table:
     :return:
     """
-    # Count coverage at each column
-    column_contacts = \
-        aligned_prointvar_table.groupby(['SOURCE_ID_A', 'Alignment_column_A']).size().groupby('Alignment_column_A')
-    column_sequence_contacts = column_contacts.size()
-    column_total_contacts = column_contacts.sum()
-    # Format results and return DataFrame
-    column_sequence_contacts.name = 'sequences_with_contacts'
-    column_total_contacts.name = 'total_contacts'
-    return pd.concat([column_sequence_contacts, column_total_contacts], axis=1).fillna(0)
+    return _structure_column_counts(aligned_prointvar_table, query=None,
+                                    unique_sequences_name='sequences_with_contacts',
+                                    total_interactions_name='total_contacts')
 
 
 def _column_protein_contacts(aligned_prointvar_table):
@@ -51,17 +64,10 @@ def _column_protein_contacts(aligned_prointvar_table):
     :param aligned_prointvar_table:
     :return:
     """
-    # Select ligand interactions from structure table
-    protein_contacts = aligned_prointvar_table.query('interaction_type == "Protein-Protein" & polymer_topology == "Interpolymer"')
-    # Count interactions at each column
-    protein_evidence = \
-        protein_contacts.groupby(['SOURCE_ID_A', 'Alignment_column_A']).size().groupby('Alignment_column_A')
-    protein_protein_interactions = protein_evidence.size()
-    pdb_protein_interactions = protein_evidence.sum()
-    # Format results and return DataFrame
-    protein_protein_interactions.name = 'protein_protein_interactions'
-    pdb_protein_interactions.name = 'total_protein_interactions'
-    return pd.concat([protein_protein_interactions, pdb_protein_interactions], axis=1).fillna(0)
+    return _structure_column_counts(aligned_prointvar_table,
+                                    query='interaction_type == "Protein-Protein" & polymer_topology == "Interpolymer"',
+                                    unique_sequences_name='protein_protein_interactions',
+                                    total_interactions_name='total_protein_interactions')
 
 
 def _interpolate_index(table):
