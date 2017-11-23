@@ -1,4 +1,6 @@
+import numpy as np
 import pandas as pd
+from scipy import stats
 
 
 def _column_ligand_contacts(aligned_prointvar_table):
@@ -81,3 +83,55 @@ def _count_nan(table):
     :return:
     """
     return {col: table.eval('{0} != {0}'.format(col)).sum() for col in table}
+
+
+def _column_set_feature_enrichment(column_annotation_table, selection_query, feature_column, feature_background):
+    """
+    Test a subset of a columns for enrichment of a feature compared to the remaining columns.
+
+    :param column_annotation_table: DataFrame
+    :param selection_query: Query string to identify subset from `column_annotation_table`.
+    :param feature_column: Column name containing feature to test for enrichment.
+    :param feature_background: Column name containing background for the test.
+    :return:
+    """
+    # generate 2x2 contingency table
+    groups = column_annotation_table.eval(selection_query)
+    test_df = column_annotation_table.groupby(groups).sum()[[feature_column, feature_background]]
+    test_df.eval('background = {} - {}'.format(feature_background, feature_column), inplace=True)  # TODO: make option?
+    test_df = test_df.reindex([0, 1]).fillna(0)  # Deal with zero counts if present
+    test_df = test_df.loc[[1, 0], [feature_column, 'background']]  # Enforce layout
+    test_df.index = ['selection', 'other']
+
+    # Fishers test and 95% CI e^(ln OR +/- 1.96 * sqrt(1/a+1/b+1/c+1/d))
+    oddsratio, pvalue = stats.fisher_exact(test_df)
+    ci = 1.96 * np.sqrt((1 / test_df).values.sum())
+    lower_ci, upper_ci = np.exp(np.log(oddsratio) - ci), np.exp(np.log(oddsratio) + ci)
+
+    return test_df, (oddsratio, pvalue, lower_ci, upper_ci)
+
+
+def column_set_ppi_enrichment(column_annotation_table, selection_query):
+    """
+    Test a subset of columns for enrichment of protein-protein interactions.
+
+    :param column_annotation_table:
+    :param selection_query:
+    :return:
+    """
+    return _column_set_feature_enrichment(column_annotation_table, selection_query,
+                                          feature_column='protein_protein_interactions',
+                                          feature_background='sequences_with_contacts')
+
+
+def column_set_ligand_enrichment(column_annotation_table, selection_query):
+    """
+    Test a subset of columns for enrichment of protein-ligand interactions.
+
+    :param column_annotation_table:
+    :param selection_query:
+    :return:
+    """
+    return _column_set_feature_enrichment(column_annotation_table, selection_query,
+                                          feature_column='protein_ligand_interactions',
+                                          feature_background='sequences_with_contacts')
