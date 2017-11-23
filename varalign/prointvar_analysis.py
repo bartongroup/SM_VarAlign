@@ -24,7 +24,7 @@ def _format_structure_data(pdb):
     # Read structure data
     try:
         pdbx, dssp, sifts, contacts = merger.table_generator(pdb_id=pdb, bio=False, contacts=True,
-                                                             override=False, residue_agg=True, dssp=False)
+                                                             override=True, residue_agg=True, dssp=False)
     except FileNotFoundError as e:
         print('{} failed with FileNotFoundError:'.format(pdb))
         return None
