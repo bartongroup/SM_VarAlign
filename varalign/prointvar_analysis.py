@@ -26,6 +26,7 @@ def _format_structure_data(pdb):
         pdbx, dssp, sifts, contacts = merger.table_generator(pdb_id=pdb, bio=False, contacts=True,
                                                              override=True, residue_agg=True, dssp=False)
     except FileNotFoundError as e:
+        # TODO: raise or don't catch this once prointvar bugs worked out...
         print('{} failed with FileNotFoundError:'.format(pdb))
         return None
     # Merge tables
@@ -39,6 +40,7 @@ def _download_structure_data(alignment_info_table, logfile='prointvar_download')
     for uniprot_id in tqdm.tqdm(alignment_info_table['uniprot_id'].unique()):
         with open(logfile + '.out.' + uniprot_id, 'w') as process_out:
             with open(logfile + '.log.' + uniprot_id, 'w') as process_err:
+                # TODO: Add `--bio` flag once bio units are fixed
                 exit_code = subprocess.call(
                     ['ProIntVar', 'download', '--mmcif', '--pdb', '--sifts', '--best_structures', uniprot_id],
                     stdout=process_out, stderr=process_err)
@@ -115,6 +117,7 @@ def _dedupe_ab_contacts(contacts_table):
     :param contacts_table:
     :return:
     """
+    # TODO: these are SIFTS PDB records and they may be wrong for bio units
     atom_id_fields = ['PDB_dbAccessionId', 'PDB_dbChainId', 'PDB_dbResNum', 'PDB_entityId']
     atom_id_fields = ['{}_{}'.format(field, ab) for ab in ['A', 'B'] for field in atom_id_fields]
     is_duplicated = contacts_table[atom_id_fields].apply(frozenset, axis=1, raw=True).duplicated()
