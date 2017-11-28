@@ -330,4 +330,18 @@ if __name__ == '__main__':
     table_head = structure_table.head().to_string()
     table_head = '### '.join(('\n'+table_head).splitlines(keepends=True))[1:]  # Prepend "### "
     log.info('Alignment contacts table head:\n%s', table_head)
+
+    # Basic statistics: N mapped PDBs, sequences and residues
+    # NB. some PDBs map to multiple sequences (e.g. heterodimers in LBD)
+    seq_pdb_map = structure_table[['UniProt_dbAccessionId_A', 'SOURCE_ID_A', 'PDB_dbAccessionId_A']].drop_duplicates()
+    seq_pdb_map.reset_index(drop=True, inplace=True)
+    seq_pdb_map.to_csv(args.alignment+'_seq_structure_mappings.csv')
+    n_seq_pdb_mappings = len(seq_pdb_map)  # Number of UniProt-PDB mappings
+    n_seqs_mapped = len(seq_pdb_map['SOURCE_ID_A'].unique())  # Number of mapped UniProts
+    n_res_mapped = len(structure_table.groupby(['SOURCE_ID_A', 'Alignment_column_A']).size())  # N mapped residues
+    log.info('Mappings retrieved...\t{}'.format(n_seq_pdb_mappings))
+    log.info('Sequences with at least one mapping...\t{}'.format(n_seqs_mapped))
+    log.info('Residues mapped...\t{}'.format(n_res_mapped))
+
+
     log.info('DONE.')
