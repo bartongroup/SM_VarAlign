@@ -273,7 +273,11 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Structural properties of alignment columns.')
     parser.add_argument('alignment', type=str, help='Path to the alignment.')
     parser.add_argument('--n_proc', type=int, help='Number of processors.', default=1)
-    parser.add_argument('--only_sifts_best', help='Process only sifts best structure.', action='store_true')
+    parser_n_sifts_group = parser.add_mutually_exclusive_group()
+    parser_n_sifts_group.add_argument('--only_sifts_best', help='Process only sifts best structure.',
+                                      action='store_true')
+    parser_n_sifts_group.add_argument('--max_pdbs', type=int,
+                                      help='Maximum number of SIFTs PDB mappings to use for a sequence')
     args = parser.parse_args()
 
     # Read data produced by `align_variants.py`
@@ -286,6 +290,9 @@ if __name__ == '__main__':
     status, downloaded = _download_structure_data(aln_info, download_logfile)
     if args.only_sifts_best:
         downloaded.query('sifts_index == 1', inplace=True)
+    elif args.max_pdbs:
+        allowed_sifts_indexes = range(1, 1+args.max_pdbs)
+        downloaded.query('sifts_index in @allowed_sifts_indexes', inplace=True)
 
     # Process all downloaded structural data with ProIntVar
     to_load = downloaded['pdb_id'].dropna().unique()
