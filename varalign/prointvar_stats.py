@@ -117,6 +117,27 @@ def _column_set_feature_enrichment(column_annotation_table, selection_query, fea
     return test_df, (oddsratio, pvalue, lower_ci, upper_ci)
 
 
+def collect_column_structure_stats(aligned_prointvar_table):
+    """
+    Produce standard column-structure feature frequency table.
+
+    :param aligned_prointvar_table:
+    :return:
+    """
+    # Generate standard tables
+    lig_stats = _column_ligand_contacts(aligned_prointvar_table)
+    cov_stats = _column_total_contacts(aligned_prointvar_table)
+    pips = _column_protein_contacts(aligned_prointvar_table)
+
+    # Merge
+    structure_stats = cov_stats.join(lig_stats).join(pips)
+
+    # Interpolate index (useful for plotting)
+    structure_stats = _interpolate_index(structure_stats)  # TODO: index to *full* alignment?
+
+    return structure_stats
+
+
 def column_set_ppi_enrichment(column_annotation_table, selection_query):
     """
     Test a subset of columns for enrichment of protein-protein interactions.
