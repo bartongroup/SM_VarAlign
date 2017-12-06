@@ -3,10 +3,16 @@ This is the script that runs the structural analyses using `ProIntVar`.
 
 It requires Python 3, for `ProIntVar` compatibility, and should be run after `align_variants.py`.
 """
+# Matplotlib setup
+import matplotlib as mpl
+mpl.use('Agg')
+import matplotlib.pyplot as plt
+from matplotlib.backends.backend_pdf import PdfPages
+from matplotlib.ticker import IndexLocator
+
 
 import argparse
 import logging
-import matplotlib.pyplot as plt
 import multiprocessing
 import numpy as np
 import os
@@ -288,14 +294,14 @@ if __name__ == '__main__':
     # Get SIFTS best and download for all proteins in alignment
     download_logfile = args.alignment + '_prointvar_download'
     status, downloaded = _download_structure_data(aln_info, download_logfile)
+    # Process all downloaded structural data with ProIntVar
     if args.only_sifts_best:
-        downloaded.query('sifts_index == 1', inplace=True)
+        to_load = downloaded.query('sifts_index == 1')['pdb_id'].dropna().unique()
     elif args.max_pdbs:
         allowed_sifts_indexes = range(1, 1+args.max_pdbs)
-        downloaded.query('sifts_index in @allowed_sifts_indexes', inplace=True)
-
-    # Process all downloaded structural data with ProIntVar
-    to_load = downloaded['pdb_id'].dropna().unique()
+        to_load = downloaded.query('sifts_index in @allowed_sifts_indexes')['pdb_id'].dropna().unique()
+    else:
+        to_load = downloaded['pdb_id'].dropna().unique()
     p = multiprocessing.Pool(args.n_proc)
     tabs = list(tqdm.tqdm(p.imap(_format_structure_data, to_load), total=len(to_load)))
     structure_table = pd.concat(tabs)
@@ -343,5 +349,27 @@ if __name__ == '__main__':
     log.info('Sequences with at least one mapping...\t{}'.format(n_seqs_mapped))
     log.info('Residues mapped...\t{}'.format(n_res_mapped))
 
+    # Plot output  # TODO: move plotting routines closer to the data they use...
+    pdf = PdfPages(args.alignment + '.structural.figures.pdf')
+    # PDF metadata
+    d = pdf.infodict()
+    d['Title'] = 'Structural context analysis of {}'.format(args.alignment)
+    d['Author'] = 'prointvar_analysis.py'
+
+    # Plot SIFTS mappings available data (i.e. before filtering)
+    # Downloaded contains scraped data from the `ProIntVar` download logs
+    n_pdbs = pd.to_numeric(downloaded.groupby('query')['sifts_index'].max(), errors='coerce').fillna(0).sort_values()
+    # Plot distribution of structural coverage
+    plot_data = n_pdbs.reset_index()
+    fig, ax = plt.subplots()
+    _ = ax.plot(plot_data['sifts_index'], '.')
+    ax.xaxis.set_major_locator(IndexLocator(10, 0))
+    # Label top three
+    for i, row in plot_data.iloc[-3:].iterrows():
+        _ = ax.annotate(row.query, (i, row.sifts_index),
+                        xytext=(0.85 * i, row.sifts_index))
+    pdf.attach_note('Available PDBs from SIFTS')
+    pdf.savefig()
+    plt.close()
 
     log.info('DONE.')
