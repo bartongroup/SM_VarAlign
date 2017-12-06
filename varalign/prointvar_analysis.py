@@ -18,6 +18,7 @@ import numpy as np
 import os
 import pandas as pd
 from prointvar import merger
+import prointvar_stats
 import subprocess
 import tqdm
 
@@ -273,6 +274,44 @@ def _classify_contacts(prointvar_table, residue=True, protein=True, polymer=True
     return pd.concat([residue, protein, pfam, cath, hierarchy, scop, polymer], axis=1)
 
 
+def _stem_and_line_plot(data, line, stems, axis=None):
+    """
+
+    :param data:
+    :param line:
+    :param stems:
+    :param axis:
+    :return:
+    """
+    if not axis:
+        axis = plt
+    _ = axis.plot(data[line])
+    (markers, stemlines, baseline) = axis.stem(data.index, data[stems])
+    _ = plt.setp(markers, marker='o', markersize=3)
+    _ = plt.setp(stemlines, linewidth=0.5)
+    _ = plt.setp(baseline, linewidth=1, visible=True)
+
+
+def alignment_ligand_plot(data, axis=None):
+    """
+
+    :param data:
+    :param axis:
+    :return:
+    """
+    _stem_and_line_plot(data, line='sequences_with_contacts', stems='protein_ligand_interactions', axis=axis)
+
+
+def alignment_ppi_plot(data, axis=None):
+    """
+
+    :param data:
+    :param axis:
+    :return:
+    """
+    _stem_and_line_plot(data, line='sequences_with_contacts', stems='protein_protein_interactions', axis=axis)
+
+
 
 if __name__ == '__main__':
     # CLI
@@ -371,5 +410,22 @@ if __name__ == '__main__':
     pdf.attach_note('Available PDBs from SIFTS')
     pdf.savefig()
     plt.close()
+
+    # Structure analyses
+    structure_stats = prointvar_stats.collect_column_structure_stats(structure_table)
+
+    # Plot comparing structural features on the alignment
+    fig, axs = plt.subplots(2, 1, sharex=True, figsize=(9, 8))
+    alignment_ligand_plot(structure_stats, axs[0])
+    alignment_ppi_plot(structure_stats, axs[1])
+    _ = axs[0].set_ylabel('Protein-Ligand Interactions')
+    _ = axs[1].set_ylabel('Protein-Protein Interactions')
+    _ = axs[1].set_xlabel('Alignment column')
+    _ = plt.suptitle('Distirbution of Structural Features on Alignment')
+    plt.tight_layout(rect=[0, 0.03, 1, 0.95])
+    pdf.attach_note('Ligand and PPI residue distribution.')
+    pdf.savefig()
+    plt.close()
+
 
     log.info('DONE.')
