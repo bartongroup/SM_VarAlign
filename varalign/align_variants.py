@@ -269,6 +269,7 @@ if __name__ == '__main__':
     M_best = occ_gmm._pick_best(gmms['models'], gmms['data'])
     # M_best.means_
     subset_mask_gmm = occ_gmm._core_column_mask(M_best, gmms['data'], args.n_groups)
+    column_summary = column_summary.assign(column_gmm_pass=subset_mask_gmm)
 
     # Regression statistics
 
