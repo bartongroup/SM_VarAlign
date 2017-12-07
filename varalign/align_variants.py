@@ -297,6 +297,9 @@ if __name__ == '__main__':
                                                               occupancy='occupancy')
     missense_scores.to_csv(results_prefix + '.col_missense_scores.csv')
     column_summary = column_summary.join(missense_scores)
+    # Add shenkin percentile rank
+    column_summary = column_summary.join(column_summary.loc[subset_mask_gmm, 'shenkin'].rank(pct=True),
+                                         rsuffix='_percentile')
     column_summary.to_csv(results_prefix + '.col_summary.csv')
 
 
@@ -379,8 +382,6 @@ if __name__ == '__main__':
     pdf.close()
 
     # Pick extreme columns and identify residues (useful for follow-up)
-    column_summary = column_summary.join(column_summary.loc[subset_mask_gmm, 'shenkin'].rank(pct=True),
-                                         rsuffix='_percentile')
     umd_mask = column_summary.eval('shenkin_percentile > 0.75 & oddsratio < 1 & pvalue < 0.1')
     ume_mask = column_summary.eval('shenkin_percentile > 0.75 & oddsratio > 1 & pvalue < 0.1')
     cmd_mask = column_summary.eval('shenkin_percentile < 0.25 & oddsratio < 1 & pvalue < 0.1')
