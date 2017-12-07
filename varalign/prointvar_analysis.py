@@ -414,6 +414,15 @@ if __name__ == '__main__':
     # Structure analyses
     structure_stats = prointvar_stats.collect_column_structure_stats(structure_table)
 
+    # Add variant column stats
+    column_stats.rename(columns={"('Alignment', 'Column')": 'Alignment_column'}, inplace=True)
+    # Add Shenkin percentile score
+    if 'shenkin_percentile' not in column_stats.columns:
+        # subset_mask_gmm??
+        column_stats = column_stats.join(column_stats['shenkin'].rank(pct=True), rsuffix='_percentile')
+    column_annotations = column_stats.set_index('Alignment_column').join(structure_stats)
+    column_annotations.to_csv(args.alignment+'_column_data.csv')
+
     # Plot comparing structural features on the alignment
     fig, axs = plt.subplots(2, 1, sharex=True, figsize=(9, 8))
     alignment_ligand_plot(structure_stats, axs[0])
