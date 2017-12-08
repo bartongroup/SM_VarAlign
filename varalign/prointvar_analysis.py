@@ -330,46 +330,53 @@ if __name__ == '__main__':
     indexed_mapping_table = pd.read_pickle(args.alignment+'_mappings.p.gz')
     column_stats = pd.read_csv(os.path.join('results', args.alignment) + '.col_summary.csv')
 
-    # Get SIFTS best and download for all proteins in alignment
-    download_logfile = args.alignment + '_prointvar_download'
-    status, downloaded = _download_structure_data(aln_info, download_logfile)
-    # Process all downloaded structural data with ProIntVar
-    if args.only_sifts_best:
-        to_load = downloaded.query('sifts_index == 1')['pdb_id'].dropna().unique()
-    elif args.max_pdbs:
-        allowed_sifts_indexes = range(1, 1+args.max_pdbs)
-        to_load = downloaded.query('sifts_index in @allowed_sifts_indexes')['pdb_id'].dropna().unique()
+    if not os.path.isfile(args.alignment+'_prointvar_structure_table.p.gz'):
+        # Get SIFTS best and download for all proteins in alignment
+        download_logfile = args.alignment + '_prointvar_download'
+        status, downloaded = _download_structure_data(aln_info, download_logfile)
+        # TODO: log some download statuses
+
+        # Process all downloaded structural data with ProIntVar
+        if args.only_sifts_best:
+            to_load = downloaded.query('sifts_index == 1')['pdb_id'].dropna().unique()
+        elif args.max_pdbs:
+            allowed_sifts_indexes = range(1, 1+args.max_pdbs)
+            to_load = downloaded.query('sifts_index in @allowed_sifts_indexes')['pdb_id'].dropna().unique()
+        else:
+            to_load = downloaded['pdb_id'].dropna().unique()
+        p = multiprocessing.Pool(args.n_proc)
+        tabs = list(tqdm.tqdm(p.imap(_format_structure_data, to_load), total=len(to_load)))
+        structure_table = pd.concat(tabs)
+        log.info('{} atom-atom records created.'.format(len(structure_table)))  # Shouldn't this be even?
+
+        # Filter non-alignment residues from the table
+        log.info('Filtering extra-domain contacts (i.e. neither atom maps to the alignment)...')
+        structure_table = _filter_extra_domain_contacts(structure_table, aln_info)
+
+        # Remove each contact's duplicate row
+        log.info('Removing contact duplicates...')
+        structure_table = _dedupe_ab_contacts(structure_table)
+
+        # Add alignment columns to table
+        log.info('Mapping contact residues to alignment...')
+        aln_mappings = _format_mapping_table(aln_info, indexed_mapping_table)
+        structure_table = _merge_alignment_columns_to_contacts(aln_mappings, structure_table)
+
+        # Sort A/B contact
+        log.info('Sorting contacts so that alignment column atom A <= that of atom B...')
+        structure_table = _sort_ab_contacts(structure_table)
+
+        # Classify contacts
+        log.info('Classifying contact residue topology...')
+        structure_table = pd.concat([structure_table, _classify_contacts(structure_table)], axis=1)
+
+        # Write structure table
+        log.info('Writing {} atom-atom records to file...'.format(len(structure_table)))
+        structure_table.to_pickle(args.alignment+'_prointvar_structure_table.p.gz')
     else:
-        to_load = downloaded['pdb_id'].dropna().unique()
-    p = multiprocessing.Pool(args.n_proc)
-    tabs = list(tqdm.tqdm(p.imap(_format_structure_data, to_load), total=len(to_load)))
-    structure_table = pd.concat(tabs)
-    log.info('{} atom-atom records created.'.format(len(structure_table)))  # Shouldn't this be even?
-
-    # Filter non-alignment residues from the table
-    log.info('Filtering extra-domain contacts (i.e. neither atom maps to the alignment)...')
-    structure_table = _filter_extra_domain_contacts(structure_table, aln_info)
-
-    # Remove each contact's duplicate row
-    log.info('Removing contact duplicates...')
-    structure_table = _dedupe_ab_contacts(structure_table)
-
-    # Add alignment columns to table
-    log.info('Mapping contact residues to alignment...')
-    aln_mappings = _format_mapping_table(aln_info, indexed_mapping_table)
-    structure_table = _merge_alignment_columns_to_contacts(aln_mappings, structure_table)
-
-    # Sort A/B contact
-    log.info('Sorting contacts so that alignment column atom A <= that of atom B...')
-    structure_table = _sort_ab_contacts(structure_table)
-
-    # Classify contacts
-    log.info('Classifying contact residue topology...')
-    structure_table = pd.concat([structure_table, _classify_contacts(structure_table)], axis=1)
-
-    # Write structure table
-    log.info('Writing {} atom-atom records to file...'.format(len(structure_table)))
-    structure_table.to_pickle(args.alignment+'_prointvar_structure_table.p.gz')
+        log.info('Reading {}...'.format(args.alignment + '_prointvar_structure_table.p.gz'))
+        structure_table = pd.read_pickle(args.alignment + '_prointvar_structure_table.p.gz')
+        log.info('Loaded {} atom-atom records from file.'.format(len(structure_table)))
 
     # Log head of table
     table_head = structure_table.head().to_string()
@@ -395,21 +402,21 @@ if __name__ == '__main__':
     d['Title'] = 'Structural context analysis of {}'.format(args.alignment)
     d['Author'] = 'prointvar_analysis.py'
 
-    # Plot SIFTS mappings available data (i.e. before filtering)
-    # Downloaded contains scraped data from the `ProIntVar` download logs
-    n_pdbs = pd.to_numeric(downloaded.groupby('query')['sifts_index'].max(), errors='coerce').fillna(0).sort_values()
-    # Plot distribution of structural coverage
-    plot_data = n_pdbs.reset_index()
-    fig, ax = plt.subplots()
-    _ = ax.plot(plot_data['sifts_index'], '.')
-    ax.xaxis.set_major_locator(IndexLocator(10, 0))
-    # Label top three
-    for i, row in plot_data.iloc[-3:].iterrows():
-        _ = ax.annotate(row.query, (i, row.sifts_index),
-                        xytext=(0.85 * i, row.sifts_index))
-    pdf.attach_note('Available PDBs from SIFTS')
-    pdf.savefig()
-    plt.close()
+    # # Plot SIFTS mappings available data (i.e. before filtering)
+    # # Downloaded contains scraped data from the `ProIntVar` download logs
+    # n_pdbs = pd.to_numeric(downloaded.groupby('query')['sifts_index'].max(), errors='coerce').fillna(0).sort_values()
+    # # Plot distribution of structural coverage
+    # plot_data = n_pdbs.reset_index()
+    # fig, ax = plt.subplots()
+    # _ = ax.plot(plot_data['sifts_index'], '.')
+    # ax.xaxis.set_major_locator(IndexLocator(10, 0))
+    # # Label top three
+    # for i, row in plot_data.iloc[-3:].iterrows():
+    #     _ = ax.annotate(row.query, (i, row.sifts_index),
+    #                     xytext=(0.85 * i, row.sifts_index))
+    # pdf.attach_note('Available PDBs from SIFTS')
+    # pdf.savefig()
+    # plt.close()
 
     # Structure analyses
     structure_stats = prointvar_stats.collect_column_structure_stats(structure_table)
