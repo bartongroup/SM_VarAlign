@@ -216,14 +216,20 @@ if __name__ == '__main__':
             raise
     results_prefix = os.path.join(output_path, args.alignment)
 
-    # Run align variants pipeline
     alignment = AlignIO.read(args.alignment, format='stockholm')
-    alignment_info, alignment_variant_table = align_variants(alignment=alignment)
-    indexed_mapping_table = _mapping_table(alignment_info)  # TODO: Should this be passed or returned by align_variants?
-    # Write data
-    alignment_info.to_pickle(args.alignment+'_info.p.gz')
-    alignment_variant_table.to_pickle(args.alignment+'_variants.p.gz')
-    indexed_mapping_table.to_pickle(args.alignment+'_mappings.p.gz')
+
+    # Run align variants pipeline
+    if not os.path.isfile(args.alignment+'_variants.p.gz'):
+        alignment_info, alignment_variant_table = align_variants(alignment=alignment)
+        indexed_mapping_table = _mapping_table(alignment_info)  # TODO: Should this be passed or returned by align_variants?
+        # Write data
+        alignment_info.to_pickle(args.alignment+'_info.p.gz')
+        alignment_variant_table.to_pickle(args.alignment+'_variants.p.gz')
+        indexed_mapping_table.to_pickle(args.alignment+'_mappings.p.gz')
+    else:
+        alignment_info = pd.read_pickle(args.alignment+'_info.p.gz')
+        alignment_variant_table = pd.read_pickle(args.alignment+'_variants.p.gz')
+        indexed_mapping_table = pd.read_pickle(args.alignment+'_mappings.p.gz')
 
     # Run aacon
     # Format for AACon and run
