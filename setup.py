@@ -8,6 +8,7 @@ setup(
     #data_files=[('config', ['varalign/config.txt'])],
     package_data={'varalign': ['config.txt']},
     #include_package_data=True,
+    scripts=['bin/filter_swiss'],
     install_requires=['requests', 'pandas', 'pyvcf', 'pysam', 'scipy'],
     url='',
     license='',
