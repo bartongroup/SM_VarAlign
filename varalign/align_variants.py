@@ -154,6 +154,10 @@ def align_variants(alignment, species='HUMAN'):
         (row.seq_id, _map_uniprot_to_genome(row.uniprot_id, species=species))
         for row in tqdm.tqdm(alignment_info.itertuples(), total=len(alignment_info))
     ]
+    if len(genomic_ranges) == 0:
+        log.warning('Failed to map any sequences to the genome... Are you sure there are human sequences?')
+        return alignment_info, None
+
     log.info("Mapped {} sequences to genome.".format(len(genomic_ranges)))
 
     # Add ranges to alignment info
@@ -220,7 +224,18 @@ if __name__ == '__main__':
 
     # Run align variants pipeline
     if not os.path.isfile(args.alignment+'_variants.p.gz'):
-        alignment_info, alignment_variant_table = align_variants(alignment=alignment)
+        # TODO: Chunk size should be optimised? Also, its effectiveness depends on human sequences in each chunk...
+        n = 500
+        info_chunks = []
+        vartable_chunks = []
+        for chunk in tqdm.tqdm((alignment[i:i + n] for i in xrange(0, len(alignment), n)), desc='Alignment chunks...',
+                               total=len(range(0, len(alignment), n))):
+            _alignment_info, _alignment_variant_table = align_variants(chunk)
+            info_chunks.append(_alignment_info)
+            vartable_chunks.append(_alignment_variant_table)
+        alignment_variant_table = pd.concat(vartable_chunks)
+        alignment_info = pd.concat(info_chunks, ignore_index=True)
+
         indexed_mapping_table = _mapping_table(alignment_info)  # TODO: Should this be passed or returned by align_variants?
         # Write data
         alignment_info.to_pickle(args.alignment+'_info.p.gz')
