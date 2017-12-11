@@ -165,11 +165,17 @@ def align_variants(alignment, species='HUMAN'):
     alignment_info = alignment_info.merge(genomic_mapping_table, on=['seq_id'], how='left')
 
     # ----- Fetch variants for the mapped genomic ranges -----
+    # NB. gnomad fetcher is packed into a generator, which is extracted in the following list comp.
     sequence_variant_lists = [(row.seq_id, (x for r in row.genomic_ranges for x in gnomad.gnomad.fetch(*r)))
                               for row in alignment_info.dropna(subset=['genomic_ranges']).itertuples()]
-    all_variants = ((variant, seq_id) for seq_id, range_reader in tqdm.tqdm(sequence_variant_lists)
-                    for variant in range_reader)
-    variants_table = gnomad.vcf_row_to_table(*zip(*all_variants))
+    all_variants = [(variant, seq_id)
+                    for seq_id, range_reader in tqdm.tqdm(sequence_variant_lists, desc='Loading variants...')
+                    for variant in range_reader]
+    # pass VCF records and source_ids
+    n = 1000  # chunking seems to interact with redundant rows... Fix by adding chunk ID with `keys`
+    variants_table = pd.concat([gnomad.vcf_row_to_table(*zip(*all_variants[i:i + n]))
+                                for i in tqdm.tqdm(xrange(0, len(all_variants), n), desc='Parsing variants...')],
+                               keys=range(0, len(all_variants), n))
 
     # ----- Add source UniProt identifiers to the table -----
     # Create UniProt ID series that shares an index with the variant table
@@ -182,6 +188,7 @@ def align_variants(alignment, species='HUMAN'):
     # ----- Filter variant table -----
     filtered_variants = _default_variant_filter(variants_table)
     log.info('Redundant rows:\t{}'.format(sum(filtered_variants.reset_index('Feature').index.duplicated())))
+    filtered_variants.reset_index(level=0, drop=True, inplace=True)  # Remove chunk ID
     log.info('Total rows:\t{}'.format(len(filtered_variants)))
 
     # ----- Map variants to columns -----
