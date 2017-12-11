@@ -8,6 +8,9 @@ import seaborn as sns
 
 import argparse
 import logging
+
+logging.basicConfig(filename='align_variants.log', format='%(asctime)s %(name)s [%(levelname)-8s] - %(message)s')
+
 from operator import itemgetter
 
 import pandas as pd
@@ -152,7 +155,7 @@ def align_variants(alignment, species='HUMAN'):
     # TODO: If get transcript ID can use to filter variant table
     genomic_ranges = [
         (row.seq_id, _map_uniprot_to_genome(row.uniprot_id, species=species))
-        for row in tqdm.tqdm(alignment_info.itertuples(), total=len(alignment_info))
+        for row in tqdm.tqdm(alignment_info.itertuples(), total=len(alignment_info), desc='Mapping sequences...')
     ]
     if len(genomic_ranges) == 0:
         log.warning('Failed to map any sequences to the genome... Are you sure there are human sequences?')
@@ -217,6 +220,12 @@ if __name__ == '__main__':
     parser.add_argument('--max_gaussians', type=int, default=5, help='Maximum number of Gaussians for occupancy fitting.')
     parser.add_argument('--n_groups', type=int, default=1, help='Top Gaussians to select after occupancy fitting.')
     args = parser.parse_args()
+
+    # Log arguments
+    log.info('Arguments...')
+    log.info('alignment\t{}'.format(args.alignment))
+    log.info('max_gaussians\t{}'.format(args.max_gaussians))
+    log.info('n_groups\t{}'.format(args.n_groups))
 
     # Results will be written in this folder, data will be saved in working directory
     output_path = 'results'
