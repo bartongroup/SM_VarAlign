@@ -34,7 +34,13 @@ def _format_structure_data(pdb):
                                                              override=True, residue_agg=True, dssp=False)
     except FileNotFoundError as e:
         # TODO: raise or don't catch this once prointvar bugs worked out...
-        print('{} failed with FileNotFoundError:'.format(pdb))
+        log.error('{} failed with FileNotFoundError'.format(pdb))
+        return None
+    except OSError as e:
+        log.error('{} failed with OSError'.format(pdb))
+        return None
+    except ValueError as e:
+        log.error('{} failed with ValueError'.format(pdb))
         return None
     # Merge tables
     table = merger.TableMerger(pdbx_table=pdbx, sifts_table=sifts,
