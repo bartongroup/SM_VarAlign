@@ -258,6 +258,7 @@ if __name__ == '__main__':
         alignment_variant_table.to_pickle(args.alignment+'_variants.p.gz')
         indexed_mapping_table.to_pickle(args.alignment+'_mappings.p.gz')
     else:
+        log.info('Loading data for {}...'.format(args.alignment))
         alignment_info = pd.read_pickle(args.alignment+'_info.p.gz')
         alignment_variant_table = pd.read_pickle(args.alignment+'_variants.p.gz')
         indexed_mapping_table = pd.read_pickle(args.alignment+'_mappings.p.gz')
