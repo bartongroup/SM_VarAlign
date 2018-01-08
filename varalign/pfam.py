@@ -98,7 +98,7 @@ def filter_non_swissprot(aln, swissprot_id_file='/homes/smacgowan/NOBACK/resourc
     :return:
     """
     # Read list of Swissprot IDS
-    swissprot_ids = pd.read_csv(swissprot_id_file, sep='\t', header=0)
+    swissprot_ids = pd.read_csv(swissprot_id_file, sep='\t', header=0, comment='#')
     swissprot_seq_names = set(swissprot_ids['Entry name'].tolist())
 
     # Filter alignment
