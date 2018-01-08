@@ -12,7 +12,8 @@ log = logging.getLogger(__name__)
 
 # Load the VCF and log some key metadata
 log.info('Loading %s...', defaults.gnomad)
-gnomad = vcf.Reader(filename=defaults.gnomad)
+vcf_is_compressed = True if defaults.gnomad.endswith('bgz') else None  # pyvcf doesn't recognise .bgz
+gnomad = vcf.Reader(filename=defaults.gnomad, compressed=vcf_is_compressed)
 log.info('File format: {}'.format(gnomad.metadata.get('fileformat')))
 log.info('Reference: {}'.format(gnomad.metadata.get('reference')))
 
