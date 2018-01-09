@@ -1,0 +1,19 @@
+
+# This requirements file lists all third-party dependencies for this project.
+#
+# Run 'pip install -r requirements.txt' to install these dependencies
+
+biopython
+matplotlib
+numpy
+pandas
+prointvar-core
+proteofav
+pysam
+requests
+requests_cache
+scipy
+seaborn
+scikit-learn
+tqdm
+pyvcf
