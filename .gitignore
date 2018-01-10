@@ -1,6 +1,5 @@
 *.fa
 *.csv
 PF00001.18_full.sto
-ensembl_cache.sqlite
 dev_notebook.ipynb
 VarAlign.egg-info
