@@ -7,10 +7,14 @@ import pandas as pd
 import pfam
 from utils import filter_alignment, sanitise_alignment
 import subprocess
+import os
+import varalign
 
 
 log = logging.getLogger(__name__)
 log.setLevel('INFO')
+
+aacon_path = os.path.join(os.path.dirname(varalign.__file__), 'lib', 'aacon', 'compbio-conservation-1.1.jar')
 
 
 def _reformat_alignment_for_aacon(aln):
@@ -45,7 +49,7 @@ def _reformat_alignment_for_aacon(aln):
     return aacon_alignment, orig_col_nums
 
 
-def _run_aacon(aln, column_index=None, aacon_jar_path='/homes/smacgowan/bin/compbio-conservation-1.1.jar'):
+def _run_aacon(aln, column_index=None, aacon_jar_path=aacon_path):
     """
     Run standalone AACon on an alignment.
 
