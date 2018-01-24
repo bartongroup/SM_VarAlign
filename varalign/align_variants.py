@@ -390,6 +390,7 @@ if __name__ == '__main__':
     # Conservation plane plot: Missense Scores vs. Shenkin
     plot_data = column_summary[subset_mask_gmm]
     plot_data = plot_data.assign(pass_alpha=plot_data['pvalue'] < 0.1)
+    # TODO: plot.scatter throws AttributeError with pandas 0.22.0 or matplotlib 2.1.2
     ax = plot_data.plot.scatter('shenkin', 'oddsratio', c='pass_alpha',  # Valdar is well correlated...
                                 colorbar=False,
                                 logy=True, figsize=(10, 10))
