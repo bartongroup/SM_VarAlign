@@ -12,11 +12,11 @@ $ source activate varalign
 Installing VarAlign
 
 ```sh
-$ wget https://github.com/stuartmac/VarAlign/new/master.zip -O VarAlign.zip
+$ wget https://github.com/stuartmac/VarAlign/archive/master.zip -O VarAlign.zip
 $ unzip VarAlign.zip
 
 # alternatively
-$ git clone https://github.com/stuartmac/VarAlign/new/master.git
+$ git clone https://github.com/stuartmac/VarAlign.git
 
 # installing requirements
 $ cd VarAlign
