@@ -16,6 +16,10 @@ $ source activate varalign-env
 
 # install VarAlign
 $ pip install .
+
+# Check it works
+$ cd tests/data
+$ python ../../varalign/align_variants.py sample_swissprot_PF00001.18_full.sto
 ```
 
 
