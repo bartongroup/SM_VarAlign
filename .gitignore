@@ -3,3 +3,14 @@
 PF00001.18_full.sto
 dev_notebook.ipynb
 VarAlign.egg-info
+sample_swissprot_PF00001.18_full.sto.figures.pdf
+sample_swissprot_PF00001.18_full.sto.corners.ann
+sample_swissprot_PF00001.18_full.sto_variants.p.gz
+aacon.log
+aacon_scores.out
+align_variants.log
+alignment_variants.vcf
+sample_swissprot_PF00001.18_full.sto_info.p.gz
+sample_swissprot_PF00001.18_full.sto_mappings.p.gz
+sample_swissprot_PF00001.18_full.sto_variant_features.feat
+swissprot_PF00001.18_full.sto
