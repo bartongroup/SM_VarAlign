@@ -222,6 +222,17 @@ def align_variants(alignment, species='HUMAN'):
     return alignment_info, alignment_variant_table
 
 
+def _chunk_alignment(aln, n):
+    """
+    Return a generator that provides chunks of an alignment (sequence-wise).
+
+    :param aln: Multiple sequence alignment.
+    :param n: Chunk size.
+    :return: Generator of n-sized alignment chunks.
+    """
+    return (aln[i:i + n] for i in range(0, len(aln), n))
+
+
 if __name__ == '__main__':
     # CLI
     parser = argparse.ArgumentParser(description='Align variants to a Pfam alignment.')
@@ -250,11 +261,12 @@ if __name__ == '__main__':
     # Run align variants pipeline
     if not os.path.isfile(args.alignment+'_variants.p.gz'):
         # TODO: Chunk size should be optimised? Also, its effectiveness depends on human sequences in each chunk...
-        n = 500
+        chunk_size = 500
         info_chunks = []
         vartable_chunks = []
-        for chunk in tqdm.tqdm((alignment[i:i + n] for i in xrange(0, len(alignment), n)), desc='Alignment chunks...',
-                               total=len(range(0, len(alignment), n))):
+        chunked_alignment = _chunk_alignment(alignment, chunk_size)
+        n_chunks = len(range(0, len(alignment), chunk_size))
+        for chunk in tqdm.tqdm(chunked_alignment, desc='Alignment chunks...', total=n_chunks):
             _alignment_info, _alignment_variant_table = align_variants(chunk)
             info_chunks.append(_alignment_info)
             vartable_chunks.append(_alignment_variant_table)
