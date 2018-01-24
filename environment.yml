@@ -1,0 +1,24 @@
+
+# This requirements file lists all third-party dependencies for this project.
+#
+# Run 'pip install -r requirements.txt' to install these dependencies
+
+name: varalign-env
+dependencies:
+- python=2
+- pip
+- biopython
+- matplotlib>=2.0.2,<=2.1.1
+- numpy
+- pandas
+- pysam
+- requests
+- requests-cache
+- scipy
+- seaborn
+- scikit-learn
+- tqdm
+- pyvcf
+- pip:
+  - proteofav
+#  - prointvar-core
