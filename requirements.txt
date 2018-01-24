@@ -4,7 +4,7 @@
 # Run 'pip install -r requirements.txt' to install these dependencies
 
 biopython
-matplotlib
+matplotlib>=2.0.2,<=2.1.1
 numpy
 pandas
 prointvar-core
