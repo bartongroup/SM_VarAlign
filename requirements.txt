@@ -7,7 +7,7 @@ biopython
 matplotlib>=2.0.2,<=2.1.1
 numpy
 pandas
-prointvar-core
+#prointvar-core
 proteofav
 pysam
 requests
