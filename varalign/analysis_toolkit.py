@@ -130,3 +130,21 @@ def _variants_vs_length_plot(protein_variant_counts, alignment_info):
     return None
 
 
+def count_column_variant_consequences(table):
+    """
+    Count the number of variants by consequence at each alignment column.
+
+    :param table: Aligned variants table (DataFrame)
+    :return: DataFrame of variant counts for all columns in `table`.
+    """
+    return _aggregate_annotation(table, ('VEP', 'Consequence'))
+
+
+def count_column_clinvar(table):
+    """
+    Count the number of ClinVar annotations by term at each alignment column.
+
+    :param table: Aligned variants table (DataFrame)
+    :return: DataFrame of ClinVar annotation frequencies for all columns in `table`.
+    """
+    return _aggregate_annotation(table, ('VEP', 'CLIN_SIG'))

@@ -26,7 +26,7 @@ import gnomad
 import jalview
 from config import defaults
 from gnomad import tabulate_variant_effects
-from varalign.analysis_toolkit import _aggregate_annotation
+from varalign.analysis_toolkit import _aggregate_annotation, count_column_variant_consequences, count_column_clinvar
 from varalign import occ_gmm
 
 import os
@@ -296,23 +296,23 @@ if __name__ == '__main__':
 
     # Column aggregations
     # Count variants over columns
-    column_variant_counts = _aggregate_annotation(alignment_variant_table, ('VEP', 'Consequence'))
+    column_variant_counts = count_column_variant_consequences(alignment_variant_table)
     column_variant_counts.to_csv(results_prefix + '.col_var_counts.csv')
 
     # Count *rare* variants over columns
     rare_maf_threshold = 0.001
     is_rare = alignment_variant_table[('Allele_INFO', 'AF_POPMAX')] < rare_maf_threshold
-    column_rare_counts = _aggregate_annotation(alignment_variant_table[is_rare], ('VEP', 'Consequence'))
+    column_rare_counts = count_column_variant_consequences(alignment_variant_table[is_rare])
     column_rare_counts.to_csv(results_prefix + '.col_rare_counts.csv')
 
     # Count ClinVar annotations for *missense* variants over columns
     is_missense = alignment_variant_table[('VEP', 'Consequence')] == 'missense_variant'
-    column_missense_clinvar = _aggregate_annotation(alignment_variant_table[is_missense], ('VEP', 'CLIN_SIG'))
+    column_missense_clinvar = count_column_clinvar(alignment_variant_table[is_missense])
     column_missense_clinvar.to_csv(results_prefix + '.col_mis_clinvar.csv')
 
     # Count ClinVar annotations for *synonymous* variants over columns
     is_synonymous = alignment_variant_table[('VEP', 'Consequence')] == 'synonymous_variant'
-    column_synonymous_clinvar = _aggregate_annotation(alignment_variant_table[is_synonymous], ('VEP', 'CLIN_SIG'))
+    column_synonymous_clinvar = count_column_clinvar(alignment_variant_table[is_synonymous])
     column_synonymous_clinvar.to_csv(results_prefix + '.col_syn_clinvar.csv')
 
     # Use mapping table to calculate human residue occupancy
