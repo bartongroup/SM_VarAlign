@@ -90,7 +90,7 @@ def read_family(pfam_path, start):
     return alignment
 
 
-def filter_non_swissprot(aln, swissprot_id_file='/homes/smacgowan/NOBACK/resources/swissprot_ids.tab'):
+def filter_non_swissprot(aln, swissprot_id_file):
     """Return new Pfam alignment with only SwissProt sequences.
 
     :param aln:
