@@ -21,6 +21,8 @@ $ git clone https://github.com/stuartmac/VarAlign.git
 # installing requirements
 $ cd VarAlign
 $ pip install -r requirements.txt
+
+# install VarAlign
 $ pip install .
 ```
 
