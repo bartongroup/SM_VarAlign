@@ -10,6 +10,7 @@ Installing VarAlign (uses Conda)
 $ git clone https://github.com/stuartmac/VarAlign.git
 
 # set up a conda environment with all requirements
+$ cd VarAlign
 $ conda env create -f environment.yml
 $ source activate varalign-env
 
