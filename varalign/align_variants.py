@@ -30,6 +30,7 @@ from varalign.analysis_toolkit import _aggregate_annotation
 from varalign import occ_gmm
 
 import os
+import vcf
 
 log = logging.getLogger(__name__)
 log.setLevel('INFO')
@@ -174,6 +175,14 @@ def align_variants(alignment, species='HUMAN'):
     all_variants = [(variant, seq_id)
                     for seq_id, range_reader in tqdm.tqdm(sequence_variant_lists, desc='Loading variants...')
                     for variant in range_reader]
+
+    # Write alignment variants to a VCF
+    with open('alignment_variants.vcf', 'w') as vcf_out:  # TODO: add alignment to file name? (needs refactoring...)
+        vcf_writer = vcf.Writer(vcf_out, gnomad.gnomad)
+        for v, _ in all_variants:
+            vcf_writer.write_record(v)
+
+
     # pass VCF records and source_ids
     n = 1000  # chunking seems to interact with redundant rows... Fix by adding chunk ID with `keys`
     variants_table = pd.concat([gnomad.vcf_row_to_table(*zip(*all_variants[i:i + n]))
