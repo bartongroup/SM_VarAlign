@@ -3,13 +3,7 @@ VarAlign is a python module that aggregates human genetic variation over the col
 
 ## Installing
 
-Setting up a conda environment
-```sh
-$ conda create -n varalign python pip
-$ source activate varalign
-```
-
-Installing VarAlign
+Installing VarAlign (uses Conda)
 
 ```sh
 $ wget https://github.com/stuartmac/VarAlign/archive/master.zip -O VarAlign.zip
@@ -18,9 +12,9 @@ $ unzip VarAlign.zip
 # alternatively
 $ git clone https://github.com/stuartmac/VarAlign.git
 
-# installing requirements
-$ cd VarAlign
-$ pip install -r requirements.txt
+# set up a conda environment with all requirements
+$ conda env create -f environment.yml
+$ source activate varalign-env
 
 # install VarAlign
 $ pip install .
