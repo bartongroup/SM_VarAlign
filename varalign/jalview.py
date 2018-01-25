@@ -94,7 +94,7 @@ def marked_columns_track(mask, title, description, filename, append=False):
     values.loc[~mask] = ''
 
     if not append:
-        with open(filename, 'wb') as f:
+        with open(filename, 'w') as f:
             f.write('JALVIEW_ANNOTATION\n')
 
     with open(filename, 'a') as f:

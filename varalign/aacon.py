@@ -62,7 +62,7 @@ def _run_aacon(aln, column_index=None, aacon_jar_path=aacon_path):
     aacon_output = 'aacon_scores.out'
 
     # Write alignment to disk as fasta
-    with open(aacon_input, 'wb') as output:
+    with open(aacon_input, 'w') as output:
         AlignIO.write(aln, output, 'fasta')
     log.info('AACon formatted alignment saved to {}'.format(aacon_input))
 
