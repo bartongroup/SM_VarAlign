@@ -41,20 +41,20 @@ def apply_column_mask(alignment, column_mask):
         if k:
             boundary_indexes.append(n + 1)  # +1 for slicing
     boundary_indexes.append(None)  # list[i:None]
-    ranges = pairwise(boundary_indexes)
+    ranges = list(pairwise(boundary_indexes))
 
     # Now use those block lengths to build new family
     # 1) Initialise new family
-    start, stop = ranges.next()
+    start, stop = ranges[0]
     keep_range = not column_mask[0]
     if not keep_range:
-        start, stop = ranges.next()
+        start, stop = ranges[1]
         keep_range = not keep_range
     masked_alignment = alignment[:, start:stop]
     keep_range = not keep_range
 
     # 2) Proceed through remaining ranges
-    for start, stop in ranges:
+    for start, stop in ranges[2:]:
         if keep_range:
             masked_alignment = masked_alignment + alignment[:, start:stop]
         keep_range = not keep_range
