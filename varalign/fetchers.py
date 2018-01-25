@@ -3,7 +3,7 @@ This module contains functions for retrieving external data required for the ana
 the full-length UniProt sequences for the aligned sequences and the variant tables.
 """
 import os.path
-import urllib2
+from varalign.six.moves import urllib
 import pandas as pd
 from Bio import SeqIO
 
@@ -35,7 +35,7 @@ def fetch_uniprot_sequences(seq_name, downloads=None):
         print(remote_fasta)
         try:
             handle = urlopen_with_retry(remote_fasta)
-        except urllib2.HTTPError:
+        except urllib.error.HTTPError:
             # Will need to query instead
             p = parse_seq_name(p)  # First word only
             # TODO: This should be configurable

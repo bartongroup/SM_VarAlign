@@ -2,7 +2,7 @@
 Utility functions.
 """
 import re
-import urllib2
+from varalign.six.moves import urllib
 import requests
 from Bio.Align import MultipleSeqAlignment
 from Bio.Seq import Seq
@@ -17,9 +17,9 @@ log.setLevel('INFO')
 
 
 # http://stackoverflow.com/questions/9446387/how-to-retry-urllib2-request-when-fails
-@retry(urllib2.URLError, tries=4, delay=3, backoff=2)
+@retry(urllib.error.URLError, tries=4, delay=3, backoff=2)
 def urlopen_with_retry(url):
-    return urllib2.urlopen(url)  #TODO: 404 should be handled differently
+    return urllib.request.urlopen(url)  #TODO: 404 should be handled differently
 
 
 def query_uniprot(search_terms, first=False):

@@ -27,7 +27,7 @@ AttributeError: 'Defaults' object has no attribute 'email'"""
 
 import logging
 import os
-from ConfigParser import ConfigParser
+from six.moves.configparser import ConfigParser
 
 __all__ = ["defaults", "Defaults"]
 
