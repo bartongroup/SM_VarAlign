@@ -9,7 +9,7 @@ from Bio.Seq import Seq
 from Bio.Alphabet import IUPAC
 import copy
 
-from retry import retry
+from varalign.retry import retry
 import logging
 
 log = logging.getLogger(__name__)

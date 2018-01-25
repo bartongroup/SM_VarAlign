@@ -6,8 +6,8 @@ from Bio.pairwise2 import format_alignment
 
 import logging
 
-from fetchers import fetch_uniprot_sequences
-from utils import parse_seq_name
+from varalign.fetchers import fetch_uniprot_sequences
+from varalign.utils import parse_seq_name
 
 log = logging.getLogger(__name__)
 

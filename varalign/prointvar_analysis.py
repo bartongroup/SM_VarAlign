@@ -18,7 +18,7 @@ import numpy as np
 import os
 import pandas as pd
 from prointvar import merger
-import prointvar_stats
+from varalign import prointvar_stats
 import subprocess
 import tqdm
 

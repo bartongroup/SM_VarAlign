@@ -1,11 +1,11 @@
 from Bio import SeqIO
-from config import defaults
+from varalign.config import defaults
 import pandas as pd
 import io
 import logging
 import os
 import requests
-from utils import urlopen_with_retry
+from varalign.utils import urlopen_with_retry
 
 log = logging.getLogger(__name__)
 
