@@ -81,11 +81,10 @@ def _format_mapping_table(alignment_info_table, alignment_mapping_table):
 
 
 def _merge_alignment_columns_to_contacts(alignment_mappings, contacts_table):
-    # Format structure table for join
-    contacts_table = contacts_table.dropna(subset=['UniProt_dbAccessionId_A', 'UniProt_dbResNum_A'])
-    contacts_table = contacts_table.set_index(['UniProt_dbAccessionId_A', 'UniProt_dbResNum_A'], drop=False)
     # Map ATOM_A contacts to alignment
-    contacts_table = alignment_mappings.join(contacts_table, how='inner')  # Left join indicates unmapped residues...
+    contacts_table = pd.merge(alignment_mappings, contacts_table,
+                              right_on=['UniProt_dbAccessionId_A', 'UniProt_dbResNum_A'],
+                              left_index=True, how='inner')
     log.info('{} atom-atom records after adding ATOM_A alignment columns.'.format(len(contacts_table)))
     # Map ATOM_B contacts to alignment
     alignment_mappings.index.rename(['UniProt_dbAccessionId_B', 'UniProt_dbResNum_B'], inplace=True)
