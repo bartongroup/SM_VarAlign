@@ -10,7 +10,7 @@ dependencies:
 - biopython
 - matplotlib>=2.0.2,<=2.1.1
 - numpy
-- pandas
+- pandas==0.20.3
 - pysam
 - requests
 - requests-cache
