@@ -18,10 +18,18 @@ def _structure_column_counts(aligned_prointvar_table, query, unique_sequences_na
     else:
         sub_table = aligned_prointvar_table
 
+    # TODO: always do this for both ATOM_A and _B? only when contacts is lower diagonal form as I use? make optional?
     # Group interactions at each column and summarise
-    grouped = sub_table.groupby(['SOURCE_ID_A', 'Alignment_column_A']).size().groupby('Alignment_column_A')
-    n_unique_sequences = grouped.size()  # How many unique sequences have interactions?
-    n_interactions = grouped.sum()  # How many interactions are there in total?
+    gr_a = sub_table.groupby(['SOURCE_ID_A', 'Alignment_column_A']).size().groupby('Alignment_column_A')
+    n_unique_sequences = gr_a.size()  # How many unique sequences have interactions?
+    n_interactions = gr_a.sum()  # How many interactions are there in total?
+
+    # Repeat for ATOM_B
+    # Group interactions at each column and summarise
+    gr_b = sub_table.groupby(['SOURCE_ID_B', 'Alignment_column_B']).size().groupby('Alignment_column_B')
+    n_unique_sequences = n_unique_sequences.add(gr_b.size(), fill_value=0)
+    n_interactions = n_interactions.add(gr_b.sum(), fill_value=0)
+
     # Format results
     n_unique_sequences.name = unique_sequences_name
     n_interactions.name = total_interactions_name
