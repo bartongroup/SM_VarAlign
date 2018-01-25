@@ -7,7 +7,7 @@ import urllib2
 import pandas as pd
 from Bio import SeqIO
 
-from utils import urlopen_with_retry, query_uniprot, parse_seq_name
+from varalign.utils import urlopen_with_retry, query_uniprot, parse_seq_name
 
 # Use my developement branch of ProteoFAV
 import sys

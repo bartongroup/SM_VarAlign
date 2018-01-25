@@ -1,4 +1,4 @@
-from config import defaults
+from varalign.config import defaults
 import requests
 import requests_cache
 import sys

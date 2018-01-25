@@ -18,14 +18,14 @@ from Bio import AlignIO
 from numpy import vectorize
 import tqdm
 
-import aacon
-import alignments
-import analysis_toolkit
-import ensembl
-import gnomad
-import jalview
-from config import defaults
-from gnomad import tabulate_variant_effects
+from varalign import aacon
+from varalign import alignments
+from varalign import analysis_toolkit
+from varalign import ensembl
+from varalign import gnomad
+from varalign import jalview
+from varalign.config import defaults
+from varalign.gnomad import tabulate_variant_effects
 from varalign.analysis_toolkit import _aggregate_annotation, count_column_variant_consequences, count_column_clinvar
 from varalign import occ_gmm
 

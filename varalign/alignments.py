@@ -1,4 +1,4 @@
-from uniprot import _strip_version
+from varalign.uniprot import _strip_version
 import pandas as pd
 
 

@@ -5,10 +5,10 @@ import os
 import pandas as pd
 from Bio import SeqIO  # Needs PR #768 #769 patched
 
-import annotate_alignment
-import pfam
-from config import defaults
-from utils import filter_alignment
+from varalign import annotate_alignment
+from varalign import pfam
+from varalign.config import defaults
+from varalign.utils import filter_alignment
 
 log = logging.getLogger(__name__)
 

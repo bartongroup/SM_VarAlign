@@ -8,8 +8,8 @@ import pandas as pd
 from Bio import AlignIO  # Needs PR #768 #769 patched
 from Bio.Alphabet import IUPAC
 
-import pfam
-from utils import filter_alignment, sanitise_alignment
+from varalign import pfam
+from varalign.utils import filter_alignment, sanitise_alignment
 
 log = logging.getLogger(__name__)
 logging.captureWarnings(True)

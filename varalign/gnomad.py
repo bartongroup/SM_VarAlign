@@ -1,6 +1,6 @@
 import itertools
 
-from config import defaults
+from varalign.config import defaults
 from copy import deepcopy
 import logging
 import pandas as pd

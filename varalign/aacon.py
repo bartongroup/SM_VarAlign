@@ -1,11 +1,11 @@
 import argparse
 from Bio import AlignIO  # Needs PR #768 #769 patched
 from Bio.Alphabet import IUPAC
-from jabaws import apply_column_mask
+from varalign.jabaws import apply_column_mask
 import logging
 import pandas as pd
-import pfam
-from utils import filter_alignment, sanitise_alignment
+from varalign import pfam
+from varalign.utils import filter_alignment, sanitise_alignment
 import subprocess
 import os
 import varalign
