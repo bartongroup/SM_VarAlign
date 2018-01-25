@@ -3,9 +3,9 @@
 #
 # Run 'conda env create -f environment.yml' in a new conda environment.
 
-name: varalign-env
+name: varalign-env-py3
 dependencies:
-- python=2
+- python=3
 - pip
 - biopython
 - matplotlib>=2.0.2,<=2.1.1
