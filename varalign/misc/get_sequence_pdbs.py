@@ -76,7 +76,7 @@ def main(args):
         # Pick out first X-ray structure
         # TODO: better structure selection
         pdb_id = None
-        for prot, record in sifts_pdb.iteritems():
+        for prot, record in sifts_pdb.items():
             for r_dict in record:
                 if r_dict.get('experimental_method') == 'X-ray diffraction':
                     pdb_id = r_dict.get('pdb_id')
@@ -149,7 +149,7 @@ def main(args):
         filename = os.path.join(output_dir, '_'.join([seq_name, structure.get_id(), chain_id, str(start) + '-' + str(end)]) + '.pdb')
         #extract(structure, chain_id, start, end, filename)
         #sel = alpha_select(chain_id, start, end)
-        sel = in_range_or_zinc(chain_id=chain_id, residue_range=range(start, end + 1))
+        sel = in_range_or_zinc(chain_id=chain_id, residue_range=list(range(start, end + 1)))
         # io = PDBIO()
         # io.set_structure(structure)
         # io.save(filename, sel)

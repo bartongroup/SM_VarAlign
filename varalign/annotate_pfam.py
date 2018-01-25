@@ -48,7 +48,7 @@ if __name__ == '__main__':
     job_number = int(os.getenv('SGE_TASK_ID', 1))
     log.info('Array job number: {}'.format(job_number))
     with open(family_id_list, 'r') as ids:
-        for i in xrange(job_number):
+        for i in range(job_number):
             desired_family = ids.readline().strip()
     log.info('Searching Pfam for family: {}'.format(desired_family))
 

@@ -185,9 +185,9 @@ def align_variants(alignment, species='HUMAN'):
 
     # pass VCF records and source_ids
     n = 1000  # chunking seems to interact with redundant rows... Fix by adding chunk ID with `keys`
-    variants_table = pd.concat([gnomad.vcf_row_to_table(*zip(*all_variants[i:i + n]))
-                                for i in tqdm.tqdm(xrange(0, len(all_variants), n), desc='Parsing variants...')],
-                               keys=range(0, len(all_variants), n))
+    variants_table = pd.concat([gnomad.vcf_row_to_table(*list(zip(*all_variants[i:i + n])))
+                                for i in tqdm.tqdm(range(0, len(all_variants), n), desc='Parsing variants...')],
+                               keys=list(range(0, len(all_variants), n)))
 
     # ----- Add source UniProt identifiers to the table -----
     # Create UniProt ID series that shares an index with the variant table
@@ -265,7 +265,7 @@ if __name__ == '__main__':
         info_chunks = []
         vartable_chunks = []
         chunked_alignment = _chunk_alignment(alignment, chunk_size)
-        n_chunks = len(range(0, len(alignment), chunk_size))
+        n_chunks = len(list(range(0, len(alignment), chunk_size)))
         for chunk in tqdm.tqdm(chunked_alignment, desc='Alignment chunks...', total=n_chunks):
             _alignment_info, _alignment_variant_table = align_variants(chunk)
             info_chunks.append(_alignment_info)
@@ -459,7 +459,7 @@ if __name__ == '__main__':
     indexed_mapping_table.reset_index().set_index(('Alignment', 'Column')).loc[cme].to_csv(results_prefix+'.cmeres.csv')
 
     # Write marking jalview tracks
-    alignment_column_index = range(1, alignment.get_alignment_length() + 1)
+    alignment_column_index = list(range(1, alignment.get_alignment_length() + 1))
     jalview.marked_columns_track(umd_mask.reindex(alignment_column_index, fill_value=False), 'UMD',
                                  'UMD columns at Shenkin PCR > 0.75 and missense OR < 1, p < 0.1',
                                  results_prefix+'.corners.ann')

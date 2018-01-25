@@ -85,7 +85,7 @@ def _interpolate_index(table):
     :param table:
     :return:
     """
-    idx = pd.Index(range(int(table.index.min()), int(table.index.max())))
+    idx = pd.Index(list(range(int(table.index.min()), int(table.index.max()))))
     return table.reindex(idx)
 
 

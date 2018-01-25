@@ -22,7 +22,7 @@ CSQ_Format = gnomad.infos['CSQ'].desc.split(' Format: ')[1].split('|')
 log.info('CSQ Format: {}'.format(CSQ_Format))
 
 # Parse INFO header
-info_header = pd.DataFrame([v for k, v in gnomad.infos.items()], dtype='str')
+info_header = pd.DataFrame([v for k, v in list(gnomad.infos.items())], dtype='str')
 info_flag_num = 0
 info_value_num = 1
 info_allele_num = -1
@@ -40,11 +40,11 @@ msg = 'The following INFO fields cannot be resolved to a variant and will be str
 log.info(msg.format(str(special_handling['INFO'])))
 
 # Parse FORMAT header
-format_header = pd.DataFrame([v for k, v in gnomad.formats.items()], dtype='str')
+format_header = pd.DataFrame([v for k, v in list(gnomad.formats.items())], dtype='str')
 log.info('FORMAT fields: {}'.format(str(list(format_header.id))))
 
 # Parse FILTER header
-filter_header = pd.DataFrame([v for k, v in gnomad.filters.items()], dtype='str')
+filter_header = pd.DataFrame([v for k, v in list(gnomad.filters.items())], dtype='str')
 log.info('FILTER flags: {}'.format(str(list(filter_header.id))))
 
 
@@ -126,14 +126,14 @@ def split_variant(variant, alleles=[], exclude=special_handling['INFO'], value_o
         info = new_variant.INFO
         [info.pop(x, 0) for x in exclude]  # Exclude ignored info fields
         if value_only:
-            new_variant.INFO = {k: v[allele_index] if isinstance(v, list) else v for k, v in info.items()}
+            new_variant.INFO = {k: v[allele_index] if isinstance(v, list) else v for k, v in list(info.items())}
         else:
-            new_variant.INFO = {k: [v[allele_index], ] if isinstance(v, list) else v for k, v in info.items()}
+            new_variant.INFO = {k: [v[allele_index], ] if isinstance(v, list) else v for k, v in list(info.items())}
         return new_variant
 
     # Work out alleles to process, either all or selection by ALT allele base or index
     if alleles == ():
-        alleles = range(len(variant.ALT))
+        alleles = list(range(len(variant.ALT)))
     else:
         if isinstance(alleles, int):
             pass
@@ -200,9 +200,9 @@ def vcf_row_to_table(variants, source_ids=None):
     for site_num, variant in enumerate(variants):
         info_dict = variant.INFO
         allele_info_records = {k: info_dict[k] for k in info_allele_fields if k in info_dict}
-        fields, both_allele_values = zip(*allele_info_records.items())
+        fields, both_allele_values = list(zip(*list(allele_info_records.items())))
         for allele_num, single_allele_values in enumerate(zip(*both_allele_values)):
-            allele_entry = dict(zip(fields, single_allele_values))
+            allele_entry = dict(list(zip(fields, single_allele_values)))
             allele_entry['ALLELE_NUM'] = allele_num
             allele_entry['SITE'] = site_num
             tables.append(allele_entry)

@@ -67,7 +67,7 @@ def run_fisher_tests(alignment, table_mask, merged_table):
 
         # Count gaps
         n_gaps = gaps_per_column[col_num - 1]
-        other_columns = range(alignment_length)
+        other_columns = list(range(alignment_length))
         other_columns.remove(col_num - 1)
         n_gaps_other = sum([gaps_per_column[i] for i in other_columns])
 
@@ -170,7 +170,7 @@ def fill_variant_count(value_counts, length):
     :return:
     """
     variants_per_pos = []
-    for i in xrange(length):
+    for i in range(length):
         col_pos = i + 1
         try:
             variants_per_pos.append((col_pos, value_counts[col_pos]))
@@ -198,7 +198,7 @@ def column_mutability(alignment, mutabilities=thornton_mutabilities, gaps=0):
         seq_string = alignment[:, c]
         proportions = Counter(seq_string)
         summed_mutabilities = 0
-        for res, freq in proportions.items():
+        for res, freq in list(proportions.items()):
             summed_mutabilities += mutabilities[res] * freq
         weighted_mutabilities.append(summed_mutabilities / n)
     return weighted_mutabilities

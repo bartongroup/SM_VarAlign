@@ -43,12 +43,12 @@ def index_seq_to_alignment(sequence, gap_chars=set(['-', '.']),
     seq_characters = str(sequence.seq)
     alignment_index = [i for i, x in enumerate(seq_characters, start=index_start) if x not in gap_chars]
     start, end = get_start_end(sequence)
-    sequence_index = range(start, end+1)
+    sequence_index = list(range(start, end+1))
     assert len(alignment_index) == len(sequence_index)
     if reverse_mapping:
-        return zip(sequence_index, alignment_index)
+        return list(zip(sequence_index, alignment_index))
     else:
-        return zip(alignment_index, sequence_index)
+        return list(zip(alignment_index, sequence_index))
 
 
 def alignment_info_table(alignment, id_filter=''):
@@ -75,7 +75,7 @@ def alignment_info_table(alignment, id_filter=''):
     alignment_info = alignment_info.assign(uniprot_id=alignment_info['uniprot'].str.split('.').str[0].values)
 
     # Add sequence lengths
-    seq_lengths = alignment_info['start_end'].apply(lambda x: len(range(*x)) + 1)
+    seq_lengths = alignment_info['start_end'].apply(lambda x: len(list(range(*x))) + 1)
     seq_lengths.name = 'length'
     alignment_info = alignment_info.join(seq_lengths)
 

@@ -37,7 +37,7 @@ def get_row_residue_numbers(subseq, uniprot_seq, use_local_alignment):
         sub_seq_id, uniprot_seq_id, pairwise = alignment
         seq = str(pairwise[0][0])
         res_nums = [i + 1 for i, s in enumerate(seq) if s != '-']  # TODO: wrong if other seq has gaps too
-        seq_indexes = range(1, len(res_nums) + 1)
+        seq_indexes = list(range(1, len(res_nums) + 1))
         align_res_nums = sub_seq_id, uniprot_seq_id, res_nums, seq_indexes
     else:
         str_seq = str(subseq.seq)
@@ -46,8 +46,8 @@ def get_row_residue_numbers(subseq, uniprot_seq, use_local_alignment):
             log.debug('Matching sub-sequence: {} to UniProt sequence: {}'.format(subseq.id, uniprot_seq.id))
             start = uniprot_str_seq.find(str_seq) + 1
             end = start + len(str_seq)
-            res_nums = range(start, end)
-            seq_indexes = range(1, len(res_nums) + 1)
+            res_nums = list(range(start, end))
+            seq_indexes = list(range(1, len(res_nums) + 1))
             align_res_nums = subseq.id, uniprot_seq.id, res_nums, seq_indexes
         else:
             log.error('Sub-sequence: {} does not match UniProt sequence: {}'.format(subseq.id, uniprot_seq.id))

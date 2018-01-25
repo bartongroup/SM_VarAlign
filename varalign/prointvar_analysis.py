@@ -346,7 +346,7 @@ if __name__ == '__main__':
         if args.only_sifts_best:
             to_load = downloaded.query('sifts_index == 1')['pdb_id'].dropna().unique()
         elif args.max_pdbs:
-            allowed_sifts_indexes = range(1, 1+args.max_pdbs)
+            allowed_sifts_indexes = list(range(1, 1+args.max_pdbs))
             to_load = downloaded.query('sifts_index in @allowed_sifts_indexes')['pdb_id'].dropna().unique()
         else:
             to_load = downloaded['pdb_id'].dropna().unique()

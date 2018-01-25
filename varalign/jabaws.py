@@ -1,7 +1,7 @@
 import argparse
 import logging
 import os
-from itertools import tee, izip
+from itertools import tee
 from subprocess import call
 
 import pandas as pd
@@ -30,7 +30,7 @@ def apply_column_mask(alignment, column_mask):
         "s -> (s0,s1), (s1,s2), (s2, s3), ..."
         a, b = tee(iterable)
         next(b, None)
-        return izip(a, b)
+        return zip(a, b)
 
     # Identify boundaries between empty / non-empty and format into ranges
     is_mask_boundary = []
@@ -86,7 +86,7 @@ if __name__ == '__main__':
     job_number = int(os.getenv('SGE_TASK_ID', 1))
     log.info('Array job number: {}'.format(job_number))
     with open(family_id_list, 'r') as ids:
-        for i in xrange(job_number):
+        for i in range(job_number):
             desired_family = ids.readline().strip()
     log.info('Searching Pfam for family: {}'.format(desired_family))
 

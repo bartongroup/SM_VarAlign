@@ -90,8 +90,8 @@ def _gmm_plot(models, x):
     scores = _score_models(models, x)
 
     ax = fig.add_subplot(122)
-    ax.plot(range(1, len(scores['AIC']) + 1), scores['AIC'], '-k', label='AIC')
-    ax.plot(range(1, len(scores['BIC']) + 1), scores['BIC'], '--k', label='BIC')
+    ax.plot(list(range(1, len(scores['AIC']) + 1)), scores['AIC'], '-k', label='AIC')
+    ax.plot(list(range(1, len(scores['BIC']) + 1)), scores['BIC'], '--k', label='BIC')
     ax.set_xlabel('n. components')
     ax.set_ylabel('information criterion')
     ax.legend(loc=2)

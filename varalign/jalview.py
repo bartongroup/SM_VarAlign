@@ -27,12 +27,12 @@ def write_jalview_annotation(ordered_values, file_name, title, description, appe
     with open(file_name, file_mode) as results_file:
         if not append:
             results_file.write('JALVIEW_ANNOTATION\n')
-        if isinstance(ordered_values, tuple) and all(map(lambda x: isinstance(x, str), [title, description])):
+        if isinstance(ordered_values, tuple) and all([isinstance(x, str) for x in [title, description]]):
             results_file.write('BAR_GRAPH\t{}\t{}\t'.format(title, description) +
                                '|'.join('{},,{}'.format(str(x), str(y)) for x, y in zip(ordered_values, tooltips)))
             results_file.write('\n')
-        elif all(map(lambda x: isinstance(x, list), [ordered_values, title, description])):
-            arg_lengths = map(len, [ordered_values, title, description])
+        elif all([isinstance(x, list) for x in [ordered_values, title, description]]):
+            arg_lengths = list(map(len, [ordered_values, title, description]))
             if len(set(arg_lengths)) == 1:
                 for v, vv, t, d in zip(ordered_values, tooltips, title, description):
                     results_file.write('BAR_GRAPH\t{}\t{}\t'.format(t, d) +
@@ -76,7 +76,7 @@ def create_jalview_feature_file(feature_dict, file_name):
     :return:
     """
     with open(file_name, 'w') as output:
-        for feature, colour in feature_dict.items():
+        for feature, colour in list(feature_dict.items()):
             output.write('{}\t{}\n'.format(feature, colour))
 
 

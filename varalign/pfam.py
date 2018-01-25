@@ -111,7 +111,7 @@ def filter_non_swissprot(aln, swissprot_id_file):
 
     # Identify occupied columns
     occupied_cols = []
-    for i in xrange(aln.get_alignment_length()):
+    for i in range(aln.get_alignment_length()):
         if not all([x == '-' for x in filtered_alignment[:, i]]):
             occupied_cols.append(i)
 
