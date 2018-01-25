@@ -42,4 +42,4 @@ if __name__ == '__main__':
 	    handle = open(filename, "w")
 	    count = SeqIO.write(batch, handle, "fasta")
 	    handle.close()
-	    print "Wrote %i records to %s" % (count, filename)
+	    print("Wrote %i records to %s" % (count, filename))

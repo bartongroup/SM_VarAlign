@@ -34,11 +34,11 @@ if __name__ == '__main__':
     tr = np.array(tr, 'f')
     identity = np.array([[1, 0, 0], [0, 1, 0], [0, 0, 1]], 'f')
 
-    print 'Applying:\n{}\n{}'.format(name_strings[args.number - 1],
-                                     transform_strings[args.number])
-    print 'Rotation:\n{}'.format(rot)
-    print 'Centre:\n{}'.format(cn)
-    print 'Translation:\n{}'.format(tr)
+    print('Applying:\n{}\n{}'.format(name_strings[args.number - 1],
+                                     transform_strings[args.number]))
+    print('Rotation:\n{}'.format(rot))
+    print('Centre:\n{}'.format(cn))
+    print('Translation:\n{}'.format(tr))
 
     # Apply to all atoms in PDB file
     pdb_parser = PDBParser()

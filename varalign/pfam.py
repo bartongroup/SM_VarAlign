@@ -58,7 +58,7 @@ def lookup_index(index_path, family=None):
             offset, ac = line.strip().split(',')
             if ac.startswith(family):
                 return int(offset)
-        print '{} not found.'.format(family)
+        print('{} not found.'.format(family))
     return None
 
 

@@ -116,7 +116,7 @@ def map_seq_resnums_or_try_isoforms(seq, uniprot_seq, use_local_alignment, downl
         for suffix in ('-2', '-3'):
             try:
                 isoform = canonical_uniprot + suffix
-                print isoform
+                print(isoform)
                 uniprot_seq = fetch_uniprot_sequences(isoform, downloads)
                 residues = get_row_residue_numbers(seq, uniprot_seq, use_local_alignment)
                 break

@@ -32,7 +32,7 @@ def fetch_uniprot_sequences(seq_name, downloads=None):
     fasta_file_name = os.path.join(downloads, p + '.fasta')
     remote_fasta = url + p + '.fasta'
     if not os.path.isfile(fasta_file_name):
-        print remote_fasta
+        print(remote_fasta)
         try:
             handle = urlopen_with_retry(remote_fasta)
         except urllib2.HTTPError:

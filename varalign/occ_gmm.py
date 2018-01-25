@@ -42,7 +42,7 @@ def _pick_best(models, x):
     # Pick best
     aic = _score_models(models, x)['AIC']
     best = np.argmin(aic)
-    print 'Best model has {} components'.format(best + 1)
+    print('Best model has {} components'.format(best + 1))
     return models[best]
 
 

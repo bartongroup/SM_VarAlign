@@ -346,9 +346,9 @@ if __name__ == '__main__':
     negative_control_p = shenkin_regressions.loc['filtered_synonymous', 'pvalue'] > 0.05
     positive_control_p = shenkin_regressions.loc['filtered_missense', 'pvalue'] < 0.05
     positive_control_m = shenkin_regressions.loc['filtered_missense', 'slope'] > 0
-    print 'Filtered synonymous vs. Shenkin (negative control)... {}'.format('PASS' if negative_control_p else 'FAIL')
-    print 'Filtered missense vs Shenkin (positive control)... {}'.format(
-        'PASS' if positive_control_p and positive_control_m else 'FAIL')
+    print('Filtered synonymous vs. Shenkin (negative control)... {}'.format('PASS' if negative_control_p else 'FAIL'))
+    print('Filtered missense vs Shenkin (positive control)... {}'.format(
+        'PASS' if positive_control_p and positive_control_m else 'FAIL'))
 
     # Column variant scores, for block columns only
     missense_scores = analysis_toolkit._column_variant_scores(column_summary[subset_mask_gmm],

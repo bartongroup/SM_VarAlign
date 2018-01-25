@@ -23,7 +23,7 @@ Traceback (most recent call last):
 ...
 AttributeError: 'Defaults' object has no attribute 'email'"""
 
-from __future__ import print_function
+
 
 import logging
 import os
