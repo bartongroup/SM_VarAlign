@@ -1,7 +1,7 @@
 
 # This requirements file lists all third-party dependencies for this project.
 #
-# Run 'pip install -r requirements.txt' to install these dependencies
+# Run 'conda env create -f environment.yml' in a new conda environment.
 
 name: varalign-env
 dependencies:
