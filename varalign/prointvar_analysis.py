@@ -31,7 +31,8 @@ def _format_structure_data(pdb):
     # Read structure data
     try:
         pdbx, dssp, sifts, contacts = merger.table_generator(pdb_id=pdb, bio=False, contacts=True,
-                                                             override=True, residue_agg=True, dssp=False)
+                                                             override=False, residue_agg=True, dssp=False)
+        # TODO: Re-enable override
     except FileNotFoundError as e:
         # TODO: raise or don't catch this once prointvar bugs worked out...
         log.error('{} failed with FileNotFoundError'.format(pdb))
