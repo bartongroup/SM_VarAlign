@@ -5,7 +5,7 @@ import gzip
 import io
 from itertools import count, groupby
 import pandas as pd
-import StringIO
+import io
 
 def index_pfam(pfam_path):
     """
@@ -77,7 +77,7 @@ def read_family(pfam_path, start):
         pfam = open(pfam_path, 'r')
 
     pfam.seek(start)
-    alignment_handle = StringIO.StringIO()
+    alignment_handle = io.StringIO()
     for line in pfam:
         alignment_handle.write(line)
         if line == '//\n':
