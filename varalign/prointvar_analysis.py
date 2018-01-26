@@ -461,5 +461,6 @@ if __name__ == '__main__':
     pdf.savefig()
     plt.close()
 
+    pdf.close()
 
     log.info('DONE.')
