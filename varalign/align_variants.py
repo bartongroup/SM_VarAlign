@@ -468,7 +468,7 @@ if __name__ == '__main__':
 
     # Write variant jalview feature file
     # Label all variants with sequence features
-    feature_file_name = args.alignment + '_variant_features.feat'
+    feature_file_name = results_prefix + '_variant_features.feat'
     jalview.create_jalview_feature_file({'missense_variant': 'red', 'synonymous_variant': 'blue'}, feature_file_name)
     for (seq_id, consequence), variant_table in alignment_variant_table['VEP'].groupby(['SOURCE_ID', 'Consequence']):
         if consequence in ('missense_variant', 'synonymous_variant'):
