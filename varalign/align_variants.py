@@ -82,7 +82,7 @@ def _map_uniprot_to_genome(uniprot, species='homo_sapiens', collapse=True):
         log.info('Removed %s non-standard sequence regions from %s.', len(non_standard_ranges), uniprot)
     # Check for no mapping
     if len(ensembl_ranges) == 0:
-        raise ValueError('Could not map {} to the genome.'.format(uniprot))
+        raise ValueError('Could not map {} to the genome.'.format(uniprot))  # TODO: handle this...
     # Collapse ranges if desired
     if collapse:
         ensembl_ranges = ensembl.merge_ranges(ensembl_ranges, min_gap=1000)
