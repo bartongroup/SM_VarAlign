@@ -1,3 +1,4 @@
+import os
 import sys
 import time
 
@@ -7,7 +8,7 @@ import requests_cache
 from varalign.config import defaults
 
 default_server = defaults.api_ensembl
-requests_cache.install_cache('ensembl_cache')
+requests_cache.install_cache(os.path.join('.varalign', 'ensembl_cache'))
 
 # Globals for rate-limiting
 reqs_per_sec = 15
