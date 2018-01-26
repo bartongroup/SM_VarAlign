@@ -13,7 +13,7 @@ dependencies:
 - pandas==0.20.3
 - pysam
 - requests
-- requests-cache
+- requests-cache>=0.4.13  # Version required for ProteoFAV and ProIntVar
 - scipy
 - seaborn
 - scikit-learn
