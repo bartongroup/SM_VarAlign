@@ -322,7 +322,7 @@ def alignment_ppi_plot(data, axis=None):
 def _add_column_if_missing(table, column):
     if column not in table.columns:
         table[column] = np.nan
-        log.info('Added missing column "{}" to table')
+        log.info('Added missing column "{}" to table'.format(column))
 
 
 if __name__ == '__main__':
