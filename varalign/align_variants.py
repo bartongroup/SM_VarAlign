@@ -232,6 +232,7 @@ if __name__ == '__main__':
     parser.add_argument('alignment', type=str, help='Path to the alignment.')
     parser.add_argument('--max_gaussians', type=int, default=5, help='Maximum number of Gaussians for occupancy fitting.')
     parser.add_argument('--n_groups', type=int, default=1, help='Top Gaussians to select after occupancy fitting.')
+    parser.add_argument('--override',  help='Override any previously generated files.', action='store_true')
     args = parser.parse_args()
 
     # Log arguments
@@ -251,7 +252,7 @@ if __name__ == '__main__':
     alignment = AlignIO.read(args.alignment, format='stockholm')
 
     # Run align variants pipeline
-    if not os.path.isfile(data_prefix+'_variants.p.gz'):
+    if args.override or not os.path.isfile(data_prefix+'_variants.p.gz'):
         # TODO: Chunk size should be optimised? Also, its effectiveness depends on human sequences in each chunk...
         chunk_size = 500
         info_chunks = []
