@@ -1,20 +1,17 @@
 # seems to be required at the top, otherwise get display error...
-import matplotlib as mpl
-mpl.use('Agg')
-import matplotlib.pyplot as plt
-from matplotlib.backends.backend_pdf import PdfPages
-
-import seaborn as sns
-
 import argparse
 import logging
+import os
 
-logging.basicConfig(filename='align_variants.log', format='%(asctime)s %(name)s [%(levelname)-8s] - %(message)s')
-
+import matplotlib; matplotlib.use('Agg')
+import matplotlib.pyplot as plt
 import pandas as pd
-from Bio import AlignIO
-from numpy import vectorize
+import seaborn as sns
 import tqdm
+import vcf
+from Bio import AlignIO
+from matplotlib.backends.backend_pdf import PdfPages
+from numpy import vectorize
 
 from varalign import aacon
 from varalign import alignments
@@ -22,13 +19,10 @@ from varalign import analysis_toolkit
 from varalign import ensembl
 from varalign import gnomad
 from varalign import jalview
-from varalign.config import defaults
-from varalign.analysis_toolkit import _aggregate_annotation, count_column_variant_consequences, count_column_clinvar
 from varalign import occ_gmm
+from varalign.config import defaults
 
-import os
-import vcf
-
+logging.basicConfig(filename='align_variants.log', format='%(asctime)s %(name)s [%(levelname)-8s] - %(message)s')
 log = logging.getLogger(__name__)
 log.setLevel('INFO')
 
@@ -293,23 +287,23 @@ if __name__ == '__main__':
 
     # Column aggregations
     # Count variants over columns
-    column_variant_counts = count_column_variant_consequences(alignment_variant_table)
+    column_variant_counts = analysis_toolkit.count_column_variant_consequences(alignment_variant_table)
     column_variant_counts.to_csv(results_prefix + '.col_var_counts.csv')
 
     # Count *rare* variants over columns
     rare_maf_threshold = 0.001
     is_rare = alignment_variant_table[('Allele_INFO', 'AF_POPMAX')] < rare_maf_threshold
-    column_rare_counts = count_column_variant_consequences(alignment_variant_table[is_rare])
+    column_rare_counts = analysis_toolkit.count_column_variant_consequences(alignment_variant_table[is_rare])
     column_rare_counts.to_csv(results_prefix + '.col_rare_counts.csv')
 
     # Count ClinVar annotations for *missense* variants over columns
     is_missense = alignment_variant_table[('VEP', 'Consequence')] == 'missense_variant'
-    column_missense_clinvar = count_column_clinvar(alignment_variant_table[is_missense])
+    column_missense_clinvar = analysis_toolkit.count_column_clinvar(alignment_variant_table[is_missense])
     column_missense_clinvar.to_csv(results_prefix + '.col_mis_clinvar.csv')
 
     # Count ClinVar annotations for *synonymous* variants over columns
     is_synonymous = alignment_variant_table[('VEP', 'Consequence')] == 'synonymous_variant'
-    column_synonymous_clinvar = count_column_clinvar(alignment_variant_table[is_synonymous])
+    column_synonymous_clinvar = analysis_toolkit.count_column_clinvar(alignment_variant_table[is_synonymous])
     column_synonymous_clinvar.to_csv(results_prefix + '.col_syn_clinvar.csv')
 
     # Use mapping table to calculate human residue occupancy
@@ -411,8 +405,8 @@ if __name__ == '__main__':
 
     # Other aggregations, some of these just produce the plot
     # Variants per sequence histogram
-    protein_consequences = _aggregate_annotation(alignment_variant_table, ('VEP', 'Consequence'),
-                                                 aggregate_by=['SOURCE_ID'])
+    protein_consequences = analysis_toolkit._aggregate_annotation(alignment_variant_table, ('VEP', 'Consequence'),
+                                                                  aggregate_by=['SOURCE_ID'])
     protein_consequences.hist(facecolor='black', edgecolor='black')
     plt.title('Variants per Sequence')
     pdf.attach_note('Distribution of variants over alignment sequences')
@@ -421,7 +415,7 @@ if __name__ == '__main__':
 
     # Variants per residue and column histograms
     fig, axes = plt.subplots(1, 2)
-    residue_counts = alignment_variant_table.pipe(_aggregate_annotation,
+    residue_counts = alignment_variant_table.pipe(analysis_toolkit._aggregate_annotation,
                                                   ('VEP', 'Consequence'),
                                                   aggregate_by=['SOURCE_ID', 'Protein_position'])
     residue_counts = residue_counts.reindex(indexed_mapping_table.index).fillna(0)  # Fill in residues with no variants

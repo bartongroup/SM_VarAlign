@@ -3,23 +3,21 @@ This is the script that runs the structural analyses using `ProIntVar`.
 
 It requires Python 3, for `ProIntVar` compatibility, and should be run after `align_variants.py`.
 """
-# Matplotlib setup
-import matplotlib as mpl
-mpl.use('Agg')
-import matplotlib.pyplot as plt
-from matplotlib.backends.backend_pdf import PdfPages
-
 import argparse
 import logging
 import multiprocessing
-import numpy as np
 import os
-import pandas as pd
-from prointvar import merger
-from varalign import prointvar_stats
 import subprocess
-import tqdm
 
+import matplotlib; matplotlib.use('Agg')  # headless backend for matplotlib
+import matplotlib.pyplot as plt
+import numpy as np
+import pandas as pd
+import tqdm
+from matplotlib.backends.backend_pdf import PdfPages
+from prointvar import merger
+
+from varalign import prointvar_stats
 
 log = logging.getLogger(__name__)
 log.setLevel('INFO')
