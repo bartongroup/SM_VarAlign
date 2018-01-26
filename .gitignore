@@ -14,3 +14,4 @@ sample_swissprot_PF00001.18_full.sto_info.p.gz
 sample_swissprot_PF00001.18_full.sto_mappings.p.gz
 sample_swissprot_PF00001.18_full.sto_variant_features.feat
 swissprot_PF00001.18_full.sto
+tests/data/prointvar_dl_logs
