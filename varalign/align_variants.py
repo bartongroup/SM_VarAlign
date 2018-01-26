@@ -21,6 +21,8 @@ from varalign import gnomad
 from varalign import jalview
 from varalign import occ_gmm
 from varalign.config import defaults
+from varalign.utils import make_dir_if_needed
+
 
 logging.basicConfig(filename='align_variants.log', format='%(asctime)s %(name)s [%(levelname)-8s] - %(message)s')
 log = logging.getLogger(__name__)
@@ -238,19 +240,18 @@ if __name__ == '__main__':
     log.info('max_gaussians\t{}'.format(args.max_gaussians))
     log.info('n_groups\t{}'.format(args.n_groups))
 
-    # Results will be written in this folder, data will be saved in working directory
-    output_path = 'results'
-    try:
-        os.makedirs(output_path)
-    except OSError:
-        if not os.path.isdir(output_path):
-            raise
-    results_prefix = os.path.join(output_path, args.alignment)
+    # Results and data will be written in these folder
+    results_path = 'results'
+    make_dir_if_needed(results_path)
+    results_prefix = os.path.join(results_path, args.alignment)
+    data_path = os.path.join('.varalign', 'aligned_variants_data')
+    make_dir_if_needed(data_path)
+    data_prefix = os.path.join(data_path, args.alignment)
 
     alignment = AlignIO.read(args.alignment, format='stockholm')
 
     # Run align variants pipeline
-    if not os.path.isfile(args.alignment+'_variants.p.gz'):
+    if not os.path.isfile(data_prefix+'_variants.p.gz'):
         # TODO: Chunk size should be optimised? Also, its effectiveness depends on human sequences in each chunk...
         chunk_size = 500
         info_chunks = []
@@ -266,14 +267,14 @@ if __name__ == '__main__':
 
         indexed_mapping_table = _mapping_table(alignment_info)  # TODO: Should this be passed or returned by align_variants?
         # Write data
-        alignment_info.to_pickle(args.alignment+'_info.p.gz')
-        alignment_variant_table.to_pickle(args.alignment+'_variants.p.gz')
-        indexed_mapping_table.to_pickle(args.alignment+'_mappings.p.gz')
+        alignment_info.to_pickle(data_prefix+'_info.p.gz')
+        alignment_variant_table.to_pickle(data_prefix+'_variants.p.gz')
+        indexed_mapping_table.to_pickle(data_prefix+'_mappings.p.gz')
     else:
         log.info('Loading data for {}...'.format(args.alignment))
-        alignment_info = pd.read_pickle(args.alignment+'_info.p.gz')
-        alignment_variant_table = pd.read_pickle(args.alignment+'_variants.p.gz')
-        indexed_mapping_table = pd.read_pickle(args.alignment+'_mappings.p.gz')
+        alignment_info = pd.read_pickle(data_prefix+'_info.p.gz')
+        alignment_variant_table = pd.read_pickle(data_prefix+'_variants.p.gz')
+        indexed_mapping_table = pd.read_pickle(data_prefix+'_mappings.p.gz')
 
     # Run aacon
     # Format for AACon and run

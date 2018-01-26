@@ -18,6 +18,7 @@ from matplotlib.backends.backend_pdf import PdfPages
 from prointvar import merger
 
 from varalign import prointvar_stats
+from varalign.utils import make_dir_if_needed
 
 log = logging.getLogger(__name__)
 log.setLevel('INFO')
@@ -341,9 +342,10 @@ if __name__ == '__main__':
     args = parser.parse_args()
 
     # Read data produced by `align_variants.py`
+    av_data_prefix = os.path.join('.varalign', 'aligned_variants_data', args.alignment)
     try:
-        aln_info = pd.read_pickle(args.alignment+'_info.p.gz')
-        indexed_mapping_table = pd.read_pickle(args.alignment+'_mappings.p.gz')
+        aln_info = pd.read_pickle(av_data_prefix+'_info.p.gz')
+        indexed_mapping_table = pd.read_pickle(av_data_prefix+'_mappings.p.gz')
         column_stats = pd.read_csv(os.path.join('results', args.alignment) + '.col_summary.csv')
     except FileNotFoundError:
         log.error('Failed to load `align_variants` input for {}'.format(args.alignment))
@@ -354,11 +356,16 @@ if __name__ == '__main__':
                              os.path.join('results', args.alignment) + '.col_summary.csv'))
         sys.exit(1)
 
-    if args.override or not os.path.isfile(args.alignment+'_prointvar_structure_table.p.gz'):
+    # This is where we'll store data
+    data_path = os.path.join('.varalign', 'prointvar_analysis_data')
+    make_dir_if_needed(data_path)
+    data_prefix = os.path.join(data_path, args.alignment)
+
+    if args.override or not os.path.isfile(data_prefix+'_prointvar_structure_table.p.gz'):
         # Get SIFTS best and download for all proteins in alignment
-        if not os.path.exists('prointvar_dl_logs'):
-            os.makedirs('prointvar_dl_logs')
-        download_logfile = os.path.join('prointvar_dl_logs', args.alignment + '_prointvar_download')
+        log_dir = os.path.join('.varalign', 'prointvar', 'download_logs')
+        make_dir_if_needed(log_dir)
+        download_logfile = os.path.join(log_dir, args.alignment + '_prointvar_download')
         status, downloaded = _download_structure_data(aln_info, download_logfile)
         # TODO: log some download statuses
 
@@ -405,10 +412,10 @@ if __name__ == '__main__':
 
         # Write structure table
         log.info('Writing {} atom-atom records to file...'.format(len(structure_table)))
-        structure_table.to_pickle(args.alignment+'_prointvar_structure_table.p.gz')
+        structure_table.to_pickle(data_prefix+'_prointvar_structure_table.p.gz')
     else:
-        log.info('Reading {}...'.format(args.alignment + '_prointvar_structure_table.p.gz'))
-        structure_table = pd.read_pickle(args.alignment + '_prointvar_structure_table.p.gz')
+        log.info('Reading {}...'.format(data_prefix + '_prointvar_structure_table.p.gz'))
+        structure_table = pd.read_pickle(data_prefix + '_prointvar_structure_table.p.gz')
         log.info('Loaded {} atom-atom records from file.'.format(len(structure_table)))
 
     # Log head of table

@@ -3,6 +3,7 @@ Utility functions.
 """
 import copy
 import logging
+import os
 import re
 
 import requests
@@ -213,3 +214,11 @@ def is_non_synonomous(variants):
     """
     mask = variants['from_aa'] != variants['to_aa_expanded']
     return mask
+
+
+def make_dir_if_needed(path):
+    try:
+        os.makedirs(path)
+    except OSError:
+        if not os.path.isdir(path):
+            raise
