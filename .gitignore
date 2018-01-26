@@ -20,3 +20,5 @@ tests/data/contacts
 tests/data/pdbx
 2ki9.xml
 sample_swissprot_PF00001.18_full.sto.structural.figures.pdf
+tests/data/.varalign
+tests/data/.prointvar
