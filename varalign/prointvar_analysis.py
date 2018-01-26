@@ -357,6 +357,9 @@ if __name__ == '__main__':
         sys.exit(1)
 
     # This is where we'll store data
+    results_path = 'results'
+    make_dir_if_needed(results_path)
+    results_prefix = os.path.join(results_path, args.alignment)
     data_path = os.path.join('.varalign', 'prointvar_analysis_data')
     make_dir_if_needed(data_path)
     data_prefix = os.path.join(data_path, args.alignment)
@@ -427,7 +430,7 @@ if __name__ == '__main__':
     # NB. some PDBs map to multiple sequences (e.g. heterodimers in LBD)
     seq_pdb_map = structure_table[['UniProt_dbAccessionId_A', 'SOURCE_ID_A', 'PDB_dbAccessionId_A']].drop_duplicates()
     seq_pdb_map.reset_index(drop=True, inplace=True)
-    seq_pdb_map.to_csv(args.alignment+'_seq_structure_mappings.csv')
+    seq_pdb_map.to_csv(results_prefix+'_seq_structure_mappings.csv')
     n_seq_pdb_mappings = len(seq_pdb_map)  # Number of UniProt-PDB mappings
     n_seqs_mapped = len(seq_pdb_map['SOURCE_ID_A'].unique())  # Number of mapped UniProts
     n_res_mapped = len(structure_table.groupby(['SOURCE_ID_A', 'Alignment_column_A']).size())  # N mapped residues
@@ -436,7 +439,7 @@ if __name__ == '__main__':
     log.info('Residues mapped...\t{}'.format(n_res_mapped))
 
     # Plot output  # TODO: move plotting routines closer to the data they use...
-    pdf = PdfPages(args.alignment + '.structural.figures.pdf')
+    pdf = PdfPages(results_prefix + '.structural.figures.pdf')
     # PDF metadata
     d = pdf.infodict()
     d['Title'] = 'Structural context analysis of {}'.format(args.alignment)
@@ -468,7 +471,7 @@ if __name__ == '__main__':
         # subset_mask_gmm??
         column_stats = column_stats.join(column_stats['shenkin'].rank(pct=True), rsuffix='_percentile')
     column_annotations = column_stats.set_index('Alignment_column').join(structure_stats)
-    column_annotations.to_csv(args.alignment+'_column_data.csv')
+    column_annotations.to_csv(results_prefix+'_column_data.csv')
 
     # Plot comparing structural features on the alignment
     fig, axs = plt.subplots(2, 1, sharex=True, figsize=(9, 8))
