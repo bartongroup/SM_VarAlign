@@ -332,6 +332,7 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Structural properties of alignment columns.')
     parser.add_argument('alignment', type=str, help='Path to the alignment.')
     parser.add_argument('--n_proc', type=int, help='Number of processors.', default=1)
+    parser.add_argument('--override',  help='Override any previously generated files.', action='store_true')
     parser_n_sifts_group = parser.add_mutually_exclusive_group()
     parser_n_sifts_group.add_argument('--only_sifts_best', help='Process only sifts best structure.',
                                       action='store_true')
@@ -353,7 +354,7 @@ if __name__ == '__main__':
                              os.path.join('results', args.alignment) + '.col_summary.csv'))
         sys.exit(1)
 
-    if not os.path.isfile(args.alignment+'_prointvar_structure_table.p.gz'):
+    if args.override or not os.path.isfile(args.alignment+'_prointvar_structure_table.p.gz'):
         # Get SIFTS best and download for all proteins in alignment
         if not os.path.exists('prointvar_dl_logs'):
             os.makedirs('prointvar_dl_logs')
