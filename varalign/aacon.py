@@ -9,7 +9,7 @@ from Bio.Alphabet import IUPAC
 
 import varalign
 from varalign.jabaws import apply_column_mask
-from varalign.utils import sanitise_alignment
+from varalign.utils import sanitise_alignment, make_dir_if_needed
 
 log = logging.getLogger(__name__)
 log.setLevel('INFO')
@@ -58,8 +58,11 @@ def _run_aacon(aln, column_index=None, aacon_jar_path=aacon_path):
     :param aacon_jar_path: Path to AACon jar.
     :return:
     """
-    aacon_input = 'aacon_input.fa'
-    aacon_output = 'aacon_scores.out'
+    tmp_dir = os.path.join('.varalign', 'aacon')
+    make_dir_if_needed(tmp_dir)
+
+    aacon_input = os.path.join(tmp_dir, 'aacon_input.fa')
+    aacon_output = os.path.join(tmp_dir, 'aacon_scores.out')
 
     # Write alignment to disk as fasta
     with open(aacon_input, 'w') as output:
@@ -68,14 +71,14 @@ def _run_aacon(aln, column_index=None, aacon_jar_path=aacon_path):
 
     # Run AACon on alignment
     log.info('Launcing AACon...')
-    with open('aacon.log', 'wb') as aacon_log:
+    with open(os.path.join(tmp_dir, 'aacon.log'), 'wb') as aacon_log:
         subprocess.call(["java", "-jar", aacon_jar_path,
                          "-i={}".format(aacon_input),
                          "-o={}".format(aacon_output)],
                         stdout=aacon_log, stderr=aacon_log)
 
     # Read results and format
-    aacon_table = pd.read_table('aacon_scores.out', sep=' ', comment='>', index_col=0, header=None)
+    aacon_table = pd.read_table(aacon_output, sep=' ', comment='>', index_col=0, header=None)
     aacon_table = aacon_table.transpose().dropna()  # Needed to add `dropna` as extra row...
     aacon_table.columns = aacon_table.columns.str.replace('#', '')
     aacon_table.columns = aacon_table.columns.str.lower()
