@@ -355,7 +355,9 @@ if __name__ == '__main__':
 
     if not os.path.isfile(args.alignment+'_prointvar_structure_table.p.gz'):
         # Get SIFTS best and download for all proteins in alignment
-        download_logfile = args.alignment + '_prointvar_download'
+        if not os.path.exists('prointvar_dl_logs'):
+            os.makedirs('prointvar_dl_logs')
+        download_logfile = os.path.join('prointvar_dl_logs', args.alignment + '_prointvar_download')
         status, downloaded = _download_structure_data(aln_info, download_logfile)
         # TODO: log some download statuses
 
