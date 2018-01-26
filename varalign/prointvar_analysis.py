@@ -320,6 +320,9 @@ def alignment_ppi_plot(data, axis=None):
 
 
 if __name__ == '__main__':
+    import sys
+
+
     # CLI
     parser = argparse.ArgumentParser(description='Structural properties of alignment columns.')
     parser.add_argument('alignment', type=str, help='Path to the alignment.')
@@ -332,9 +335,18 @@ if __name__ == '__main__':
     args = parser.parse_args()
 
     # Read data produced by `align_variants.py`
-    aln_info = pd.read_pickle(args.alignment+'_info.p.gz')
-    indexed_mapping_table = pd.read_pickle(args.alignment+'_mappings.p.gz')
-    column_stats = pd.read_csv(os.path.join('results', args.alignment) + '.col_summary.csv')
+    try:
+        aln_info = pd.read_pickle(args.alignment+'_info.p.gz')
+        indexed_mapping_table = pd.read_pickle(args.alignment+'_mappings.p.gz')
+        column_stats = pd.read_csv(os.path.join('results', args.alignment) + '.col_summary.csv')
+    except FileNotFoundError:
+        log.error('Failed to load `align_variants` input for {}'.format(args.alignment))
+        message = ('Could not find required output from `align_variants.py`. Did you forget to run this first?\n'
+                   'Make sure that {}, {} and\n'
+                   '{} are present in the run directory.')
+        print(message.format(args.alignment+'_info.p.gz', args.alignment+'_mappings.p.gz',
+                             os.path.join('results', args.alignment) + '.col_summary.csv'))
+        sys.exit(1)
 
     if not os.path.isfile(args.alignment+'_prointvar_structure_table.p.gz'):
         # Get SIFTS best and download for all proteins in alignment
