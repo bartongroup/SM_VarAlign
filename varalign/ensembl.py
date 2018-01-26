@@ -1,9 +1,10 @@
-from varalign.config import defaults
-import requests
-import requests_cache
 import sys
 import time
 
+import requests
+import requests_cache
+
+from varalign.config import defaults
 
 default_server = defaults.api_ensembl
 requests_cache.install_cache('ensembl_cache')

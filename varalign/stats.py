@@ -1,12 +1,12 @@
 """
 This module contains functions that calculate column-wise statistics on aligned variant tables.
 """
+import logging
 from collections import Counter
+
 import numpy as np
 import pandas as pd
 from scipy.stats import fisher_exact, linregress
-
-import logging
 
 log = logging.getLogger(__name__)
 

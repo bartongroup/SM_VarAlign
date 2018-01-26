@@ -1,16 +1,17 @@
 """
 Utility functions.
 """
+import copy
+import logging
 import re
-from varalign.six.moves import urllib
+
 import requests
 from Bio.Align import MultipleSeqAlignment
-from Bio.Seq import Seq
 from Bio.Alphabet import IUPAC
-import copy
+from Bio.Seq import Seq
+from varalign.six.moves import urllib
 
 from varalign.retry import retry
-import logging
 
 log = logging.getLogger(__name__)
 log.setLevel('INFO')

@@ -1,10 +1,10 @@
+import logging
+
 import pandas as pd
 from Bio import pairwise2
 from Bio.Seq import Seq
 from Bio.SeqRecord import SeqRecord
 from Bio.pairwise2 import format_alignment
-
-import logging
 
 from varalign.fetchers import fetch_uniprot_sequences
 from varalign.utils import parse_seq_name

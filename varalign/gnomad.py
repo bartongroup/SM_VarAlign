@@ -1,12 +1,12 @@
 import itertools
-
-from varalign.config import defaults
-from copy import deepcopy
 import logging
+from copy import deepcopy
+
 import pandas as pd
 import vcf  ## Requires pysam functionality
 from vcf.utils import trim_common_suffix
 
+from varalign.config import defaults
 
 log = logging.getLogger(__name__)
 

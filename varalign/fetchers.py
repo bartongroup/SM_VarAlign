@@ -3,14 +3,15 @@ This module contains functions for retrieving external data required for the ana
 the full-length UniProt sequences for the aligned sequences and the variant tables.
 """
 import os.path
-from varalign.six.moves import urllib
+# Use my developement branch of ProteoFAV
+import sys
+
 import pandas as pd
 from Bio import SeqIO
+from varalign.six.moves import urllib
 
 from varalign.utils import urlopen_with_retry, query_uniprot, parse_seq_name
 
-# Use my developement branch of ProteoFAV
-import sys
 sys.path.extend(['/Users/smacgowan/PycharmProjects/ProteoFAV'])
 from proteofav.variants import select_uniprot_variants
 

@@ -11,8 +11,6 @@ import logging
 
 logging.basicConfig(filename='align_variants.log', format='%(asctime)s %(name)s [%(levelname)-8s] - %(message)s')
 
-from operator import itemgetter
-
 import pandas as pd
 from Bio import AlignIO
 from numpy import vectorize
@@ -25,7 +23,6 @@ from varalign import ensembl
 from varalign import gnomad
 from varalign import jalview
 from varalign.config import defaults
-from varalign.gnomad import tabulate_variant_effects
 from varalign.analysis_toolkit import _aggregate_annotation, count_column_variant_consequences, count_column_clinvar
 from varalign import occ_gmm
 

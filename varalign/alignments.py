@@ -1,5 +1,6 @@
-from varalign.uniprot import _strip_version
 import pandas as pd
+
+from varalign.uniprot import _strip_version
 
 
 def get_accession(sequence, strip_version=False):

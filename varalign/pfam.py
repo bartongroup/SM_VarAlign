@@ -1,11 +1,12 @@
 import argparse
-from Bio import AlignIO
-from Bio.Align import MultipleSeqAlignment
 import gzip
 import io
 from itertools import count, groupby
+
 import pandas as pd
-import io
+from Bio import AlignIO
+from Bio.Align import MultipleSeqAlignment
+
 
 def index_pfam(pfam_path):
     """

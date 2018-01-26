@@ -1,10 +1,12 @@
-from Bio import SeqIO
-from varalign.config import defaults
-import pandas as pd
 import io
 import logging
 import os
+
+import pandas as pd
 import requests
+from Bio import SeqIO
+
+from varalign.config import defaults
 from varalign.utils import urlopen_with_retry
 
 log = logging.getLogger(__name__)
