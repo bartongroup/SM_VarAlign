@@ -245,14 +245,18 @@ def _classify_contacts(prointvar_table, residue=True, protein=True, polymer=True
 
     if cath_hierarchy:
         # Figure out what level of the CATH hierarchy a match occurs, if any
-        cath_id_fields = ['CATH_dbAccessionId_A', 'CATH_dbAccessionId_B']
-        match = prointvar_table[cath_id_fields[0]].str.split('.', expand=True) == \
-                prointvar_table[cath_id_fields[1]].str.split('.', expand=True)
-        hierarchy = _new_series('cath_hierarchical_topology')
-        hierarchy[match[0]] = 'level_1'
-        hierarchy[match[[0, 1]].all(1)] = 'level_2'
-        hierarchy[match[[0, 1, 2]].all(1)] = 'level_3'
-        hierarchy[match[[0, 1, 2, 3]].all(1)] = 'level_4'
+        try:
+            cath_id_fields = ['CATH_dbAccessionId_A', 'CATH_dbAccessionId_B']
+            match = prointvar_table[cath_id_fields[0]].str.split('.', expand=True) == \
+                    prointvar_table[cath_id_fields[1]].str.split('.', expand=True)
+            hierarchy = _new_series('cath_hierarchical_topology')
+            hierarchy[match[0]] = 'level_1'
+            hierarchy[match[[0, 1]].all(1)] = 'level_2'
+            hierarchy[match[[0, 1, 2]].all(1)] = 'level_3'
+            hierarchy[match[[0, 1, 2, 3]].all(1)] = 'level_4'
+        except AttributeError:
+            log.info('Could not classify contacts by CATH hierarchy. There may be no relevant mappings.')
+            hierarchy = None
     else:
         hierarchy = None
 
@@ -317,6 +321,11 @@ def alignment_ppi_plot(data, axis=None):
     """
     _stem_and_line_plot(data, line='sequences_with_contacts', stems='protein_protein_interactions', axis=axis)
 
+
+def _add_column_if_missing(table, column):
+    if column not in table.columns:
+        table[column] = np.nan
+        log.info('Added missing column "{}" to table')
 
 
 if __name__ == '__main__':
@@ -383,6 +392,13 @@ if __name__ == '__main__':
         # Sort A/B contact
         log.info('Sorting contacts so that alignment column atom A <= that of atom B...')
         structure_table = _sort_ab_contacts(structure_table)
+
+        # Make sure all columns are present even if unpopulated
+        # TODO: This avoids KeyErrors below when there are no mappings present, but is this best approach?
+        for column_name in ['Pfam_dbAccessionId_A', 'Pfam_dbAccessionId_B',
+                            'CATH_dbAccessionId_A', 'CATH_dbAccessionId_B',
+                            'SCOP_dbAccessionId_A', 'SCOP_dbAccessionId_B']:
+            _add_column_if_missing(structure_table, column_name)
 
         # Classify contacts
         log.info('Classifying contact residue topology...')
