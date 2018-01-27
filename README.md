@@ -1,6 +1,12 @@
 # VarAlign
 VarAlign is a python module that aggregates human genetic variation over the columns of a multiple sequence alignment.
 
+## Table of Contents
+
+- [Installing](#installing)
+  - [Enabling structural analysis](#enabling-structural-analysis)
+- [Configuration](#configuration)
+
 ## Installing
 
 Installing VarAlign (uses Conda)
@@ -22,7 +28,8 @@ $ cd tests/data
 $ python ../../varalign/align_variants.py sample_swissprot_PF00001.18_full.sto
 ```
 
-### Enabling structural analysis (requires ProIntVar and Arpeggio)
+### Enabling structural analysis
+*\*requires ProIntVar and Arpeggio*
 
 Arpeggio needs to go in a seperate environment because it requires Python 2.
 ```
