@@ -22,6 +22,43 @@ $ cd tests/data
 $ python ../../varalign/align_variants.py sample_swissprot_PF00001.18_full.sto
 ```
 
+### Enabling structural analysis (requires ProIntVar and Arpeggio)
+
+Arpeggio needs to go in a seperate environment because it requires Python 2.
+```
+# Setup environment with arpeggio dependencies
+$ conda create -n arpeggio python=2 pip numpy biopython openbabel
+$ source activate arpeggio
+
+# Get patched Arpeggio
+$ git clone https://bitbucket.org/biomadeira/arpeggio
+$ cd arpeggio
+$ python arpeggio.py -h
+```
+
+Install and configure ProIntVar. (NB. ProIntVar requires Python 3.)
+```
+# Install ProIntVar (https://github.com/bartongroup/ProIntVar)
+$ source activate varalign-env-py3
+$ git clone https://github.com/bartongroup/ProIntVar-Core.git
+$ cd ProIntVar-Core
+$ pip install .
+
+# Configure ProIntVar
+$ ProIntVar-Core-config-setup prointvar_config.ini
+
+# *** Edit the following values in prointvar_config.ini ***
+# arpeggio_bin = /path/to/arpeggio/arpeggio.py
+# python_exe = /path/to/anaconda/envs/arpeggio/bin/python
+# python_path = /path/to/anaconda/envs/arpeggio/python/lib/site-packages/
+
+$ ProIntVar-Core-config-load prointvar_config.ini
+
+# Check it works (after running `align_variants.py` as above)
+$ cd path/to/VarAlign/tests/data
+$ python ../../varalign/prointvar_analysis.py sample_swissprot_PF00001.18_full.sto
+```
+
 
 ## Configuration
 
