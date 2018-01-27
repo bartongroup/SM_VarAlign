@@ -276,9 +276,8 @@ if __name__ == '__main__':
         indexed_mapping_table = pd.read_pickle(data_prefix+'_mappings.p.gz')
 
     # Run AACon and save results
-    aacon_alignment, orig_col_nums = aacon._reformat_alignment_for_aacon(alignment)
-    alignment_conservation = aacon._run_aacon(aacon_alignment, orig_col_nums)
-    cons_scores_file = results_prefix + 'aacon_scores.csv'
+    alignment_conservation = aacon.get_aacon(alignment)
+    cons_scores_file = results_prefix + '_aacon_scores.csv'
     alignment_conservation.to_csv(cons_scores_file)
     log.info('Formatted AACons results saved to {}'.format(cons_scores_file))
 

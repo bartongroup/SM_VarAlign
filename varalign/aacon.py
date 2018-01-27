@@ -49,16 +49,15 @@ def _reformat_alignment_for_aacon(aln):
     return aacon_alignment, orig_col_nums
 
 
-def _run_aacon(aln, column_index=None, aacon_jar_path=aacon_path):
+def _run_aacon(aln, aacon_jar_path=aacon_path, tmp_dir=os.path.join('.varalign', 'aacon')):
     """
     Run standalone AACon on an alignment.
 
     :param aln: Alignment.
-    :param column_index: Additional column numbering to add to results table.
     :param aacon_jar_path: Path to AACon jar.
-    :return:
+    :tmp_dir: Directory to store AACon files.
+    :return: Path to AACon results (str)
     """
-    tmp_dir = os.path.join('.varalign', 'aacon')
     make_dir_if_needed(tmp_dir)
 
     aacon_input = os.path.join(tmp_dir, 'aacon_input.fa')
@@ -71,11 +70,23 @@ def _run_aacon(aln, column_index=None, aacon_jar_path=aacon_path):
 
     # Run AACon on alignment
     log.info('Launcing AACon...')
-    with open(os.path.join(tmp_dir, 'aacon.log'), 'wb') as aacon_log:
+    with open(os.path.join(tmp_dir, 'aacon.log'), 'w') as aacon_log:
         subprocess.call(["java", "-jar", aacon_jar_path,
                          "-i={}".format(aacon_input),
                          "-o={}".format(aacon_output)],
                         stdout=aacon_log, stderr=aacon_log)
+
+    return aacon_output
+
+
+def _parse_aacon_results(aacon_output, column_index=None):
+    """
+    Read and parse AACon results file into a column * score DataFrame.
+
+    :param aacon_output: Path to AACon results (str)
+    :param column_index: Additional column numbering to add to results table.
+    :return: AACon conservation scores (DataFrame)
+    """
 
     # Read results and format
     aacon_table = pd.read_table(aacon_output, sep=' ', comment='>', index_col=0, header=None)
@@ -83,11 +94,26 @@ def _run_aacon(aln, column_index=None, aacon_jar_path=aacon_path):
     aacon_table.columns = aacon_table.columns.str.replace('#', '')
     aacon_table.columns = aacon_table.columns.str.lower()
 
+    # TODO: Rounding?
+
     if column_index:
         aacon_table['column_index'] = column_index
         aacon_table.set_index('column_index', inplace=True)
 
     return aacon_table
+
+
+def get_aacon(aln):
+    """
+    Run AACon on an alignment and get the conservation scores.
+
+    :param aln: Input alignment (MSA)
+    :return: AACon conservation scores (DataFrame)
+    """
+    aacon_compatible_aln, source_column_numbers = _reformat_alignment_for_aacon(aln)
+    aacon_output_path = _run_aacon(aacon_compatible_aln)
+    conservation = _parse_aacon_results(aacon_output_path, source_column_numbers)
+    return conservation
 
 
 if __name__ == '__main__':
@@ -99,11 +125,9 @@ if __name__ == '__main__':
     alignment = AlignIO.read(args.alignment, format='stockholm')
 
     # Format for AACon and run
-    aacon_alignment, orig_col_nums = _reformat_alignment_for_aacon(alignment)
-    alignment_conservation = _run_aacon(aacon_alignment, orig_col_nums)
+    alignment_conservation = get_aacon(alignment)
 
     # Save result
     cons_scores_file = 'aacon_scores.csv'
     alignment_conservation.to_csv(cons_scores_file)
     log.info('Formatted AACons results saved to {}'.format(cons_scores_file))
-
