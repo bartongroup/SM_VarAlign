@@ -22,3 +22,4 @@ tests/data/pdbx
 sample_swissprot_PF00001.18_full.sto.structural.figures.pdf
 tests/data/.varalign
 tests/data/.prointvar
+prointvar.sqlite
