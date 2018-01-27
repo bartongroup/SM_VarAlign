@@ -133,38 +133,37 @@ def _mapping_table(alignment_info):
     return indexed_map_table
 
 
-def align_variants(alignment, species='HUMAN'):
+def align_variants(aln, species='HUMAN'):
     """
 
-    :param alignment_info:
     :param species:
     :return:
     """
     # ----- Parse alignment info -----
     log.info('Generating alignment info table...')
-    alignment_info = alignments.alignment_info_table(alignment, species)
-    log.info('Alignment info table head:\n%s', alignment_info.head().to_string())
+    aln_info_table = alignments.alignment_info_table(aln, species)
+    log.info('Alignment info table head:\n%s', aln_info_table.head().to_string())
 
     # ----- Map sequences to genome -----
     # TODO: If get transcript ID can use to filter variant table
     genomic_ranges = [
         (row.seq_id, _map_uniprot_to_genome(row.uniprot_id, species=species))
-        for row in tqdm.tqdm(alignment_info.itertuples(), total=len(alignment_info), desc='Mapping sequences...')
+        for row in tqdm.tqdm(aln_info_table.itertuples(), total=len(aln_info_table), desc='Mapping sequences...')
     ]
     if len(genomic_ranges) == 0:
         log.warning('Failed to map any sequences to the genome... Are you sure there are human sequences?')
-        return alignment_info, None
+        return aln_info_table, None
 
     log.info("Mapped {} sequences to genome.".format(len(genomic_ranges)))
 
     # Add ranges to alignment info
     genomic_mapping_table = pd.DataFrame(genomic_ranges, columns=['seq_id', 'genomic_ranges'])
-    alignment_info = alignment_info.merge(genomic_mapping_table, on=['seq_id'], how='left')
+    aln_info_table = aln_info_table.merge(genomic_mapping_table, on=['seq_id'], how='left')
 
     # ----- Fetch variants for the mapped genomic ranges -----
     # NB. gnomad fetcher is packed into a generator, which is extracted in the following list comp.
     sequence_variant_lists = [(row.seq_id, (x for r in row.genomic_ranges for x in gnomad.gnomad.fetch(*r)))
-                              for row in alignment_info.dropna(subset=['genomic_ranges']).itertuples()]
+                              for row in aln_info_table.dropna(subset=['genomic_ranges']).itertuples()]
     all_variants = [(variant, seq_id)
                     for seq_id, range_reader in tqdm.tqdm(sequence_variant_lists, desc='Loading variants...')
                     for variant in range_reader]
@@ -175,7 +174,6 @@ def align_variants(alignment, species='HUMAN'):
         for v, _ in all_variants:
             vcf_writer.write_record(v)
 
-
     # pass VCF records and source_ids
     n = 1000  # chunking seems to interact with redundant rows... Fix by adding chunk ID with `keys`
     variants_table = pd.concat([gnomad.vcf_row_to_table(*list(zip(*all_variants[i:i + n])))
@@ -184,7 +182,7 @@ def align_variants(alignment, species='HUMAN'):
 
     # ----- Add source UniProt identifiers to the table -----
     # Create UniProt ID series that shares an index with the variant table
-    source_uniprot_ids = alignment_info.set_index('seq_id')['uniprot_id']
+    source_uniprot_ids = aln_info_table.set_index('seq_id')['uniprot_id']
     source_uniprot_ids.name = ('External', 'SOURCE_ACCESSION')
     source_uniprot_ids.index.name = 'SOURCE_ID'
     # Add IDs to variant tables
@@ -198,7 +196,7 @@ def align_variants(alignment, species='HUMAN'):
 
     # ----- Map variants to columns -----
     # Generate alignment column / sequence residue mapping table
-    indexed_map_table = _mapping_table(alignment_info)
+    indexed_map_table = _mapping_table(aln_info_table)
     # Coerce Protein_position to correct type
     filtered_variants.loc[:, ('VEP', 'Protein_position')] = pd.to_numeric(
         filtered_variants.loc[:, ('VEP', 'Protein_position')],
@@ -212,7 +210,7 @@ def align_variants(alignment, species='HUMAN'):
     alignment_variant_table = indexed_map_table.join(filtered_variants)  # Drops variants that map outside alignment
     alignment_variant_table.sort_index(inplace=True)
 
-    return alignment_info, alignment_variant_table
+    return aln_info_table, alignment_variant_table
 
 
 def _chunk_alignment(aln, n):
