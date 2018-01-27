@@ -241,7 +241,7 @@ if __name__ == '__main__':
     log.info('max_gaussians\t{}'.format(args.max_gaussians))
     log.info('n_groups\t{}'.format(args.n_groups))
 
-    # Results and data will be written in these folder
+    # Results and data will be written in these folders
     results_path = 'results'
     make_dir_if_needed(results_path)
     results_prefix = os.path.join(results_path, args.alignment)
@@ -277,32 +277,26 @@ if __name__ == '__main__':
         alignment_variant_table = pd.read_pickle(data_prefix+'_variants.p.gz')
         indexed_mapping_table = pd.read_pickle(data_prefix+'_mappings.p.gz')
 
-    # Run aacon
-    # Format for AACon and run
+    # Run AACon and save results
     aacon_alignment, orig_col_nums = aacon._reformat_alignment_for_aacon(alignment)
     alignment_conservation = aacon._run_aacon(aacon_alignment, orig_col_nums)
-
-    # Save result
     cons_scores_file = results_prefix + 'aacon_scores.csv'
     alignment_conservation.to_csv(cons_scores_file)
     log.info('Formatted AACons results saved to {}'.format(cons_scores_file))
 
-    # Column aggregations
+    # Calculate column variant aggregations and save results
     # Count variants over columns
     column_variant_counts = analysis_toolkit.count_column_variant_consequences(alignment_variant_table)
     column_variant_counts.to_csv(results_prefix + '.col_var_counts.csv')
-
     # Count *rare* variants over columns
     rare_maf_threshold = 0.001
     is_rare = alignment_variant_table[('Allele_INFO', 'AF_POPMAX')] < rare_maf_threshold
     column_rare_counts = analysis_toolkit.count_column_variant_consequences(alignment_variant_table[is_rare])
     column_rare_counts.to_csv(results_prefix + '.col_rare_counts.csv')
-
     # Count ClinVar annotations for *missense* variants over columns
     is_missense = alignment_variant_table[('VEP', 'Consequence')] == 'missense_variant'
     column_missense_clinvar = analysis_toolkit.count_column_clinvar(alignment_variant_table[is_missense])
     column_missense_clinvar.to_csv(results_prefix + '.col_mis_clinvar.csv')
-
     # Count ClinVar annotations for *synonymous* variants over columns
     is_synonymous = alignment_variant_table[('VEP', 'Consequence')] == 'synonymous_variant'
     column_synonymous_clinvar = analysis_toolkit.count_column_clinvar(alignment_variant_table[is_synonymous])
