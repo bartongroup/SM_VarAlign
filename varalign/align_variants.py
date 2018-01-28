@@ -197,20 +197,31 @@ def align_variants(aln, species='HUMAN'):
     # ----- Map variants to columns -----
     # Generate alignment column / sequence residue mapping table
     indexed_map_table = _mapping_table(aln_info_table)
-    # Coerce Protein_position to correct type
-    filtered_variants.loc[:, ('VEP', 'Protein_position')] = pd.to_numeric(
-        filtered_variants.loc[:, ('VEP', 'Protein_position')],
-        errors='coerce')
-    # Set index for merge
-    filtered_variants.reset_index(['SITE', 'ALLELE_NUM', 'Feature'], inplace=True)
-    filtered_variants.set_index(('VEP', 'Protein_position'), append=True, inplace=True)
-    filtered_variants.index.set_names(['SOURCE_ID', 'Protein_position'], inplace=True)
-    filtered_variants.sort_index(inplace=True)
-    # Merge to map
-    alignment_variant_table = indexed_map_table.join(filtered_variants)  # Drops variants that map outside alignment
-    alignment_variant_table.sort_index(inplace=True)
+    aligned_variants = map_variants_to_alignment(filtered_variants, indexed_map_table)
 
-    return aln_info_table, alignment_variant_table
+    return aln_info_table, aligned_variants
+
+
+def map_variants_to_alignment(variants_df, residue_column_map):
+    """
+    Add alignment column numbers to a variant table.
+
+    :param variants_df: Unaligned variant table (DataFrame)
+    :param residue_column_map:
+    :return:
+    """
+    # Coerce Protein_position to correct type
+    variants_df.loc[:, ('VEP', 'Protein_position')] = pd.to_numeric(variants_df.loc[:, ('VEP', 'Protein_position')],
+                                                                    errors='coerce')
+    # Set index for merge
+    variants_df.reset_index(['SITE', 'ALLELE_NUM', 'Feature'], inplace=True)
+    variants_df.set_index(('VEP', 'Protein_position'), append=True, inplace=True)
+    variants_df.index.set_names(['SOURCE_ID', 'Protein_position'], inplace=True)
+    variants_df.sort_index(inplace=True)
+    # Merge to map
+    aligned_variants = residue_column_map.join(variants_df)  # Drops variants that map outside alignment
+    aligned_variants.sort_index(inplace=True)
+    return aligned_variants
 
 
 def _chunk_alignment(aln, n):
