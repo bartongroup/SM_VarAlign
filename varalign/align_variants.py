@@ -29,6 +29,22 @@ log = logging.getLogger(__name__)
 log.setLevel('INFO')
 
 
+def _chunk_alignment(aln, n):
+    """
+    Return a generator that provides chunks of an alignment (sequence-wise).
+
+    :param aln: Multiple sequence alignment.
+    :param n: Chunk size.
+    :return: Generator of n-sized alignment chunks.
+    """
+    return (aln[i:i + n] for i in range(0, len(aln), n))
+
+
+def _dump_table_and_log(method, path, what):
+    method(path)
+    log.info('{} saved to {}'.format(what, path))
+
+
 def _build_vep_filter(canonical=eval(defaults.canonical), consequences=defaults.consequences,
                       additional=defaults.additional):
     """
@@ -47,6 +63,35 @@ def _build_vep_filter(canonical=eval(defaults.canonical), consequences=defaults.
     if additional != '':
         query.append(additional)
     return ' & '.join(query)
+
+
+def _default_variant_filter(variants_table):
+    """
+    Apply standard filters to a alignment derived variant table.
+
+    :param variants_table:
+    :return:
+    """
+    # See version 1 of notebook for other ideas (e.g. Protin_position in UniProt range...)
+    # Reduce transcript duplication
+    is_canonical = variants_table[('VEP', 'CANONICAL')] == 'YES'
+    is_ccds = variants_table[('VEP', 'CCDS')] != ''
+    # Only want those that can map to a residue
+    is_protein_coding = variants_table[('VEP', 'BIOTYPE')] == 'protein_coding'
+    at_protein_position = variants_table[('VEP', 'Protein_position')] != ''
+    # Filter least useful effects
+    is_not_modifier = variants_table[('VEP', 'IMPACT')] != 'MODIFIER'
+    # Source protein filter
+    swissprot_matches_source = (variants_table['External', 'SOURCE_ACCESSION'] == variants_table['VEP', 'SWISSPROT'])
+    vcontains = vectorize(lambda x, y: x in y)
+    trembl_matches_source = vcontains(variants_table[('External', 'SOURCE_ACCESSION')],
+                                      variants_table[('VEP', 'TREMBL')])
+    trembl_matches_source[:] = False  # OVERRIDE TREMBL TO KEEP ONLY SWISSPROT
+    # Apply filter
+    filtered_variants = variants_table.loc[is_canonical & is_protein_coding & is_not_modifier & is_ccds &
+                                           (swissprot_matches_source | trembl_matches_source) &
+                                           at_protein_position].copy()
+    return filtered_variants
 
 
 def _map_uniprot_to_genome(uniprot, species='homo_sapiens', collapse=True):
@@ -82,35 +127,6 @@ def _map_uniprot_to_genome(uniprot, species='homo_sapiens', collapse=True):
     return ensembl_ranges
 
 
-def _default_variant_filter(variants_table):
-    """
-    Apply standard filters to a alignment derived variant table.
-
-    :param variants_table:
-    :return:
-    """
-    # See version 1 of notebook for other ideas (e.g. Protin_position in UniProt range...)
-    # Reduce transcript duplication
-    is_canonical = variants_table[('VEP', 'CANONICAL')] == 'YES'
-    is_ccds = variants_table[('VEP', 'CCDS')] != ''
-    # Only want those that can map to a residue
-    is_protein_coding = variants_table[('VEP', 'BIOTYPE')] == 'protein_coding'
-    at_protein_position = variants_table[('VEP', 'Protein_position')] != ''
-    # Filter least useful effects
-    is_not_modifier = variants_table[('VEP', 'IMPACT')] != 'MODIFIER'
-    # Source protein filter
-    swissprot_matches_source = (variants_table['External', 'SOURCE_ACCESSION'] == variants_table['VEP', 'SWISSPROT'])
-    vcontains = vectorize(lambda x, y: x in y)
-    trembl_matches_source = vcontains(variants_table[('External', 'SOURCE_ACCESSION')],
-                                      variants_table[('VEP', 'TREMBL')])
-    trembl_matches_source[:] = False  # OVERRIDE TREMBL TO KEEP ONLY SWISSPROT
-    # Apply filter
-    filtered_variants = variants_table.loc[is_canonical & is_protein_coding & is_not_modifier & is_ccds &
-                                           (swissprot_matches_source | trembl_matches_source) &
-                                           at_protein_position].copy()
-    return filtered_variants
-
-
 def _mapping_table(alignment_info):
     """
     Construct a alignment column to sequence residue mapping table.
@@ -131,6 +147,77 @@ def _mapping_table(alignment_info):
     indexed_map_table.columns = pd.MultiIndex.from_tuples([('Alignment', x) for x in indexed_map_table.columns],
                                                           names=['Type', 'Field'])
     return indexed_map_table
+
+
+def get_genome_mappings(aln_info_table, species):
+    """
+
+    :param aln_info_table:
+    :param species:
+    :return:
+    """
+    # TODO: If get transcript ID can use to filter variant table (duplicate)
+    genomic_ranges = [
+        (row.seq_id, _map_uniprot_to_genome(row.uniprot_id, species=species))
+        for row in tqdm.tqdm(aln_info_table.itertuples(), total=len(aln_info_table), desc='Mapping sequences...')
+    ]
+    if len(genomic_ranges) == 0:
+        log.error('Failed to map any sequences to the genome... Are you sure there are human sequences?')
+        raise ValueError
+    log.info("Mapped {} sequences to genome.".format(len(genomic_ranges)))
+    # Format to table
+    genomic_mapping_table = pd.DataFrame(genomic_ranges, columns=['seq_id', 'genomic_ranges'])
+    return genomic_mapping_table
+
+
+def get_gnomad_variants(aln_info_table):
+    """
+
+    :param aln_info_table:
+    :return:
+    """
+    # NB. gnomad fetcher is packed into a generator, which is extracted in the following list comp.
+    sequence_variant_lists = [(row.seq_id, (x for r in row.genomic_ranges for x in gnomad.gnomad.fetch(*r)))
+                              for row in aln_info_table.dropna(subset=['genomic_ranges']).itertuples()]
+    all_variants = [(variant, seq_id)
+                    for seq_id, range_reader in tqdm.tqdm(sequence_variant_lists, desc='Loading variants...')
+                    for variant in range_reader]
+
+    # pass VCF records and source_ids
+    n = 1000  # chunking seems to interact with redundant rows... Fix by adding chunk ID with `keys`
+    variants_table = pd.concat([gnomad.vcf_row_to_table(*list(zip(*all_variants[i:i + n])))
+                                for i in tqdm.tqdm(range(0, len(all_variants), n), desc='Parsing variants...')],
+                               keys=list(range(0, len(all_variants), n)))
+
+    # Write alignment variants to a VCF
+    with open('alignment_variants.vcf', 'w') as vcf_out:  # TODO: add alignment to file name? (needs refactoring...)
+        vcf_writer = vcf.Writer(vcf_out, gnomad.gnomad)
+        for v, _ in all_variants:
+            vcf_writer.write_record(v)
+
+    return variants_table
+
+
+def map_variants_to_alignment(variants_df, residue_column_map):
+    """
+    Add alignment column numbers to a variant table.
+
+    :param variants_df: Unaligned variant table (DataFrame)
+    :param residue_column_map:
+    :return:
+    """
+    # Coerce Protein_position to correct type
+    variants_df.loc[:, ('VEP', 'Protein_position')] = pd.to_numeric(variants_df.loc[:, ('VEP', 'Protein_position')],
+                                                                    errors='coerce')
+    # Set index for merge
+    variants_df.reset_index(['SITE', 'ALLELE_NUM', 'Feature'], inplace=True)
+    variants_df.set_index(('VEP', 'Protein_position'), append=True, inplace=True)
+    variants_df.index.set_names(['SOURCE_ID', 'Protein_position'], inplace=True)
+    variants_df.sort_index(inplace=True)
+    # Merge to map
+    aligned_variants = residue_column_map.join(variants_df)  # Drops variants that map outside alignment
+    aligned_variants.sort_index(inplace=True)
+    return aligned_variants
 
 
 def align_variants(aln, species='HUMAN'):
@@ -172,93 +259,6 @@ def align_variants(aln, species='HUMAN'):
     aligned_variants = map_variants_to_alignment(filtered_variants, indexed_map_table)
 
     return aln_info_table, aligned_variants
-
-
-def get_gnomad_variants(aln_info_table):
-    """
-
-    :param aln_info_table:
-    :return:
-    """
-    # NB. gnomad fetcher is packed into a generator, which is extracted in the following list comp.
-    sequence_variant_lists = [(row.seq_id, (x for r in row.genomic_ranges for x in gnomad.gnomad.fetch(*r)))
-                              for row in aln_info_table.dropna(subset=['genomic_ranges']).itertuples()]
-    all_variants = [(variant, seq_id)
-                    for seq_id, range_reader in tqdm.tqdm(sequence_variant_lists, desc='Loading variants...')
-                    for variant in range_reader]
-
-    # pass VCF records and source_ids
-    n = 1000  # chunking seems to interact with redundant rows... Fix by adding chunk ID with `keys`
-    variants_table = pd.concat([gnomad.vcf_row_to_table(*list(zip(*all_variants[i:i + n])))
-                                for i in tqdm.tqdm(range(0, len(all_variants), n), desc='Parsing variants...')],
-                               keys=list(range(0, len(all_variants), n)))
-
-    # Write alignment variants to a VCF
-    with open('alignment_variants.vcf', 'w') as vcf_out:  # TODO: add alignment to file name? (needs refactoring...)
-        vcf_writer = vcf.Writer(vcf_out, gnomad.gnomad)
-        for v, _ in all_variants:
-            vcf_writer.write_record(v)
-            
-    return variants_table
-
-
-def get_genome_mappings(aln_info_table, species):
-    """
-
-    :param aln_info_table:
-    :param species:
-    :return:
-    """
-    # TODO: If get transcript ID can use to filter variant table (duplicate)
-    genomic_ranges = [
-        (row.seq_id, _map_uniprot_to_genome(row.uniprot_id, species=species))
-        for row in tqdm.tqdm(aln_info_table.itertuples(), total=len(aln_info_table), desc='Mapping sequences...')
-    ]
-    if len(genomic_ranges) == 0:
-        log.error('Failed to map any sequences to the genome... Are you sure there are human sequences?')
-        raise ValueError
-    log.info("Mapped {} sequences to genome.".format(len(genomic_ranges)))
-    # Format to table
-    genomic_mapping_table = pd.DataFrame(genomic_ranges, columns=['seq_id', 'genomic_ranges'])
-    return genomic_mapping_table
-
-
-def map_variants_to_alignment(variants_df, residue_column_map):
-    """
-    Add alignment column numbers to a variant table.
-
-    :param variants_df: Unaligned variant table (DataFrame)
-    :param residue_column_map:
-    :return:
-    """
-    # Coerce Protein_position to correct type
-    variants_df.loc[:, ('VEP', 'Protein_position')] = pd.to_numeric(variants_df.loc[:, ('VEP', 'Protein_position')],
-                                                                    errors='coerce')
-    # Set index for merge
-    variants_df.reset_index(['SITE', 'ALLELE_NUM', 'Feature'], inplace=True)
-    variants_df.set_index(('VEP', 'Protein_position'), append=True, inplace=True)
-    variants_df.index.set_names(['SOURCE_ID', 'Protein_position'], inplace=True)
-    variants_df.sort_index(inplace=True)
-    # Merge to map
-    aligned_variants = residue_column_map.join(variants_df)  # Drops variants that map outside alignment
-    aligned_variants.sort_index(inplace=True)
-    return aligned_variants
-
-
-def _chunk_alignment(aln, n):
-    """
-    Return a generator that provides chunks of an alignment (sequence-wise).
-
-    :param aln: Multiple sequence alignment.
-    :param n: Chunk size.
-    :return: Generator of n-sized alignment chunks.
-    """
-    return (aln[i:i + n] for i in range(0, len(aln), n))
-
-
-def _dump_table_and_log(method, path, what):
-    method(path)
-    log.info('{} saved to {}'.format(what, path))
 
 
 if __name__ == '__main__':
