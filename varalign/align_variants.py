@@ -146,18 +146,7 @@ def align_variants(aln, species='HUMAN'):
 
     # ----- Map sequences to genome -----
     # TODO: If get transcript ID can use to filter variant table
-    genomic_ranges = [
-        (row.seq_id, _map_uniprot_to_genome(row.uniprot_id, species=species))
-        for row in tqdm.tqdm(aln_info_table.itertuples(), total=len(aln_info_table), desc='Mapping sequences...')
-    ]
-    if len(genomic_ranges) == 0:
-        log.warning('Failed to map any sequences to the genome... Are you sure there are human sequences?')
-        return aln_info_table, None
-
-    log.info("Mapped {} sequences to genome.".format(len(genomic_ranges)))
-
-    # Add ranges to alignment info
-    genomic_mapping_table = pd.DataFrame(genomic_ranges, columns=['seq_id', 'genomic_ranges'])
+    genomic_mapping_table = get_genome_mappings(aln_info_table, species)
     aln_info_table = aln_info_table.merge(genomic_mapping_table, on=['seq_id'], how='left')
 
     # ----- Fetch variants for the mapped genomic ranges -----
@@ -200,6 +189,27 @@ def align_variants(aln, species='HUMAN'):
     aligned_variants = map_variants_to_alignment(filtered_variants, indexed_map_table)
 
     return aln_info_table, aligned_variants
+
+
+def get_genome_mappings(aln_info_table, species):
+    """
+    
+    :param aln_info_table:
+    :param species:
+    :return:
+    """
+    # TODO: If get transcript ID can use to filter variant table (duplicate)
+    genomic_ranges = [
+        (row.seq_id, _map_uniprot_to_genome(row.uniprot_id, species=species))
+        for row in tqdm.tqdm(aln_info_table.itertuples(), total=len(aln_info_table), desc='Mapping sequences...')
+    ]
+    if len(genomic_ranges) == 0:
+        log.error('Failed to map any sequences to the genome... Are you sure there are human sequences?')
+        raise ValueError
+    log.info("Mapped {} sequences to genome.".format(len(genomic_ranges)))
+    # Format to table
+    genomic_mapping_table = pd.DataFrame(genomic_ranges, columns=['seq_id', 'genomic_ranges'])
+    return genomic_mapping_table
 
 
 def map_variants_to_alignment(variants_df, residue_column_map):
