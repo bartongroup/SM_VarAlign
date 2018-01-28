@@ -261,21 +261,23 @@ def align_variants(aln, species='HUMAN'):
     return aln_info_table, aligned_variants
 
 
-if __name__ == '__main__':
+def cli(argv=None):
     # CLI
     parser = argparse.ArgumentParser(description='Align variants to a Pfam alignment.')
     parser.add_argument('alignment', type=str, help='Path to the alignment.')
-    parser.add_argument('--max_gaussians', type=int, default=5, help='Maximum number of Gaussians for occupancy fitting.')
+    parser.add_argument('--max_gaussians', type=int, default=5,
+                        help='Maximum number of Gaussians for occupancy fitting.')
     parser.add_argument('--n_groups', type=int, default=1, help='Top Gaussians to select after occupancy fitting.')
-    parser.add_argument('--override',  help='Override any previously generated files.', action='store_true')
-    args = parser.parse_args()
+    parser.add_argument('--override', help='Override any previously generated files.', action='store_true')
+    return parser.parse_args(argv)
 
+
+def main(args):
     # Log arguments
     log.info('Arguments...')
     log.info('alignment\t{}'.format(args.alignment))
     log.info('max_gaussians\t{}'.format(args.max_gaussians))
     log.info('n_groups\t{}'.format(args.n_groups))
-
     # Results and data will be written in these folders
     results_path = 'results'
     make_dir_if_needed(results_path)
@@ -283,11 +285,9 @@ if __name__ == '__main__':
     data_path = os.path.join('.varalign', 'aligned_variants_data')
     make_dir_if_needed(data_path)
     data_prefix = os.path.join(data_path, args.alignment)
-
     alignment = AlignIO.read(args.alignment, format='stockholm')
-
     # Run align variants pipeline
-    if args.override or not os.path.isfile(data_prefix+'_variants.p.gz'):
+    if args.override or not os.path.isfile(data_prefix + '_variants.p.gz'):
         # TODO: Chunk size should be optimised? Also, its effectiveness depends on human sequences in each chunk...
         chunk_size = 500
         info_chunks = []
@@ -303,22 +303,20 @@ if __name__ == '__main__':
 
         indexed_mapping_table = _mapping_table(alignment_info)  # TODO: Should be passed or returned by align_variants?
         # Write data
-        _dump_table_and_log(alignment_info.to_pickle, data_prefix+'_info.p.gz', 'Alignment info table pickle')
-        _dump_table_and_log(alignment_variant_table.to_pickle, data_prefix+'_variants.p.gz',
+        _dump_table_and_log(alignment_info.to_pickle, data_prefix + '_info.p.gz', 'Alignment info table pickle')
+        _dump_table_and_log(alignment_variant_table.to_pickle, data_prefix + '_variants.p.gz',
                             'Alignment variant table pickle')
-        _dump_table_and_log(indexed_mapping_table.to_pickle, data_prefix+'_mappings.p.gz',
+        _dump_table_and_log(indexed_mapping_table.to_pickle, data_prefix + '_mappings.p.gz',
                             'Alignment mapping table pickle')
     else:
         log.info('Loading data for {}...'.format(args.alignment))
-        alignment_info = pd.read_pickle(data_prefix+'_info.p.gz')
-        alignment_variant_table = pd.read_pickle(data_prefix+'_variants.p.gz')
-        indexed_mapping_table = pd.read_pickle(data_prefix+'_mappings.p.gz')
-
+        alignment_info = pd.read_pickle(data_prefix + '_info.p.gz')
+        alignment_variant_table = pd.read_pickle(data_prefix + '_variants.p.gz')
+        indexed_mapping_table = pd.read_pickle(data_prefix + '_mappings.p.gz')
     # Run AACon and save results
     alignment_conservation = aacon.get_aacon(alignment)
     _dump_table_and_log(alignment_conservation.to_csv, results_prefix + '_aacon_scores.csv',
                         'Formatted AACons results')
-
     # Calculate column variant aggregations and save results
     # Count variants over columns
     column_variant_counts = analysis_toolkit.count_column_variant_consequences(alignment_variant_table)
@@ -336,42 +334,34 @@ if __name__ == '__main__':
     is_synonymous = alignment_variant_table[('VEP', 'Consequence')] == 'synonymous_variant'
     column_synonymous_clinvar = analysis_toolkit.count_column_clinvar(alignment_variant_table[is_synonymous])
     column_synonymous_clinvar.to_csv(results_prefix + '.col_syn_clinvar.csv')
-
     # Use mapping table to calculate human residue occupancy
     # TODO: Adjust for unmapped seqs
     column_occupancy = indexed_mapping_table[('Alignment', 'Column')].value_counts().sort_index()
     column_occupancy.name = 'occupancy'
-
     # Merge required data for further standard analyses; this is saved after missense scores are added
     column_summary = column_variant_counts.join([column_missense_clinvar, column_occupancy, alignment_conservation])
-
     # Occupancy GMM
     gmms = occ_gmm._fit_mixture_models(column_summary['occupancy'], args.max_gaussians)
     M_best = occ_gmm._pick_best(gmms['models'], gmms['data'])
     # M_best.means_
     subset_mask_gmm = occ_gmm._core_column_mask(M_best, gmms['data'], args.n_groups)
     column_summary = column_summary.assign(column_gmm_pass=subset_mask_gmm)
-
     # Regression statistics
-
     # This checks whether missense and synonymous variant counts are correlated with column occupancy before and
     # after column filtering
     variants_vs_occ = analysis_toolkit._comparative_regression(column_summary, 'occupancy', filter_mask=subset_mask_gmm)
     variants_vs_occ.to_csv(results_prefix + '.variant_occ_regression.csv')
     # TODO: Test variants_vs_occ.loc['filtered_missense', 'pvalue'] > 0.05
-
     # Conservation plane with Shenkin score
     shenkin_regressions = analysis_toolkit._comparative_regression(column_summary, 'shenkin',
                                                                    filter_mask=subset_mask_gmm)
     shenkin_regressions.to_csv(results_prefix + '.variant_shenkin_regression.csv')
-
     negative_control_p = shenkin_regressions.loc['filtered_synonymous', 'pvalue'] > 0.05
     positive_control_p = shenkin_regressions.loc['filtered_missense', 'pvalue'] < 0.05
     positive_control_m = shenkin_regressions.loc['filtered_missense', 'slope'] > 0
     print('Filtered synonymous vs. Shenkin (negative control)... {}'.format('PASS' if negative_control_p else 'FAIL'))
     print('Filtered missense vs Shenkin (positive control)... {}'.format(
         'PASS' if positive_control_p and positive_control_m else 'FAIL'))
-
     # Column variant scores, for block columns only
     missense_scores = analysis_toolkit._column_variant_scores(column_summary[subset_mask_gmm],
                                                               variant_class='missense_variant',
@@ -382,21 +372,17 @@ if __name__ == '__main__':
     column_summary = column_summary.join(column_summary.loc[subset_mask_gmm, 'shenkin'].rank(pct=True),
                                          rsuffix='_percentile')
     column_summary.to_csv(results_prefix + '.col_summary.csv')
-
-
     # Plot output
     pdf = PdfPages(results_prefix + '.figures.pdf')
     # PDF metadata
     d = pdf.infodict()
     d['Title'] = 'Aligned Variant Diagnostics Plots for {}'.format(args.alignment)
     d['Author'] = 'align_variants.py'
-
     # Plot GMM diagnostics
     occ_gmm._gmm_plot(gmms['models'], gmms['data'])
     pdf.attach_note('Residue Occupancy GMM Diagnostics')
     pdf.savefig()
     plt.close()
-
     # Plot 1
     fig, axs = plt.subplots(1, 2, figsize=(10, 5), sharex=True, sharey=True)
     column_summary.plot.scatter('occupancy', 'missense_variant', ax=axs[0])
@@ -407,20 +393,18 @@ if __name__ == '__main__':
     pdf.attach_note('N Variants vs. Occupancy')
     pdf.savefig()
     plt.close()
-
     # Conservation plane plot: Variant counts vs. Shenkin
     fig, axs = plt.subplots(1, 2, figsize=(15, 5), sharex=True, sharey=True)
     sns.regplot(x='shenkin', y='missense_variant', data=column_summary[subset_mask_gmm], ax=axs[0])
     pd.plotting.table(axs[0], shenkin_regressions.loc[['missense', 'filtered_missense']].round(2),
-                      loc='upper right', colWidths=[0.12]*5, zorder=100)
+                      loc='upper right', colWidths=[0.12] * 5, zorder=100)
     sns.regplot(x='shenkin', y='synonymous_variant', data=column_summary[subset_mask_gmm], ax=axs[1])
     pd.plotting.table(axs[1], shenkin_regressions.loc[['synonymous', 'filtered_synonymous']].round(2),
-                      loc='upper right', colWidths=[0.12]*5, zorder=100)
+                      loc='upper right', colWidths=[0.12] * 5, zorder=100)
     plt.title('N Variants vs. Shenkin')
     pdf.attach_note('N Variants vs. Shenkin')
     pdf.savefig()
     plt.close()
-
     # Conservation plane plot: Missense Scores vs. Shenkin
     plot_data = column_summary[subset_mask_gmm]
     plot_data = plot_data.assign(pass_alpha=plot_data['pvalue'] < 0.1)
@@ -433,7 +417,6 @@ if __name__ == '__main__':
     pdf.attach_note('Missense Score vs. Shenkin')
     pdf.savefig()
     plt.close()
-
     # Other aggregations, some of these just produce the plot
     # Variants per sequence histogram
     protein_consequences = analysis_toolkit._aggregate_annotation(alignment_variant_table, ('VEP', 'Consequence'),
@@ -443,7 +426,6 @@ if __name__ == '__main__':
     pdf.attach_note('Distribution of variants over alignment sequences')
     pdf.savefig()
     plt.close()
-
     # Variants per residue and column histograms
     fig, axes = plt.subplots(1, 2)
     residue_counts = alignment_variant_table.pipe(analysis_toolkit._aggregate_annotation,
@@ -453,16 +435,13 @@ if __name__ == '__main__':
     residue_counts['missense_variant'].astype(int).value_counts().plot.bar(ax=axes[0], width=1, facecolor='black',
                                                                            edgecolor='black')
     axes[0].set_title('Missense Variants per Residue')
-
     # column_variant_counts['missense_variant'].hist(ax=axes[0])
     column_summary.loc[subset_mask_gmm, 'missense_variant'].hist(ax=axes[1], facecolor='black', edgecolor='black')
     axes[1].set_title('Missense Variants per Column')
     pdf.attach_note('Distribution of variants over residues and alignment columns')
     pdf.savefig()
     plt.close()
-
     pdf.close()
-
     # Pick extreme columns and identify residues (useful for follow-up)
     umd_mask = column_summary.eval('shenkin_percentile > 0.75 & oddsratio < 1 & pvalue < 0.1')
     ume_mask = column_summary.eval('shenkin_percentile > 0.75 & oddsratio > 1 & pvalue < 0.1')
@@ -473,28 +452,29 @@ if __name__ == '__main__':
     ume = ume_mask[ume_mask].index
     cmd = cmd_mask[cmd_mask].index
     cme = cme_mask[cme_mask].index
-
     # Save residues in selection
-    indexed_mapping_table.reset_index().set_index(('Alignment', 'Column')).loc[umd].to_csv(results_prefix+'.umdres.csv')
-    indexed_mapping_table.reset_index().set_index(('Alignment', 'Column')).loc[ume].to_csv(results_prefix+'.umeres.csv')
-    indexed_mapping_table.reset_index().set_index(('Alignment', 'Column')).loc[cmd].to_csv(results_prefix+'.cmdres.csv')
-    indexed_mapping_table.reset_index().set_index(('Alignment', 'Column')).loc[cme].to_csv(results_prefix+'.cmeres.csv')
-
+    indexed_mapping_table.reset_index().set_index(('Alignment', 'Column')).loc[umd].to_csv(
+        results_prefix + '.umdres.csv')
+    indexed_mapping_table.reset_index().set_index(('Alignment', 'Column')).loc[ume].to_csv(
+        results_prefix + '.umeres.csv')
+    indexed_mapping_table.reset_index().set_index(('Alignment', 'Column')).loc[cmd].to_csv(
+        results_prefix + '.cmdres.csv')
+    indexed_mapping_table.reset_index().set_index(('Alignment', 'Column')).loc[cme].to_csv(
+        results_prefix + '.cmeres.csv')
     # Write marking jalview tracks
     alignment_column_index = list(range(1, alignment.get_alignment_length() + 1))
     jalview.marked_columns_track(umd_mask.reindex(alignment_column_index, fill_value=False), 'UMD',
                                  'UMD columns at Shenkin PCR > 0.75 and missense OR < 1, p < 0.1',
-                                 results_prefix+'.corners.ann')
+                                 results_prefix + '.corners.ann')
     jalview.marked_columns_track(ume_mask.reindex(alignment_column_index, fill_value=False), 'UME',
                                  'UME columns at Shenkin PCR > 0.75 and missense OR > 1, p < 0.1',
-                                 results_prefix+'.corners.ann', append=True)
+                                 results_prefix + '.corners.ann', append=True)
     jalview.marked_columns_track(cmd_mask.reindex(alignment_column_index, fill_value=False), 'CMD',
                                  'CMD columns at Shenkin PCR < 0.25 and missense OR < 1, p < 0.1',
-                                 results_prefix+'.corners.ann', append=True)
+                                 results_prefix + '.corners.ann', append=True)
     jalview.marked_columns_track(cme_mask.reindex(alignment_column_index, fill_value=False), 'CME',
                                  'CME columns at Shenkin PCR < 0.25 and missense OR > 1, p < 0.1',
-                                 results_prefix+'.corners.ann', append=True)
-
+                                 results_prefix + '.corners.ann', append=True)
     # Write variant jalview feature file
     # Label all variants with sequence features
     feature_file_name = results_prefix + '_variant_features.feat'
@@ -506,5 +486,9 @@ if __name__ == '__main__':
             variant_ids = list(variant_table['Existing_variation'])
             jalview.append_jalview_variant_features(seq_id.split('/')[0], residue_indexes, variant_ids, consequence,
                                                     feature_file_name)
-
     log.info('DONE.')
+
+
+if __name__ == '__main__':
+    parameters = cli()
+    main(parameters)
