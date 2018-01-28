@@ -224,6 +224,11 @@ def _chunk_alignment(aln, n):
     return (aln[i:i + n] for i in range(0, len(aln), n))
 
 
+def _dump_table_and_log(method, path, what):
+    method(path)
+    log.info('{} saved to {}'.format(what, path))
+
+
 if __name__ == '__main__':
     # CLI
     parser = argparse.ArgumentParser(description='Align variants to a Pfam alignment.')
@@ -264,11 +269,13 @@ if __name__ == '__main__':
         alignment_variant_table = pd.concat(vartable_chunks)
         alignment_info = pd.concat(info_chunks, ignore_index=True)
 
-        indexed_mapping_table = _mapping_table(alignment_info)  # TODO: Should this be passed or returned by align_variants?
+        indexed_mapping_table = _mapping_table(alignment_info)  # TODO: Should be passed or returned by align_variants?
         # Write data
-        alignment_info.to_pickle(data_prefix+'_info.p.gz')
-        alignment_variant_table.to_pickle(data_prefix+'_variants.p.gz')
-        indexed_mapping_table.to_pickle(data_prefix+'_mappings.p.gz')
+        _dump_table_and_log(alignment_info.to_pickle, data_prefix+'_info.p.gz', 'Alignment info table pickle')
+        _dump_table_and_log(alignment_variant_table.to_pickle, data_prefix+'_variants.p.gz',
+                            'Alignment variant table pickle')
+        _dump_table_and_log(indexed_mapping_table.to_pickle, data_prefix+'_mappings.p.gz',
+                            'Alignment mapping table pickle')
     else:
         log.info('Loading data for {}...'.format(args.alignment))
         alignment_info = pd.read_pickle(data_prefix+'_info.p.gz')
@@ -277,9 +284,8 @@ if __name__ == '__main__':
 
     # Run AACon and save results
     alignment_conservation = aacon.get_aacon(alignment)
-    cons_scores_file = results_prefix + '_aacon_scores.csv'
-    alignment_conservation.to_csv(cons_scores_file)
-    log.info('Formatted AACons results saved to {}'.format(cons_scores_file))
+    _dump_table_and_log(alignment_conservation.to_csv, results_prefix + '_aacon_scores.csv',
+                        'Formatted AACons results')
 
     # Calculate column variant aggregations and save results
     # Count variants over columns
