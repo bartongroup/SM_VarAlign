@@ -450,7 +450,7 @@ def main(args):
                                                                    filter_mask=subset_mask_gmm)
     _dump_table_and_log(shenkin_regressions.to_csv, results_prefix + '.variant_shenkin_regression.csv',
                         'Variant vs. Shenkin regression parameters')
-    _interpret_regression_results(shenkin_regressions, action=print)  # TODO: log instead of print?
+    _interpret_regression_results(shenkin_regressions, action=log.info)
 
     # Column variant scores, for block columns only
     missense_scores = analysis_toolkit._column_variant_scores(column_summary[subset_mask_gmm],

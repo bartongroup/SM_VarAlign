@@ -1,8 +1,11 @@
+import logging
+
 import numpy as np
 import pandas as pd
 from matplotlib import pyplot as plt
 from sklearn import mixture
 
+log = logging.getLogger(__name__)
 
 def _fit_mixture_models(s, max_gaussians=5):
     """
@@ -42,7 +45,7 @@ def _pick_best(models, x):
     # Pick best
     aic = _score_models(models, x)['AIC']
     best = np.argmin(aic)
-    print('Best model has {} components'.format(best + 1))
+    log.info('Best model has {} components'.format(best + 1))
     return models[best]
 
 
