@@ -348,8 +348,8 @@ def main(args):
                              os.path.isfile(data_prefix + '_mappings.p.gz')])
 
 
-    # Run align variants pipeline
-    # ----- Parse alignment info -----
+    # Run align variants pipeline in chunks
+    # Parse alignment info
     log.info('Generating alignment info table...')
     alignment_info = alignments.alignment_info_table(alignment, args.species)
     log.info('Alignment info table head:\n%s', alignment_info.head().to_string())
@@ -376,10 +376,15 @@ def main(args):
         alignment_info = pd.read_pickle(data_prefix + '_info.p.gz')
         alignment_variant_table = pd.read_pickle(data_prefix + '_variants.p.gz')
         indexed_mapping_table = pd.read_pickle(data_prefix + '_mappings.p.gz')
+
+    # AACon
     # Run AACon and save results
     alignment_conservation = aacon.get_aacon(alignment)
     _dump_table_and_log(alignment_conservation.to_csv, results_prefix + '_aacon_scores.csv',
                         'Formatted AACons results')
+
+    # The remainder is pretty much all analysis, plotting and formatting (e.g., to Jalview output)
+
     # Calculate column variant aggregations and save results
     # Count variants over columns
     column_variant_counts = analysis_toolkit.count_column_variant_consequences(alignment_variant_table)
@@ -406,12 +411,14 @@ def main(args):
     column_occupancy = _occupancy_from_mapping_table(indexed_mapping_table)
     # Merge required data for further standard analyses; this is saved after missense scores are added
     column_summary = column_variant_counts.join([column_missense_clinvar, column_occupancy, alignment_conservation])
+
     # Occupancy GMM
     gmms = occ_gmm._fit_mixture_models(column_summary['occupancy'], args.max_gaussians)
     M_best = occ_gmm._pick_best(gmms['models'], gmms['data'])
     # M_best.means_
     subset_mask_gmm = occ_gmm._core_column_mask(M_best, gmms['data'], args.n_groups)
     column_summary = column_summary.assign(column_gmm_pass=subset_mask_gmm)
+
     # Regression statistics
     # This checks whether missense and synonymous variant counts are correlated with column occupancy before and
     # after column filtering
@@ -436,17 +443,20 @@ def main(args):
     column_summary = column_summary.join(column_summary.loc[subset_mask_gmm, 'shenkin'].rank(pct=True),
                                          rsuffix='_percentile')
     _dump_table_and_log(column_summary.to_csv, results_prefix + '.col_summary.csv', 'Column summary data')
+
     # Plot output
     pdf = PdfPages(results_prefix + '.figures.pdf')
     # PDF metadata
     d = pdf.infodict()
     d['Title'] = 'Aligned Variant Diagnostics Plots for {}'.format(args.alignment)
     d['Author'] = 'align_variants.py'
+
     # Plot GMM diagnostics
     occ_gmm._gmm_plot(gmms['models'], gmms['data'])
     pdf.attach_note('Residue Occupancy GMM Diagnostics')
     pdf.savefig()
     plt.close()
+
     # Plot 1
     fig, axs = plt.subplots(1, 2, figsize=(10, 5), sharex=True, sharey=True)
     column_summary.plot.scatter('occupancy', 'missense_variant', ax=axs[0])
@@ -457,6 +467,7 @@ def main(args):
     pdf.attach_note('N Variants vs. Occupancy')
     pdf.savefig()
     plt.close()
+
     # Conservation plane plot: Variant counts vs. Shenkin
     fig, axs = plt.subplots(1, 2, figsize=(15, 5), sharex=True, sharey=True)
     sns.regplot(x='shenkin', y='missense_variant', data=column_summary[subset_mask_gmm], ax=axs[0])
@@ -469,6 +480,7 @@ def main(args):
     pdf.attach_note('N Variants vs. Shenkin')
     pdf.savefig()
     plt.close()
+
     # Conservation plane plot: Missense Scores vs. Shenkin
     plot_data = column_summary[subset_mask_gmm]
     plot_data = plot_data.assign(pass_alpha=plot_data['pvalue'] < 0.1)
@@ -481,6 +493,7 @@ def main(args):
     pdf.attach_note('Missense Score vs. Shenkin')
     pdf.savefig()
     plt.close()
+
     # Other aggregations, some of these just produce the plot
     # Variants per sequence histogram
     protein_consequences = analysis_toolkit._aggregate_annotation(alignment_variant_table, ('VEP', 'Consequence'),
@@ -506,6 +519,7 @@ def main(args):
     pdf.savefig()
     plt.close()
     pdf.close()
+
     # Pick extreme columns and identify residues (useful for follow-up)
     umd_mask = column_summary.eval('shenkin_percentile > 0.75 & oddsratio < 1 & pvalue < 0.1')
     ume_mask = column_summary.eval('shenkin_percentile > 0.75 & oddsratio > 1 & pvalue < 0.1')
@@ -539,6 +553,7 @@ def main(args):
     jalview.marked_columns_track(cme_mask.reindex(alignment_column_index, fill_value=False), 'CME',
                                  'CME columns at Shenkin PCR < 0.25 and missense OR > 1, p < 0.1',
                                  results_prefix + '.corners.ann', append=True)
+
     # Write variant jalview feature file
     # Label all variants with sequence features
     feature_file_name = results_prefix + '_variant_features.feat'
@@ -550,6 +565,7 @@ def main(args):
             variant_ids = list(variant_table['Existing_variation'])
             jalview.append_jalview_variant_features(seq_id.split('/')[0], residue_indexes, variant_ids, consequence,
                                                     feature_file_name)
+    # Log completion
     log.info('DONE.')
 
 
