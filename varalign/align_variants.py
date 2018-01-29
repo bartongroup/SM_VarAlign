@@ -204,6 +204,25 @@ def _interpret_regression_results(regression_table, p_threshold=0.05, action=Non
         action(r)
 
 
+def _write_variants_as_features(alignment_variant_table, feature_file_name):
+    """
+    Write a Jalview feature file marking up the variants in the alignment.
+
+    :param alignment_variant_table:
+    :param feature_file_name:
+    :return:
+    """
+    jalview.create_jalview_feature_file({'missense_variant': 'red', 'synonymous_variant': 'blue'}, feature_file_name)
+    for (seq_id, consequence), variant_table in alignment_variant_table['VEP'].groupby(['SOURCE_ID', 'Consequence']):
+        if consequence in ('missense_variant', 'synonymous_variant'):
+            residue_indexes = list(variant_table.index.get_level_values(1))
+            #     residue_indexes = [x - 1 + int(seq_id.split('/')[1].split('-')[0]) for x in residue_indexes]
+            variant_ids = list(variant_table['Existing_variation'])
+            jalview.append_jalview_variant_features(seq_id.split('/')[0], residue_indexes, variant_ids, consequence,
+                                                    feature_file_name)
+    log.info('Wrote alignment variants to Jalview feature file %s', feature_file_name)
+
+
 def get_genome_mappings(aln_info_table, species):
     """
 
@@ -556,15 +575,8 @@ def main(args):
 
     # Write variant jalview feature file
     # Label all variants with sequence features
-    feature_file_name = results_prefix + '_variant_features.feat'
-    jalview.create_jalview_feature_file({'missense_variant': 'red', 'synonymous_variant': 'blue'}, feature_file_name)
-    for (seq_id, consequence), variant_table in alignment_variant_table['VEP'].groupby(['SOURCE_ID', 'Consequence']):
-        if consequence in ('missense_variant', 'synonymous_variant'):
-            residue_indexes = list(variant_table.index.get_level_values(1))
-            #     residue_indexes = [x - 1 + int(seq_id.split('/')[1].split('-')[0]) for x in residue_indexes]
-            variant_ids = list(variant_table['Existing_variation'])
-            jalview.append_jalview_variant_features(seq_id.split('/')[0], residue_indexes, variant_ids, consequence,
-                                                    feature_file_name)
+    _write_variants_as_features(alignment_variant_table, results_prefix + '_variant_features.feat')
+    
     # Log completion
     log.info('DONE.')
 
