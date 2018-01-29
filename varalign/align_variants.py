@@ -172,6 +172,38 @@ def _occupancy_from_mapping_table(indexed_mapping_table):
     return column_occupancy
 
 
+def _interpret_regression_results(regression_table, p_threshold=0.05, action=None):
+    """
+    Provide human interpretation of regression results.
+    
+    :param regression_table: Output from `analysis_toolkit._comparative_regression` (DataFrame)
+    :param p_threshold: Significance threshold for regression p-value (float)
+    :param action: Method to call on  interpretations, e.g. `print` or `logging.info`
+    :return: Nothing if action is unspecified otherwise a list of strings.
+    """
+    # Synonymous variant counts should NOT be positively correlated with conservation
+    negative_control_p = regression_table.loc['filtered_synonymous', 'pvalue'] > p_threshold
+    negative_control_m = regression_table.loc['filtered_synonymous', 'slope'] < 0  # TODO: Why sometimes signif -ve?
+    pass_negative = negative_control_p or negative_control_m
+
+    # Missense variant counts should be positively correlated with conservation
+    positive_control_p = regression_table.loc['filtered_missense', 'pvalue'] < p_threshold
+    positive_control_m = regression_table.loc['filtered_missense', 'slope'] > 0
+    pass_positive = positive_control_p and positive_control_m
+
+    # Human readable interpretation
+    results = ['Filtered synonymous vs. Shenkin (negative control)... {}'.format('PASS' if pass_negative else 'FAIL'),
+               'Filtered missense vs Shenkin (positive control)... {}'.format('PASS' if pass_positive else 'FAIL')]
+
+    # Either return strings...
+    if not action:
+        return results
+
+    # ...or call action
+    for r in results:
+        action(r)
+
+
 def get_genome_mappings(aln_info_table, species):
     """
 
@@ -383,12 +415,8 @@ def main(args):
     shenkin_regressions = analysis_toolkit._comparative_regression(column_summary, 'shenkin',
                                                                    filter_mask=subset_mask_gmm)
     shenkin_regressions.to_csv(results_prefix + '.variant_shenkin_regression.csv')
-    negative_control_p = shenkin_regressions.loc['filtered_synonymous', 'pvalue'] > 0.05
-    positive_control_p = shenkin_regressions.loc['filtered_missense', 'pvalue'] < 0.05
-    positive_control_m = shenkin_regressions.loc['filtered_missense', 'slope'] > 0
-    print('Filtered synonymous vs. Shenkin (negative control)... {}'.format('PASS' if negative_control_p else 'FAIL'))
-    print('Filtered missense vs Shenkin (positive control)... {}'.format(
-        'PASS' if positive_control_p and positive_control_m else 'FAIL'))
+    _interpret_regression_results(shenkin_regressions, action=print)  # TODO: log instead of print?
+
     # Column variant scores, for block columns only
     missense_scores = analysis_toolkit._column_variant_scores(column_summary[subset_mask_gmm],
                                                               variant_class='missense_variant',
