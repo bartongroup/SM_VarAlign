@@ -380,20 +380,24 @@ def main(args):
     # Calculate column variant aggregations and save results
     # Count variants over columns
     column_variant_counts = analysis_toolkit.count_column_variant_consequences(alignment_variant_table)
-    column_variant_counts.to_csv(results_prefix + '.col_var_counts.csv')
+    _dump_table_and_log(column_variant_counts.to_csv, results_prefix + '.col_var_counts.csv',
+                        'Column variant counts')
     # Count *rare* variants over columns
     rare_maf_threshold = 0.001
     is_rare = alignment_variant_table[('Allele_INFO', 'AF_POPMAX')] < rare_maf_threshold
     column_rare_counts = analysis_toolkit.count_column_variant_consequences(alignment_variant_table[is_rare])
-    column_rare_counts.to_csv(results_prefix + '.col_rare_counts.csv')
+    _dump_table_and_log(column_rare_counts.to_csv, results_prefix + '.col_rare_counts.csv',
+                        'Column rare variant counts')
     # Count ClinVar annotations for *missense* variants over columns
     is_missense = alignment_variant_table[('VEP', 'Consequence')] == 'missense_variant'
     column_missense_clinvar = analysis_toolkit.count_column_clinvar(alignment_variant_table[is_missense])
-    column_missense_clinvar.to_csv(results_prefix + '.col_mis_clinvar.csv')
+    _dump_table_and_log(column_missense_clinvar.to_csv, results_prefix + '.col_mis_clinvar.csv',
+                        'Column missense variant ClinVar annotation frequencies')
     # Count ClinVar annotations for *synonymous* variants over columns
     is_synonymous = alignment_variant_table[('VEP', 'Consequence')] == 'synonymous_variant'
     column_synonymous_clinvar = analysis_toolkit.count_column_clinvar(alignment_variant_table[is_synonymous])
-    column_synonymous_clinvar.to_csv(results_prefix + '.col_syn_clinvar.csv')
+    _dump_table_and_log(column_synonymous_clinvar.to_csv, results_prefix + '.col_syn_clinvar.csv',
+                        'Column synonymous variant ClinVar annotation frequencies')
     # Use mapping table to calculate human residue occupancy
     # TODO: Adjust for unmapped seqs
     column_occupancy = _occupancy_from_mapping_table(indexed_mapping_table)
@@ -409,24 +413,26 @@ def main(args):
     # This checks whether missense and synonymous variant counts are correlated with column occupancy before and
     # after column filtering
     variants_vs_occ = analysis_toolkit._comparative_regression(column_summary, 'occupancy', filter_mask=subset_mask_gmm)
-    variants_vs_occ.to_csv(results_prefix + '.variant_occ_regression.csv')
+    _dump_table_and_log(variants_vs_occ.to_csv, results_prefix + '.variant_occ_regression.csv',
+                        'Variant vs. occupancy regression parameters')
     # TODO: Test variants_vs_occ.loc['filtered_missense', 'pvalue'] > 0.05
     # Conservation plane with Shenkin score
     shenkin_regressions = analysis_toolkit._comparative_regression(column_summary, 'shenkin',
                                                                    filter_mask=subset_mask_gmm)
-    shenkin_regressions.to_csv(results_prefix + '.variant_shenkin_regression.csv')
+    _dump_table_and_log(shenkin_regressions.to_csv, results_prefix + '.variant_shenkin_regression.csv',
+                        'Variant vs. Shenkin regression parameters')
     _interpret_regression_results(shenkin_regressions, action=print)  # TODO: log instead of print?
 
     # Column variant scores, for block columns only
     missense_scores = analysis_toolkit._column_variant_scores(column_summary[subset_mask_gmm],
                                                               variant_class='missense_variant',
                                                               occupancy='occupancy')
-    missense_scores.to_csv(results_prefix + '.col_missense_scores.csv')
+    _dump_table_and_log(missense_scores.to_csv, results_prefix + '.col_missense_scores.csv', 'Column missense scores')
     column_summary = column_summary.join(missense_scores)
     # Add shenkin percentile rank
     column_summary = column_summary.join(column_summary.loc[subset_mask_gmm, 'shenkin'].rank(pct=True),
                                          rsuffix='_percentile')
-    column_summary.to_csv(results_prefix + '.col_summary.csv')
+    _dump_table_and_log(column_summary.to_csv, results_prefix + '.col_summary.csv', 'Column summary data')
     # Plot output
     pdf = PdfPages(results_prefix + '.figures.pdf')
     # PDF metadata
