@@ -286,8 +286,15 @@ def main(args):
     make_dir_if_needed(data_path)
     data_prefix = os.path.join(data_path, args.alignment)
     alignment = AlignIO.read(args.alignment, format='stockholm')
+
+    # Check if data is available from previous run
+    is_data_available = all([os.path.isfile(data_prefix + '_variants.p.gz'),
+                             os.path.isfile(data_prefix + '_info.p.gz'),
+                             os.path.isfile(data_prefix + '_mappings.p.gz')])
+
+
     # Run align variants pipeline
-    if args.override or not os.path.isfile(data_prefix + '_variants.p.gz'):
+    if args.override or not is_data_available:
         # TODO: Chunk size should be optimised? Also, its effectiveness depends on human sequences in each chunk...
         chunk_size = 500
         info_chunks = []
