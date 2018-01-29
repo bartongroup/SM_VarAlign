@@ -160,6 +160,18 @@ def _mapping_table(alignment_info):
     return indexed_map_table
 
 
+def _occupancy_from_mapping_table(indexed_mapping_table):
+    """
+    Calculate column occupancy from a mapping table.
+
+    :param indexed_mapping_table:
+    :return:
+    """
+    column_occupancy = indexed_mapping_table[('Alignment', 'Column')].value_counts().sort_index()
+    column_occupancy.name = 'occupancy'
+    return column_occupancy
+
+
 def get_genome_mappings(aln_info_table, species):
     """
 
@@ -352,8 +364,7 @@ def main(args):
     column_synonymous_clinvar.to_csv(results_prefix + '.col_syn_clinvar.csv')
     # Use mapping table to calculate human residue occupancy
     # TODO: Adjust for unmapped seqs
-    column_occupancy = indexed_mapping_table[('Alignment', 'Column')].value_counts().sort_index()
-    column_occupancy.name = 'occupancy'
+    column_occupancy = _occupancy_from_mapping_table(indexed_mapping_table)
     # Merge required data for further standard analyses; this is saved after missense scores are added
     column_summary = column_variant_counts.join([column_missense_clinvar, column_occupancy, alignment_conservation])
     # Occupancy GMM
