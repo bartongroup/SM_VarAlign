@@ -40,6 +40,17 @@ def _chunk_alignment(aln, n):
     return (aln[i:i + n] for i in range(0, len(aln), n))
 
 
+def _chunk_table(table, n):
+    """
+    Return a generator that provides chunks of a DataFrame (row-wise).
+
+    :param table: DataFrame.
+    :param n: Chunk size.
+    :return: Generator of n-sized alignment chunks.
+    """
+    return (table.iloc[i:i + n] for i in range(0, len(table), n))
+
+
 def _dump_table_and_log(method, path, what):
     method(path)
     log.info('{} saved to {}'.format(what, path))
@@ -220,16 +231,12 @@ def map_variants_to_alignment(variants_df, residue_column_map):
     return aligned_variants
 
 
-def align_variants(aln, species='HUMAN'):
+def align_variants(aln_info_table, species='HUMAN'):
     """
 
     :param species:
     :return:
     """
-    # ----- Parse alignment info -----
-    log.info('Generating alignment info table...')
-    aln_info_table = alignments.alignment_info_table(aln, species)
-    log.info('Alignment info table head:\n%s', aln_info_table.head().to_string())
 
     # ----- Map sequences to genome -----
     # TODO: If get transcript ID can use to filter variant table
@@ -258,7 +265,7 @@ def align_variants(aln, species='HUMAN'):
     indexed_map_table = _mapping_table(aln_info_table)
     aligned_variants = map_variants_to_alignment(filtered_variants, indexed_map_table)
 
-    return aln_info_table, aligned_variants
+    return aligned_variants
 
 
 def cli(argv=None):
@@ -269,6 +276,7 @@ def cli(argv=None):
                         help='Maximum number of Gaussians for occupancy fitting.')
     parser.add_argument('--n_groups', type=int, default=1, help='Top Gaussians to select after occupancy fitting.')
     parser.add_argument('--override', help='Override any previously generated files.', action='store_true')
+    parser.add_argument('--species', type=str, help='Species (used for alignment filtering)', default='HUMAN')
     return parser.parse_args(argv)
 
 
@@ -294,19 +302,20 @@ def main(args):
 
 
     # Run align variants pipeline
+    # ----- Parse alignment info -----
+    log.info('Generating alignment info table...')
+    alignment_info = alignments.alignment_info_table(alignment, args.species)
+    log.info('Alignment info table head:\n%s', alignment_info.head().to_string())
     if args.override or not is_data_available:
         # TODO: Chunk size should be optimised? Also, its effectiveness depends on human sequences in each chunk...
         chunk_size = 500
-        info_chunks = []
         vartable_chunks = []
-        chunked_alignment = _chunk_alignment(alignment, chunk_size)
-        n_chunks = len(list(range(0, len(alignment), chunk_size)))
-        for chunk in tqdm.tqdm(chunked_alignment, desc='Alignment chunks...', total=n_chunks):
-            _alignment_info, _alignment_variant_table = align_variants(chunk)
-            info_chunks.append(_alignment_info)
+        chunked_info = _chunk_table(alignment_info, chunk_size)
+        n_chunks = len(list(range(0, len(alignment_info), chunk_size)))
+        for chunk in tqdm.tqdm(chunked_info, desc='Alignment chunks...', total=n_chunks):
+            _alignment_variant_table = align_variants(chunk)
             vartable_chunks.append(_alignment_variant_table)
         alignment_variant_table = pd.concat(vartable_chunks)
-        alignment_info = pd.concat(info_chunks, ignore_index=True)
 
         indexed_mapping_table = _mapping_table(alignment_info)  # TODO: Should be passed or returned by align_variants?
         # Write data
