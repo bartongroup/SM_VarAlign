@@ -312,7 +312,7 @@ def align_variants(aln_info_table, species='HUMAN'):
     return aligned_variants
 
 
-def cli(argv=None):
+def cli(argv=None, logger=log):
     # CLI
     parser = argparse.ArgumentParser(description='Align variants to a Pfam alignment.')
     parser.add_argument('alignment', type=str, help='Path to the alignment.')
@@ -321,15 +321,18 @@ def cli(argv=None):
     parser.add_argument('--n_groups', type=int, default=1, help='Top Gaussians to select after occupancy fitting.')
     parser.add_argument('--override', help='Override any previously generated files.', action='store_true')
     parser.add_argument('--species', type=str, help='Species (used for alignment filtering)', default='HUMAN')
-    return parser.parse_args(argv)
+    args = parser.parse_args(argv)
+
+    if logger:
+        # Log arguments
+        for arg, value in sorted(vars(args).items()):
+            logger.info("Command line argument %s: %r", arg, value)
+        # TODO: or just `log.info(args)`
+
+    return args
 
 
 def main(args):
-    # Log arguments
-    log.info('Arguments...')
-    log.info('alignment\t{}'.format(args.alignment))
-    log.info('max_gaussians\t{}'.format(args.max_gaussians))
-    log.info('n_groups\t{}'.format(args.n_groups))
     # Results and data will be written in these folders
     results_path = 'results'
     make_dir_if_needed(results_path)
