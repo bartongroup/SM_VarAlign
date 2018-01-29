@@ -46,10 +46,10 @@ def _pick_best(models, x):
     return models[best]
 
 
-def _gmm_plot(models, x):
+def _gmm_plot(best_model, all_models, x):
     """Plot some diagnostics for the GMM fitting.
 
-    :param models:
+    :param all_models:
     :return:
     """
     # Adapted from: http://www.astroml.org/book_figures/chapter4/fig_GMM_1D.html
@@ -65,8 +65,6 @@ def _gmm_plot(models, x):
                         bottom=0.21, top=0.9, wspace=0.5)
 
     # plot 1: data + best-fit mixture
-    best_model = _pick_best(models, x)
-
     ax = fig.add_subplot(121)
 
     grid = np.linspace(1, max(x), 1000)  # Can't go from 0 because get p > 1 !!!
@@ -87,7 +85,7 @@ def _gmm_plot(models, x):
     ax.plot(grid, pdf_individual, '--k')
 
     # plot 2: AIC and BIC
-    scores = _score_models(models, x)
+    scores = _score_models(all_models, x)
 
     ax = fig.add_subplot(122)
     ax.plot(list(range(1, len(scores['AIC']) + 1)), scores['AIC'], '-k', label='AIC')

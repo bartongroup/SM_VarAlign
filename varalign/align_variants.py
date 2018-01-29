@@ -471,7 +471,7 @@ def main(args):
     d['Author'] = 'align_variants.py'
 
     # Plot GMM diagnostics
-    occ_gmm._gmm_plot(gmms['models'], gmms['data'])
+    occ_gmm._gmm_plot(M_best, gmms['models'], gmms['data'])
     pdf.attach_note('Residue Occupancy GMM Diagnostics')
     pdf.savefig()
     plt.close()
@@ -576,7 +576,7 @@ def main(args):
     # Write variant jalview feature file
     # Label all variants with sequence features
     _write_variants_as_features(alignment_variant_table, results_prefix + '_variant_features.feat')
-    
+
     # Log completion
     log.info('DONE.')
 
