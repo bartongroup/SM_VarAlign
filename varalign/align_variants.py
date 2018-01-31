@@ -8,7 +8,6 @@ import matplotlib.pyplot as plt
 import pandas as pd
 import seaborn as sns
 import tqdm
-import vcf
 from Bio import AlignIO
 from matplotlib.backends.backend_pdf import PdfPages
 from numpy import vectorize
@@ -244,34 +243,6 @@ def get_genome_mappings(aln_info_table, species):
     return genomic_mapping_table
 
 
-def get_gnomad_variants(aln_info_table):
-    """
-
-    :param aln_info_table:
-    :return:
-    """
-    # NB. gnomad fetcher is packed into a generator, which is extracted in the following list comp.
-    sequence_variant_lists = [(row.seq_id, (x for r in row.genomic_ranges for x in gnomad.gnomad.fetch(*r)))
-                              for row in aln_info_table.dropna(subset=['genomic_ranges']).itertuples()]
-    all_variants = [(variant, seq_id)
-                    for seq_id, range_reader in tqdm.tqdm(sequence_variant_lists, desc='Loading variants...')
-                    for variant in range_reader]
-
-    # pass VCF records and source_ids
-    n = 1000  # chunking seems to interact with redundant rows... Fix by adding chunk ID with `keys`
-    variants_table = pd.concat([gnomad.vcf_row_to_table(*list(zip(*all_variants[i:i + n])))
-                                for i in tqdm.tqdm(range(0, len(all_variants), n), desc='Parsing variants...')],
-                               keys=list(range(0, len(all_variants), n)))
-
-    # Write alignment variants to a VCF
-    with open('alignment_variants.vcf', 'w') as vcf_out:  # TODO: add alignment to file name? (needs refactoring...)
-        vcf_writer = vcf.Writer(vcf_out, gnomad.gnomad)
-        for v, _ in all_variants:
-            vcf_writer.write_record(v)
-
-    return variants_table
-
-
 def map_variants_to_alignment(variants_df, residue_column_map):
     """
     Add alignment column numbers to a variant table.
@@ -307,7 +278,7 @@ def align_variants(aln_info_table, species='HUMAN'):
     aln_info_table = aln_info_table.merge(genomic_mapping_table, on=['seq_id'], how='left')
 
     # ----- Fetch variants for the mapped genomic ranges -----
-    variants_table = get_gnomad_variants(aln_info_table)
+    variants_table = gnomad.get_gnomad_variants(aln_info_table)
 
     # ----- Add source UniProt identifiers to the table -----
     # Create UniProt ID series that shares an index with the variant table

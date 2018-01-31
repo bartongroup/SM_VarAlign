@@ -3,6 +3,7 @@ import logging
 from copy import deepcopy
 
 import pandas as pd
+import tqdm
 import vcf  ## Requires pysam functionality
 from vcf.utils import trim_common_suffix
 
@@ -243,3 +244,31 @@ def vcf_row_to_table(variants, source_ids=None):
 
 
     return merged_variant_table
+
+
+def get_gnomad_variants(aln_info_table):
+    """
+
+    :param aln_info_table:
+    :return:
+    """
+    # NB. gnomad fetcher is packed into a generator, which is extracted in the following list comp.
+    sequence_variant_lists = [(row.seq_id, (x for r in row.genomic_ranges for x in gnomad.fetch(*r)))
+                              for row in aln_info_table.dropna(subset=['genomic_ranges']).itertuples()]
+    all_variants = [(variant, seq_id)
+                    for seq_id, range_reader in tqdm.tqdm(sequence_variant_lists, desc='Loading variants...')
+                    for variant in range_reader]
+
+    # pass VCF records and source_ids
+    n = 1000  # chunking seems to interact with redundant rows... Fix by adding chunk ID with `keys`
+    variants_table = pd.concat([vcf_row_to_table(*list(zip(*all_variants[i:i + n])))
+                                for i in tqdm.tqdm(range(0, len(all_variants), n), desc='Parsing variants...')],
+                               keys=list(range(0, len(all_variants), n)))
+
+    # Write alignment variants to a VCF
+    with open('alignment_variants.vcf', 'w') as vcf_out:  # TODO: add alignment to file name? (needs refactoring...)
+        vcf_writer = vcf.Writer(vcf_out, gnomad)
+        for v, _ in all_variants:
+            vcf_writer.write_record(v)
+
+    return variants_table
