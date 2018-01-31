@@ -278,7 +278,10 @@ def align_variants(aln_info_table, species='HUMAN'):
     aln_info_table = aln_info_table.merge(genomic_mapping_table, on=['seq_id'], how='left')
 
     # ----- Fetch variants for the mapped genomic ranges -----
-    variants_table = gnomad.get_gnomad_variants(aln_info_table)
+    # Load the VCF with extended vcf.Reader
+    vcf_is_compressed = True if defaults.gnomad.endswith('bgz') else None  # pyvcf doesn't recognise .bgz
+    parser = gnomad.Reader(filename=defaults.gnomad, compressed=vcf_is_compressed)
+    variants_table = parser.get_gnomad_variants(aln_info_table)
 
     # ----- Add source UniProt identifiers to the table -----
     # Create UniProt ID series that shares an index with the variant table
