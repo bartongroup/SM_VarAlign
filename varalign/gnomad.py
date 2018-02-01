@@ -1,5 +1,6 @@
 import itertools
 import logging
+import os
 from copy import deepcopy
 
 import pandas as pd
@@ -275,7 +276,8 @@ class Reader(vcf.Reader):
                                    keys=list(range(0, len(all_variants), n)))
 
         # Write alignment variants to a VCF
-        with open('alignment_variants.vcf', 'w') as vcf_out:  # TODO: add alignment to file name? (needs refactoring...)
+        # TODO: add alignment to file name? (needs refactoring...)
+        with open(os.path.join('results', 'alignment_variants.vcf'), 'w') as vcf_out:
             vcf_writer = vcf.Writer(vcf_out, self)
             for v, _ in all_variants:
                 vcf_writer.write_record(v)
