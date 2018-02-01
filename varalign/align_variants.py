@@ -330,10 +330,11 @@ def main(path_to_alignment, max_gaussians=5, n_groups=1, override=False, species
     # Results and data will be written in these folders
     results_path = 'results'
     make_dir_if_needed(results_path)
-    results_prefix = os.path.join(results_path, path_to_alignment)
+    input_alignment_filename = os.path.basename(path_to_alignment)
+    results_prefix = os.path.join(results_path, input_alignment_filename)
     data_path = os.path.join('.varalign', 'aligned_variants_data')
     make_dir_if_needed(data_path)
-    data_prefix = os.path.join(data_path, path_to_alignment)
+    data_prefix = os.path.join(data_path, input_alignment_filename)
     alignment = AlignIO.read(path_to_alignment, format='stockholm')
 
     # Check if data is available from previous run
