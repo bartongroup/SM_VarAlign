@@ -3,4 +3,4 @@
 from varalign import align_variants
 
 parameters = align_variants.cli()
-align_variants.main(parameters)
+align_variants.main(**vars(parameters))

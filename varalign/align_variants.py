@@ -306,9 +306,10 @@ def align_variants(aln_info_table, species='HUMAN'):
 
 
 def cli(argv=None, logger=log):
+    # TODO: Move this to appropriate script, its only still here whilst I update my usage on the cluster
     # CLI
     parser = argparse.ArgumentParser(description='Align variants to a Pfam alignment.')
-    parser.add_argument('alignment', type=str, help='Path to the alignment.')
+    parser.add_argument('path_to_alignment', type=str, help='Path to the alignment.')
     parser.add_argument('--max_gaussians', type=int, default=5,
                         help='Maximum number of Gaussians for occupancy fitting.')
     parser.add_argument('--n_groups', type=int, default=1, help='Top Gaussians to select after occupancy fitting.')
@@ -325,15 +326,15 @@ def cli(argv=None, logger=log):
     return args
 
 
-def main(args):
+def main(path_to_alignment, max_gaussians=5, n_groups=1, override=False, species='HUMAN'):
     # Results and data will be written in these folders
     results_path = 'results'
     make_dir_if_needed(results_path)
-    results_prefix = os.path.join(results_path, args.alignment)
+    results_prefix = os.path.join(results_path, path_to_alignment)
     data_path = os.path.join('.varalign', 'aligned_variants_data')
     make_dir_if_needed(data_path)
-    data_prefix = os.path.join(data_path, args.alignment)
-    alignment = AlignIO.read(args.alignment, format='stockholm')
+    data_prefix = os.path.join(data_path, path_to_alignment)
+    alignment = AlignIO.read(path_to_alignment, format='stockholm')
 
     # Check if data is available from previous run
     is_data_available = all([os.path.isfile(data_prefix + '_variants.p.gz'),
@@ -344,9 +345,9 @@ def main(args):
     # Run align variants pipeline in chunks
     # Parse alignment info
     log.info('Generating alignment info table...')
-    alignment_info = alignments.alignment_info_table(alignment, args.species)
+    alignment_info = alignments.alignment_info_table(alignment, species)
     log.info('Alignment info table head:\n%s', alignment_info.head().to_string())
-    if args.override or not is_data_available:
+    if override or not is_data_available:
         # TODO: Chunk size should be optimised? Also, its effectiveness depends on human sequences in each chunk...
         chunk_size = 500
         vartable_chunks = []
@@ -365,7 +366,7 @@ def main(args):
         _dump_table_and_log(indexed_mapping_table.to_pickle, data_prefix + '_mappings.p.gz',
                             'Alignment mapping table pickle')
     else:
-        log.info('Loading data for {}...'.format(args.alignment))
+        log.info('Loading data for {}...'.format(path_to_alignment))
         alignment_info = pd.read_pickle(data_prefix + '_info.p.gz')
         alignment_variant_table = pd.read_pickle(data_prefix + '_variants.p.gz')
         indexed_mapping_table = pd.read_pickle(data_prefix + '_mappings.p.gz')
@@ -406,10 +407,10 @@ def main(args):
     column_summary = column_variant_counts.join([column_missense_clinvar, column_occupancy, alignment_conservation])
 
     # Occupancy GMM
-    gmms = occ_gmm._fit_mixture_models(column_summary['occupancy'], args.max_gaussians)
+    gmms = occ_gmm._fit_mixture_models(column_summary['occupancy'], max_gaussians)
     M_best = occ_gmm._pick_best(gmms['models'], gmms['data'])
     # M_best.means_
-    subset_mask_gmm = occ_gmm._core_column_mask(M_best, gmms['data'], args.n_groups)
+    subset_mask_gmm = occ_gmm._core_column_mask(M_best, gmms['data'], n_groups)
     column_summary = column_summary.assign(column_gmm_pass=subset_mask_gmm)
 
     # Regression statistics
@@ -441,7 +442,7 @@ def main(args):
     pdf = PdfPages(results_prefix + '.figures.pdf')
     # PDF metadata
     d = pdf.infodict()
-    d['Title'] = 'Aligned Variant Diagnostics Plots for {}'.format(args.alignment)
+    d['Title'] = 'Aligned Variant Diagnostics Plots for {}'.format(path_to_alignment)
     d['Author'] = 'align_variants.py'
 
     # Plot GMM diagnostics
@@ -557,4 +558,4 @@ def main(args):
 
 if __name__ == '__main__':
     parameters = cli()
-    main(parameters)
+    main(**vars(parameters))
