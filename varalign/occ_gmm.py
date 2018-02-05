@@ -7,6 +7,8 @@ from sklearn import mixture
 
 log = logging.getLogger(__name__)
 
+np.random.seed(98127342)
+
 def _fit_mixture_models(s, max_gaussians=5):
     """
     Fit mixture models to a numeric Series column.

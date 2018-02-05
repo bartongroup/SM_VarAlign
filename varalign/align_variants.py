@@ -441,7 +441,7 @@ def main(path_to_alignment, max_gaussians=5, n_groups=1, override=False, species
     _dump_table_and_log(column_summary.to_csv, results_prefix + '.col_summary.csv', 'Column summary data')
 
     # Plot output
-    pdf = PdfPages(results_prefix + '.figures.pdf')
+    pdf = PdfPages(results_prefix + '.figures.pdf', metadata={'creationDate': None})
     # PDF metadata
     d = pdf.infodict()
     d['Title'] = 'Aligned Variant Diagnostics Plots for {}'.format(path_to_alignment)
@@ -450,7 +450,7 @@ def main(path_to_alignment, max_gaussians=5, n_groups=1, override=False, species
     # Plot GMM diagnostics
     occ_gmm._gmm_plot(M_best, gmms['models'], gmms['data'])
     pdf.attach_note('Residue Occupancy GMM Diagnostics')
-    pdf.savefig()
+    pdf.savefig(metadata={'creationDate': None})
     plt.close()
 
     # Plot 1
@@ -461,7 +461,7 @@ def main(path_to_alignment, max_gaussians=5, n_groups=1, override=False, species
     axs[1].axvline(column_summary[subset_mask_gmm]['occupancy'].min())
     fig.suptitle('N Variants vs. Occupancy')
     pdf.attach_note('N Variants vs. Occupancy')
-    pdf.savefig()
+    pdf.savefig(metadata={'creationDate': None})
     plt.close()
 
     # Conservation plane plot: Variant counts vs. Shenkin
@@ -474,7 +474,7 @@ def main(path_to_alignment, max_gaussians=5, n_groups=1, override=False, species
                       loc='upper right', colWidths=[0.12] * 5, zorder=100)
     plt.title('N Variants vs. Shenkin')
     pdf.attach_note('N Variants vs. Shenkin')
-    pdf.savefig()
+    pdf.savefig(metadata={'creationDate': None})
     plt.close()
 
     # Conservation plane plot: Missense Scores vs. Shenkin
@@ -487,7 +487,7 @@ def main(path_to_alignment, max_gaussians=5, n_groups=1, override=False, species
     _ = plt.setp(ax.get_xticklabels(), visible=True)
     plt.title('Missense Score vs. Shenkin')
     pdf.attach_note('Missense Score vs. Shenkin')
-    pdf.savefig()
+    pdf.savefig(metadata={'creationDate': None})
     plt.close()
 
     # Other aggregations, some of these just produce the plot
@@ -497,7 +497,7 @@ def main(path_to_alignment, max_gaussians=5, n_groups=1, override=False, species
     protein_consequences.hist(facecolor='black', edgecolor='black')
     plt.title('Variants per Sequence')
     pdf.attach_note('Distribution of variants over alignment sequences')
-    pdf.savefig()
+    pdf.savefig(metadata={'creationDate': None})
     plt.close()
     # Variants per residue and column histograms
     fig, axes = plt.subplots(1, 2)
@@ -512,7 +512,7 @@ def main(path_to_alignment, max_gaussians=5, n_groups=1, override=False, species
     column_summary.loc[subset_mask_gmm, 'missense_variant'].hist(ax=axes[1], facecolor='black', edgecolor='black')
     axes[1].set_title('Missense Variants per Column')
     pdf.attach_note('Distribution of variants over residues and alignment columns')
-    pdf.savefig()
+    pdf.savefig(metadata={'creationDate': None})
     plt.close()
     pdf.close()
 
