@@ -16,6 +16,10 @@ log.setLevel('INFO')
 
 aacon_path = os.path.join(os.path.dirname(varalign.__file__), 'lib', 'aacon', 'compbio-conservation-1.1.jar')
 
+aacon_methods = ['KABAT', 'JORES', 'SCHNEIDER', 'SHENKIN', 'GERSTEIN', 'TAYLOR_GAPS', 'TAYLOR_NO_GAPS', 'ZVELIBIL',
+                 'KARLIN', 'ARMON', 'THOMPSON', 'NOT_LANCET', 'MIRNY', 'WILLIAMSON', 'LANDGRAF', 'SANDER', 'VALDAR',
+                 'SMERFS']
+
 
 def _reformat_alignment_for_aacon(aln):
     """
@@ -49,13 +53,14 @@ def _reformat_alignment_for_aacon(aln):
     return aacon_alignment, orig_col_nums
 
 
-def _run_aacon(aln, aacon_jar_path=aacon_path, tmp_dir=os.path.join('.varalign', 'aacon')):
+def _run_aacon(aln, aacon_jar_path=aacon_path, tmp_dir=os.path.join('.varalign', 'aacon'), methods=aacon_methods):
     """
     Run standalone AACon on an alignment.
 
     :param aln: Alignment.
     :param aacon_jar_path: Path to AACon jar.
-    :tmp_dir: Directory to store AACon files.
+    :param tmp_dir: Directory to store AACon files.
+    :param methods: Conservation score(s) to calculate.
     :return: Path to AACon results (str)
     """
     make_dir_if_needed(tmp_dir)
@@ -68,12 +73,18 @@ def _run_aacon(aln, aacon_jar_path=aacon_path, tmp_dir=os.path.join('.varalign',
         AlignIO.write(aln, output, 'fasta')
     log.info('AACon formatted alignment saved to {}'.format(aacon_input))
 
+    # Check methods
+    methods = [x for x in methods if x in aacon_methods]
+    if len(methods) == 0:
+        raise ValueError('Could not identify any valid methods for AACon.')
+
     # Run AACon on alignment
     log.info('Launcing AACon...')
     with open(os.path.join(tmp_dir, 'aacon.log'), 'w') as aacon_log:
         subprocess.call(["java", "-jar", aacon_jar_path,
                          "-i={}".format(aacon_input),
-                         "-o={}".format(aacon_output)],
+                         "-o={}".format(aacon_output),
+                         "-m={}".format(','.join(methods))],
                         stdout=aacon_log, stderr=aacon_log)
 
     return aacon_output
@@ -103,15 +114,16 @@ def _parse_aacon_results(aacon_output, column_index=None):
     return aacon_table
 
 
-def get_aacon(aln):
+def get_aacon(aln, methods=aacon_methods):
     """
     Run AACon on an alignment and get the conservation scores.
 
     :param aln: Input alignment (MSA)
+    :param methods: Conservation score(s) to calculate.
     :return: AACon conservation scores (DataFrame)
     """
     aacon_compatible_aln, source_column_numbers = _reformat_alignment_for_aacon(aln)
-    aacon_output_path = _run_aacon(aacon_compatible_aln)
+    aacon_output_path = _run_aacon(aacon_compatible_aln, methods=methods)
     conservation = _parse_aacon_results(aacon_output_path, source_column_numbers)
     return conservation
 

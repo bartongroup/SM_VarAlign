@@ -374,7 +374,8 @@ def main(path_to_alignment, max_gaussians=5, n_groups=1, override=False, species
 
     # AACon
     # Run AACon and save results
-    alignment_conservation = aacon.get_aacon(alignment)
+    conservation_methods = [x for x in aacon.aacon_methods if x != 'LANDGRAF']  # TODO: reinstate Landgraf when fixed
+    alignment_conservation = aacon.get_aacon(alignment, methods=conservation_methods)
     _dump_table_and_log(alignment_conservation.to_csv, results_prefix + '_aacon_scores.csv',
                         'Formatted AACons results')
 
