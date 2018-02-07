@@ -350,17 +350,20 @@ def cli(argv=None, logger=log):
 
 def main(path_to_alignment, override, only_sifts_best, max_pdbs, n_proc):
     # Read data produced by `align_variants.py`
-    av_data_prefix = os.path.join('.varalign', 'aligned_variants_data', path_to_alignment)
+    input_alignment_filename = os.path.basename(path_to_alignment)
+    av_data_prefix = os.path.join(os.path.dirname(path_to_alignment), '.varalign', 'aligned_variants_data',
+                                  input_alignment_filename)
     try:
         aln_info = pd.read_pickle(av_data_prefix + '_info.p.gz')
         indexed_mapping_table = pd.read_pickle(av_data_prefix + '_mappings.p.gz')
-        column_stats = pd.read_csv(os.path.join('results', path_to_alignment) + '.col_summary.csv')
+        column_stats = pd.read_csv(os.path.join(os.path.dirname(path_to_alignment), 'results', input_alignment_filename)
+                                   + '.col_summary.csv')
     except FileNotFoundError:
         log.error('Failed to load `align_variants` input for {}'.format(path_to_alignment))
         message = ('Could not find required output from `align_variants.py`. Did you forget to run this first?\n'
                    'Make sure that {}, {} and\n'
                    '{} are present in the run directory.')
-        print(message.format(path_to_alignment + '_info.p.gz', path_to_alignment + '_mappings.p.gz',
+        print(message.format(av_data_prefix + '_info.p.gz', av_data_prefix + '_mappings.p.gz',
                              os.path.join('results', path_to_alignment) + '.col_summary.csv'))
         sys.exit(1)
     # This is where we'll store data
