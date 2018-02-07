@@ -369,15 +369,15 @@ def main(path_to_alignment, override, only_sifts_best, max_pdbs, n_proc):
     # This is where we'll store data
     results_path = 'results'
     make_dir_if_needed(results_path)
-    results_prefix = os.path.join(results_path, path_to_alignment)
+    results_prefix = os.path.join(results_path, input_alignment_filename)
     data_path = os.path.join('.varalign', 'prointvar_analysis_data')
     make_dir_if_needed(data_path)
-    data_prefix = os.path.join(data_path, path_to_alignment)
+    data_prefix = os.path.join(data_path, input_alignment_filename)
     if override or not os.path.isfile(data_prefix + '_prointvar_structure_table.p.gz'):
         # Get SIFTS best and download for all proteins in alignment
         log_dir = os.path.join('.varalign', 'prointvar', 'download_logs')
         make_dir_if_needed(log_dir)
-        download_logfile = os.path.join(log_dir, path_to_alignment + '_prointvar_download')
+        download_logfile = os.path.join(log_dir, input_alignment_filename + '_prointvar_download')
         status, downloaded = _download_structure_data(aln_info, download_logfile)
         # TODO: log some download statuses
 
