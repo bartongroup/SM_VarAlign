@@ -1,0 +1,28 @@
+Traceback (most recent call last):
+  File "/Users/smacgowan/anaconda/envs/varalign-env-py3/bin/ProIntVar", line 11, in <module>
+    load_entry_point('ProIntVar-Core', 'console_scripts', 'ProIntVar')()
+  File "/Users/smacgowan/anaconda/envs/varalign-env-py3/lib/python3.6/site-packages/click/core.py", line 722, in __call__
+    return self.main(*args, **kwargs)
+  File "/Users/smacgowan/anaconda/envs/varalign-env-py3/lib/python3.6/site-packages/click/core.py", line 697, in main
+    rv = self.invoke(ctx)
+  File "/Users/smacgowan/anaconda/envs/varalign-env-py3/lib/python3.6/site-packages/click/core.py", line 1092, in invoke
+    rv.append(sub_ctx.command.invoke(sub_ctx))
+  File "/Users/smacgowan/anaconda/envs/varalign-env-py3/lib/python3.6/site-packages/click/core.py", line 895, in invoke
+    return ctx.invoke(self.callback, **ctx.params)
+  File "/Users/smacgowan/anaconda/envs/varalign-env-py3/lib/python3.6/site-packages/click/core.py", line 535, in invoke
+    return callback(*args, **kwargs)
+  File "/Users/smacgowan/PycharmProjects/FM_ProIntVar-Core/cli/main.py", line 289, in downloads
+    best_structures=best_structures, override=override)
+  File "/Users/smacgowan/PycharmProjects/FM_ProIntVar-Core/cli/main.py", line 218, in file_downloader
+    download_sifts_from_ebi(pid, override=override)
+  File "/Users/smacgowan/PycharmProjects/FM_ProIntVar-Core/prointvar/fetchers.py", line 470, in download_sifts_from_ebi
+    decompress=True, override=override)
+  File "/Users/smacgowan/PycharmProjects/FM_ProIntVar-Core/prointvar/fetchers.py", line 382, in __init__
+    self._decompress()
+  File "/Users/smacgowan/PycharmProjects/FM_ProIntVar-Core/prointvar/fetchers.py", line 401, in _decompress
+    with gzip.open(self.outputfile_origin, 'rb') as infile, \
+  File "/Users/smacgowan/anaconda/envs/varalign-env-py3/lib/python3.6/gzip.py", line 53, in open
+    binary_file = GzipFile(filename, gz_mode, compresslevel)
+  File "/Users/smacgowan/anaconda/envs/varalign-env-py3/lib/python3.6/gzip.py", line 163, in __init__
+    fileobj = self.myfileobj = builtins.open(filename, mode or 'rb')
+FileNotFoundError: [Errno 2] No such file or directory: './.prointvar/sifts/Q8TCW9.xml.gz'
