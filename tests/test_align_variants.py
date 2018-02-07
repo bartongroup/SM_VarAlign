@@ -81,5 +81,3 @@ class TestAlign_Variants(TestCase):
         cmpfiles_mismatch = self.comparison[1]
         message = 'The following file(s) do not match their standards: {}'.format(cmpfiles_mismatch)
         self.assertFalse(cmpfiles_mismatch, message)
-
-
