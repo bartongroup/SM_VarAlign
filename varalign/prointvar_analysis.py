@@ -8,6 +8,7 @@ import logging
 import multiprocessing
 import os
 import subprocess
+import sys
 
 import matplotlib; matplotlib.use('Agg')  # headless backend for matplotlib
 import matplotlib.pyplot as plt
@@ -325,62 +326,67 @@ def _add_column_if_missing(table, column):
         log.info('Added missing column "{}" to table'.format(column))
 
 
-if __name__ == '__main__':
-    import sys
-
-
+def cli(argv=None, logger=log):
     # CLI
     parser = argparse.ArgumentParser(description='Structural properties of alignment columns.')
-    parser.add_argument('alignment', type=str, help='Path to the alignment.')
+    parser.add_argument('path_to_alignment', type=str, help='Path to the alignment.')
     parser.add_argument('--n_proc', type=int, help='Number of processors.', default=1)
-    parser.add_argument('--override',  help='Override any previously generated files.', action='store_true')
+    parser.add_argument('--override', help='Override any previously generated files.', action='store_true')
     parser_n_sifts_group = parser.add_mutually_exclusive_group()
     parser_n_sifts_group.add_argument('--only_sifts_best', help='Process only sifts best structure.',
                                       action='store_true')
     parser_n_sifts_group.add_argument('--max_pdbs', type=int,
                                       help='Maximum number of SIFTs PDB mappings to use for a sequence')
-    args = parser.parse_args()
+    args = parser.parse_args(argv)
 
+    if logger:
+        # Log arguments
+        for arg, value in sorted(vars(args).items()):
+            logger.info("Command line argument %s: %r", arg, value)
+        # TODO: or just `log.info(args)`
+
+    return args
+
+
+def main(path_to_alignment, override, only_sifts_best, max_pdbs, n_proc):
     # Read data produced by `align_variants.py`
-    av_data_prefix = os.path.join('.varalign', 'aligned_variants_data', args.alignment)
+    av_data_prefix = os.path.join('.varalign', 'aligned_variants_data', path_to_alignment)
     try:
-        aln_info = pd.read_pickle(av_data_prefix+'_info.p.gz')
-        indexed_mapping_table = pd.read_pickle(av_data_prefix+'_mappings.p.gz')
-        column_stats = pd.read_csv(os.path.join('results', args.alignment) + '.col_summary.csv')
+        aln_info = pd.read_pickle(av_data_prefix + '_info.p.gz')
+        indexed_mapping_table = pd.read_pickle(av_data_prefix + '_mappings.p.gz')
+        column_stats = pd.read_csv(os.path.join('results', path_to_alignment) + '.col_summary.csv')
     except FileNotFoundError:
-        log.error('Failed to load `align_variants` input for {}'.format(args.alignment))
+        log.error('Failed to load `align_variants` input for {}'.format(path_to_alignment))
         message = ('Could not find required output from `align_variants.py`. Did you forget to run this first?\n'
                    'Make sure that {}, {} and\n'
                    '{} are present in the run directory.')
-        print(message.format(args.alignment+'_info.p.gz', args.alignment+'_mappings.p.gz',
-                             os.path.join('results', args.alignment) + '.col_summary.csv'))
+        print(message.format(path_to_alignment + '_info.p.gz', path_to_alignment + '_mappings.p.gz',
+                             os.path.join('results', path_to_alignment) + '.col_summary.csv'))
         sys.exit(1)
-
     # This is where we'll store data
     results_path = 'results'
     make_dir_if_needed(results_path)
-    results_prefix = os.path.join(results_path, args.alignment)
+    results_prefix = os.path.join(results_path, path_to_alignment)
     data_path = os.path.join('.varalign', 'prointvar_analysis_data')
     make_dir_if_needed(data_path)
-    data_prefix = os.path.join(data_path, args.alignment)
-
-    if args.override or not os.path.isfile(data_prefix+'_prointvar_structure_table.p.gz'):
+    data_prefix = os.path.join(data_path, path_to_alignment)
+    if override or not os.path.isfile(data_prefix + '_prointvar_structure_table.p.gz'):
         # Get SIFTS best and download for all proteins in alignment
         log_dir = os.path.join('.varalign', 'prointvar', 'download_logs')
         make_dir_if_needed(log_dir)
-        download_logfile = os.path.join(log_dir, args.alignment + '_prointvar_download')
+        download_logfile = os.path.join(log_dir, path_to_alignment + '_prointvar_download')
         status, downloaded = _download_structure_data(aln_info, download_logfile)
         # TODO: log some download statuses
 
         # Process all downloaded structural data with ProIntVar
-        if args.only_sifts_best:
+        if only_sifts_best:
             to_load = downloaded.query('sifts_index == 1')['pdb_id'].dropna().unique()
-        elif args.max_pdbs:
-            allowed_sifts_indexes = list(range(1, 1+args.max_pdbs))
+        elif max_pdbs:
+            allowed_sifts_indexes = list(range(1, 1 + max_pdbs))
             to_load = downloaded.query('sifts_index in @allowed_sifts_indexes')['pdb_id'].dropna().unique()
         else:
             to_load = downloaded['pdb_id'].dropna().unique()
-        p = multiprocessing.Pool(args.n_proc)
+        p = multiprocessing.Pool(n_proc)
         tabs = list(tqdm.tqdm(p.imap(_format_structure_data, to_load), total=len(to_load)))
         structure_table = pd.concat(tabs)
         log.info('{} atom-atom records created.'.format(len(structure_table)))  # Shouldn't this be even?
@@ -415,36 +421,32 @@ if __name__ == '__main__':
 
         # Write structure table
         log.info('Writing {} atom-atom records to file...'.format(len(structure_table)))
-        structure_table.to_pickle(data_prefix+'_prointvar_structure_table.p.gz')
+        structure_table.to_pickle(data_prefix + '_prointvar_structure_table.p.gz')
     else:
         log.info('Reading {}...'.format(data_prefix + '_prointvar_structure_table.p.gz'))
         structure_table = pd.read_pickle(data_prefix + '_prointvar_structure_table.p.gz')
         log.info('Loaded {} atom-atom records from file.'.format(len(structure_table)))
-
     # Log head of table
     table_head = structure_table.head().to_string()
-    table_head = '### '.join(('\n'+table_head).splitlines(keepends=True))[1:]  # Prepend "### "
+    table_head = '### '.join(('\n' + table_head).splitlines(keepends=True))[1:]  # Prepend "### "
     log.info('Alignment contacts table head:\n%s', table_head)
-
     # Basic statistics: N mapped PDBs, sequences and residues
     # NB. some PDBs map to multiple sequences (e.g. heterodimers in LBD)
     seq_pdb_map = structure_table[['UniProt_dbAccessionId_A', 'SOURCE_ID_A', 'PDB_dbAccessionId_A']].drop_duplicates()
     seq_pdb_map.reset_index(drop=True, inplace=True)
-    seq_pdb_map.to_csv(results_prefix+'_seq_structure_mappings.csv')
+    seq_pdb_map.to_csv(results_prefix + '_seq_structure_mappings.csv')
     n_seq_pdb_mappings = len(seq_pdb_map)  # Number of UniProt-PDB mappings
     n_seqs_mapped = len(seq_pdb_map['SOURCE_ID_A'].unique())  # Number of mapped UniProts
     n_res_mapped = len(structure_table.groupby(['SOURCE_ID_A', 'Alignment_column_A']).size())  # N mapped residues
     log.info('Mappings retrieved...\t{}'.format(n_seq_pdb_mappings))
     log.info('Sequences with at least one mapping...\t{}'.format(n_seqs_mapped))
     log.info('Residues mapped...\t{}'.format(n_res_mapped))
-
     # Plot output  # TODO: move plotting routines closer to the data they use...
     pdf = PdfPages(results_prefix + '.structural.figures.pdf')
     # PDF metadata
     d = pdf.infodict()
-    d['Title'] = 'Structural context analysis of {}'.format(args.alignment)
+    d['Title'] = 'Structural context analysis of {}'.format(path_to_alignment)
     d['Author'] = 'prointvar_analysis.py'
-
     # # Plot SIFTS mappings available data (i.e. before filtering)
     # # Downloaded contains scraped data from the `ProIntVar` download logs
     # n_pdbs = pd.to_numeric(downloaded.groupby('query')['sifts_index'].max(), errors='coerce').fillna(0).sort_values()
@@ -460,10 +462,8 @@ if __name__ == '__main__':
     # pdf.attach_note('Available PDBs from SIFTS')
     # pdf.savefig()
     # plt.close()
-
     # Structure analyses
     structure_stats = prointvar_stats.collect_column_structure_stats(structure_table)
-
     # Add variant column stats
     column_stats.rename(columns={"('Alignment', 'Column')": 'Alignment_column'}, inplace=True)
     # Add Shenkin percentile score
@@ -471,8 +471,7 @@ if __name__ == '__main__':
         # subset_mask_gmm??
         column_stats = column_stats.join(column_stats['shenkin'].rank(pct=True), rsuffix='_percentile')
     column_annotations = column_stats.set_index('Alignment_column').join(structure_stats)
-    column_annotations.to_csv(results_prefix+'_column_data.csv')
-
+    column_annotations.to_csv(results_prefix + '_column_data.csv')
     # Plot comparing structural features on the alignment
     fig, axs = plt.subplots(2, 1, sharex=True, figsize=(9, 8))
     alignment_ligand_plot(structure_stats, axs[0])
@@ -485,7 +484,10 @@ if __name__ == '__main__':
     pdf.attach_note('Ligand and PPI residue distribution.')
     pdf.savefig()
     plt.close()
-
     pdf.close()
-
     log.info('DONE.')
+
+
+if __name__ == '__main__':
+    parameters = cli()
+    main(**vars(parameters))
