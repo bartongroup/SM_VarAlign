@@ -300,6 +300,12 @@ def _stem_and_line_plot(data, line, stems, axis=None):
     _ = plt.setp(baseline, linewidth=1, visible=True)
 
 
+def _add_column_if_missing(table, column):
+    if column not in table.columns:
+        table[column] = np.nan
+        log.info('Added missing column "{}" to table'.format(column))
+
+
 def alignment_ligand_plot(data, axis=None):
     """
 
@@ -318,12 +324,6 @@ def alignment_ppi_plot(data, axis=None):
     :return:
     """
     _stem_and_line_plot(data, line='sequences_with_contacts', stems='protein_protein_interactions', axis=axis)
-
-
-def _add_column_if_missing(table, column):
-    if column not in table.columns:
-        table[column] = np.nan
-        log.info('Added missing column "{}" to table'.format(column))
 
 
 def cli(argv=None, logger=log):
