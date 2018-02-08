@@ -1,6 +1,6 @@
 from unittest import TestCase
 
-from varalign.cli import cli
+from varalign.cli import align_variants_parser
 
 
 class TestCliAlignVariants(TestCase):
@@ -13,17 +13,17 @@ class TestCliAlignVariants(TestCase):
 
     def test_path_to_alignment(self):
         """Check first positional is called 'path_to_alignment'"""
-        args = cli(['sample_swissprot_PF00001.18_full.sto'])
+        args = align_variants_parser(['sample_swissprot_PF00001.18_full.sto'])
         self.assertEqual(args.path_to_alignment, 'sample_swissprot_PF00001.18_full.sto')
 
     def test_defaults(self):
         """Check defaults are as expected."""
-        args = cli(['sample_swissprot_PF00001.18_full.sto'])  # dummy for positional
+        args = align_variants_parser(['sample_swissprot_PF00001.18_full.sto'])  # dummy for positional
         mismatched = [k for k, v in zip(self.options, self.defaults) if not getattr(args, k) == v]
         message = 'Argument defaults are broken. Incorrect default(s) for {}'.format(mismatched)
         self.assertFalse(mismatched, message)
 
     def test_parsing(self):
         """Check we can modify parameters."""
-        args = cli('--n_groups 2 --override sample_swissprot_PF00001.18_full.sto'.split())
+        args = align_variants_parser('--n_groups 2 --override sample_swissprot_PF00001.18_full.sto'.split())
         self.assertTrue(all([args.n_groups == 2, args.override]))

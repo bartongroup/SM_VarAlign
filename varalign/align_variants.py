@@ -538,5 +538,5 @@ def main(path_to_alignment, max_gaussians=5, n_groups=1, override=False, species
 
 
 if __name__ == '__main__':
-    parameters = cli.cli()
+    parameters = cli.align_variants_parser()
     main(**vars(parameters))

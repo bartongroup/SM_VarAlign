@@ -2,5 +2,5 @@
 import varalign.cli
 from varalign import align_variants
 
-parameters = varalign.cli.cli()
+parameters = varalign.cli.align_variants_parser()
 align_variants.main(**vars(parameters))

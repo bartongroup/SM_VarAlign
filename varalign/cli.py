@@ -5,7 +5,7 @@ log = logging.getLogger(__name__)
 log.setLevel('INFO')
 
 
-def cli(argv=None, logger=log):
+def align_variants_parser(argv=None, logger=log):
     # TODO: Move this to appropriate script, its only still here whilst I update my usage on the cluster
     # CLI
     parser = argparse.ArgumentParser(description='Align variants to a Pfam alignment.')
