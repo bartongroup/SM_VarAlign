@@ -3,7 +3,6 @@ This is the script that runs the structural analyses using `ProIntVar`.
 
 It requires Python 3, for `ProIntVar` compatibility, and should be run after `align_variants.py`.
 """
-import argparse
 import logging
 import multiprocessing
 import os
@@ -19,6 +18,7 @@ from matplotlib.backends.backend_pdf import PdfPages
 from prointvar import merger
 
 from varalign import prointvar_stats
+from varalign import cli
 from varalign.utils import make_dir_if_needed
 
 log = logging.getLogger(__name__)
@@ -326,28 +326,6 @@ def alignment_ppi_plot(data, axis=None):
     _stem_and_line_plot(data, line='sequences_with_contacts', stems='protein_protein_interactions', axis=axis)
 
 
-def cli(argv=None, logger=log):
-    # CLI
-    parser = argparse.ArgumentParser(description='Structural properties of alignment columns.')
-    parser.add_argument('path_to_alignment', type=str, help='Path to the alignment.')
-    parser.add_argument('--n_proc', type=int, help='Number of processors.', default=1)
-    parser.add_argument('--override', help='Override any previously generated files.', action='store_true')
-    parser_n_sifts_group = parser.add_mutually_exclusive_group()
-    parser_n_sifts_group.add_argument('--only_sifts_best', help='Process only sifts best structure.',
-                                      action='store_true')
-    parser_n_sifts_group.add_argument('--max_pdbs', type=int,
-                                      help='Maximum number of SIFTs PDB mappings to use for a sequence')
-    args = parser.parse_args(argv)
-
-    if logger:
-        # Log arguments
-        for arg, value in sorted(vars(args).items()):
-            logger.info("Command line argument %s: %r", arg, value)
-        # TODO: or just `log.info(args)`
-
-    return args
-
-
 def main(path_to_alignment, override, only_sifts_best, max_pdbs, n_proc):
     # Read data produced by `align_variants.py`
     input_alignment_filename = os.path.basename(path_to_alignment)
@@ -492,5 +470,5 @@ def main(path_to_alignment, override, only_sifts_best, max_pdbs, n_proc):
 
 
 if __name__ == '__main__':
-    parameters = cli()
+    parameters = cli.prointvar_analysis_parser()
     main(**vars(parameters))
