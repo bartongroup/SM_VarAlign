@@ -4,6 +4,8 @@ import shutil
 
 from unittest import TestCase
 
+import pandas as pd
+
 from varalign.prointvar_analysis import main
 
 
@@ -40,6 +42,7 @@ class TestProintvarAnalysis(TestCase):
         comparison = filecmp.cmpfiles(standard_path, TestProintvarAnalysis.test_dir, output_files)
 
         self.output_files = output_files
+        self.standard_path = standard_path
         self.comparison = comparison
 
     @classmethod
@@ -59,5 +62,22 @@ class TestProintvarAnalysis(TestCase):
         cmpfiles_mismatch = self.comparison[1]
         message = 'The following file(s) do not match their standards: {}'.format(cmpfiles_mismatch)
         self.assertFalse(cmpfiles_mismatch, message)
+
+    def test_tabular_output_is_stable(self):
+        # Load numeric data from CSV files
+        csv_output = [f for f in self.output_files if f.endswith('.csv')]
+        csv_tables_standard = [pd.read_csv(os.path.join(self.standard_path, f)) for f in csv_output]
+        csv_tables_test = [pd.read_csv(os.path.join(TestProintvarAnalysis.test_dir, f)) for f in csv_output]
+        # Identify any tables with columns that don't match
+        mismatched_tables = []
+        for f, standard_df, test_df in zip(csv_output, csv_tables_standard, csv_tables_test):
+            # NB. need to dropna since nan != nan
+            mismatched_columns = [col for col in standard_df
+                                  if not (standard_df[col].dropna() == test_df[col].dropna()).all()]
+            if mismatched_columns:
+                mismatched_tables.append({f: mismatched_columns})
+        # Test that we didn't find any mismatches or report where they were
+        message = 'The following table(s) / column(s) do not match their standards: {}'.format(mismatched_tables)
+        self.assertFalse(mismatched_tables, message)
 
     # TODO: Test output consistency for numeric data at a lower precision? (Implement when add rounding)
