@@ -1,5 +1,4 @@
 # seems to be required at the top, otherwise get display error...
-import argparse
 import logging
 import os
 
@@ -19,6 +18,7 @@ from varalign import ensembl
 from varalign import gnomad
 from varalign import jalview
 from varalign import occ_gmm
+from varalign import cli
 from varalign.config import defaults
 from varalign.utils import make_dir_if_needed
 
@@ -305,27 +305,6 @@ def align_variants(aln_info_table, species='HUMAN'):
     return aligned_variants
 
 
-def cli(argv=None, logger=log):
-    # TODO: Move this to appropriate script, its only still here whilst I update my usage on the cluster
-    # CLI
-    parser = argparse.ArgumentParser(description='Align variants to a Pfam alignment.')
-    parser.add_argument('path_to_alignment', type=str, help='Path to the alignment.')
-    parser.add_argument('--max_gaussians', type=int, default=5,
-                        help='Maximum number of Gaussians for occupancy fitting.')
-    parser.add_argument('--n_groups', type=int, default=1, help='Top Gaussians to select after occupancy fitting.')
-    parser.add_argument('--override', help='Override any previously generated files.', action='store_true')
-    parser.add_argument('--species', type=str, help='Species (used for alignment filtering)', default='HUMAN')
-    args = parser.parse_args(argv)
-
-    if logger:
-        # Log arguments
-        for arg, value in sorted(vars(args).items()):
-            logger.info("Command line argument %s: %r", arg, value)
-        # TODO: or just `log.info(args)`
-
-    return args
-
-
 def main(path_to_alignment, max_gaussians=5, n_groups=1, override=False, species='HUMAN'):
     # Results and data will be written in these folders
     results_path = 'results'
@@ -559,5 +538,5 @@ def main(path_to_alignment, max_gaussians=5, n_groups=1, override=False, species
 
 
 if __name__ == '__main__':
-    parameters = cli()
+    parameters = cli.cli()
     main(**vars(parameters))

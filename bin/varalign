@@ -1,6 +1,6 @@
 #!/usr/bin/env python
-
+import varalign.cli
 from varalign import align_variants
 
-parameters = align_variants.cli()
+parameters = varalign.cli.cli()
 align_variants.main(**vars(parameters))

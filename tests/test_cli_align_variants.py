@@ -1,6 +1,6 @@
 from unittest import TestCase
 
-from varalign.align_variants import cli
+from varalign.cli import cli
 
 
 class TestCliAlignVariants(TestCase):
