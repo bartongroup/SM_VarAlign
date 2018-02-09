@@ -48,7 +48,9 @@ class Defaults(object):
         for section in self.__config.sections():
             for var_name, var_par in self.__config.items(section):
                 if var_par == "...":
-                    logger.warning("Update the config.txt file...")
+                    # TODO: Figure out best way to do this so doesn't clutter CLI interactions
+                    # logger.warning("Update the config.txt file...")
+                    pass
                 # Format vep_filter for use in DataFrame queries
                 if var_name == "additional":
                     var_par = var_par.replace('\n', ' ')
