@@ -56,3 +56,9 @@ def prointvar_analysis_parser(argv=None, logger=log):
                                      parents=[_parent_parser, _prointvar_analysis_parser])
     return _parse_args_and_log(parser, argv, logger)
 
+
+def varalign_parser(argv=None, logger=log):
+    parser = argparse.ArgumentParser(description=('Analyse variants, conservation and structural features of a Pfam '
+                                                  'alignment.'),
+                                     parents=[_parent_parser, _align_variants_parser, _prointvar_analysis_parser])
+    return _parse_args_and_log(parser, argv, logger)
