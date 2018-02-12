@@ -1,17 +1,20 @@
 import filecmp
-import logging
 import os
 import shutil
-
 from unittest import TestCase, expectedFailure
+
+import pandas as pd
+from pandas.api.types import is_bool_dtype, is_numeric_dtype
+
 from varalign.six import add_move, MovedModule; add_move(MovedModule('mock', 'mock', 'unittest.mock'))
 from varalign.six.moves import mock
-
 from varalign.align_variants import main
 from varalign.config import defaults as mock_defaults
 
 root = os.path.abspath(os.path.dirname(__file__))
 mock_defaults.gnomad = "{}/data/sample_swissprot_PF00001.18_full.vcf.gz".format(root)
+
+# TODO: pandas.api.testing have some useful functions that could be applied here.
 
 
 @mock.patch("varalign.config.defaults", mock_defaults)
@@ -63,6 +66,7 @@ class TestAlign_Variants(TestCase):
         comparison = filecmp.cmpfiles(standard_path, TestAlign_Variants.test_dir, output_files)
 
         self.output_files = output_files
+        self.standard_path = standard_path
         self.comparison = comparison
 
     @classmethod
@@ -81,6 +85,26 @@ class TestAlign_Variants(TestCase):
         cmpfiles_mismatch = [f for f in self.comparison[1] if not f.endswith('.pdf')]  # Exclude pdf
         message = 'The following file(s) do not match their standards: {}'.format(cmpfiles_mismatch)
         self.assertFalse(cmpfiles_mismatch, message)
+
+    def test_numeric_output_is_consistent(self):
+        # Read standard and test CSV files
+        csv_files = [f for f in self.output_files if f.endswith('.csv')]
+        test_tables = [pd.read_csv(os.path.join(TestAlign_Variants.test_dir, f)) for f in csv_files]
+        standard_tables = [pd.read_csv(os.path.join(self.standard_path, f)) for f in csv_files]
+        # Check each numeric data column is consistent
+        mismatches = []
+        for test, standard in zip(test_tables, standard_tables):
+            for column in standard:
+                # bool dtypes are numeric according to Pandas, bug?
+                if is_numeric_dtype(standard[column]) and not is_bool_dtype(standard[column]):
+                    error = test[column] - standard[column]
+                    if any(error**2 > 0):
+                        rmse = ((error**2).mean())**.5
+                        mismatches.append('{} ({})'.format(column, rmse))
+
+        message = 'The following column(s) do not match their standards. Format: column (rmse).: {}'.format(mismatches)
+        self.assertFalse(mismatches, message)
+
 
     @expectedFailure
     def test_pdf_output_is_consistent(self):
