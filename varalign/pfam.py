@@ -8,6 +8,36 @@ from Bio import AlignIO
 from Bio.Align import MultipleSeqAlignment
 
 
+def _mask_alignment(aln, column_indexes):
+    """Return specified columns of an alignment.
+
+    :param aln:
+    :param column_indexes:
+    :return:
+    """
+    # Convert to ranges
+    # Inspired by:
+    # https://stackoverflow.com/questions/3429510/pythonic-way-to-convert-a-list-of-integers-into-a-string-of-comma-separated-range/3430231#3430231
+    G = (list(x) for _, x in groupby(column_indexes, lambda x, c=count(): next(c) - x))
+    mask_ranges = [(g[0], g[-1])[:len(g)] for g in G]
+    mask_ranges = [x if len(x) == 2 else x * 2 for x in mask_ranges]
+    # Build list of continuous occupied sub-alignments
+    MSA_columns = []
+    for start, end in mask_ranges:
+        MSA_columns.append(aln[:, start:end + 1])
+
+    # Concatenate sub-alignments
+    masked_alignment = aln[:, 0:0]
+    for x in MSA_columns:
+        masked_alignment = masked_alignment + x
+    # NB. `reduce` could be faster...
+    # Add sequence annotations to new alignment
+    for new, old in zip(masked_alignment, aln):
+        new.annotations = old.annotations
+
+    return masked_alignment
+
+
 def index_pfam(pfam_path):
     """
     Write an index containing the start positions of the alignments in a Pfam file.
@@ -119,36 +149,6 @@ def filter_non_swissprot(aln, swissprot_id_file):
     degapped_alignment = _mask_alignment(filtered_alignment, occupied_cols)
 
     return degapped_alignment
-
-
-def _mask_alignment(aln, column_indexes):
-    """Return specified columns of an alignment.
-    
-    :param aln: 
-    :param column_indexes: 
-    :return: 
-    """
-    # Convert to ranges
-    # Inspired by:
-    # https://stackoverflow.com/questions/3429510/pythonic-way-to-convert-a-list-of-integers-into-a-string-of-comma-separated-range/3430231#3430231
-    G = (list(x) for _, x in groupby(column_indexes, lambda x, c=count(): next(c) - x))
-    mask_ranges = [(g[0], g[-1])[:len(g)] for g in G]
-    mask_ranges = [x if len(x) == 2 else x * 2 for x in mask_ranges]
-    # Build list of continuous occupied sub-alignments
-    MSA_columns = []
-    for start, end in mask_ranges:
-        MSA_columns.append(aln[:, start:end + 1])
-
-    # Concatenate sub-alignments
-    masked_alignment = aln[:, 0:0]
-    for x in MSA_columns:
-        masked_alignment = masked_alignment + x
-    # NB. `reduce` could be faster...
-    # Add sequence annotations to new alignment
-    for new, old in zip(masked_alignment, aln):
-        new.annotations = old.annotations
-
-    return masked_alignment
 
 
 if __name__ == '__main__':
