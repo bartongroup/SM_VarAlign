@@ -39,6 +39,7 @@ def _format_structure_data(pdb):
         log.error('{} failed with OSError'.format(pdb))
         return None
     except ValueError as e:
+        # TODO: This error can be caused by ProIntVar trying to parse empty special contacts from arpeggio
         log.error('{} failed with ValueError'.format(pdb))
         return None
     # Merge tables
