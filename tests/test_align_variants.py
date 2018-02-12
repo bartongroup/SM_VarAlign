@@ -98,6 +98,7 @@ class TestAlign_Variants(TestCase):
                 # bool dtypes are numeric according to Pandas, bug?
                 if is_numeric_dtype(standard[column]) and not is_bool_dtype(standard[column]):
                     error = test[column] - standard[column]
+                    # TODO: In some cases, relative error could be useful
                     if any(error**2 > 0):
                         rmse = ((error**2).mean())**.5
                         mismatches.append('{} ({})'.format(column, rmse))
