@@ -23,7 +23,7 @@ setup(
     # data_files=[('config', ['varalign/config.txt'])],
     package_data={'varalign': ['config.txt']},
     include_package_data=True,
-    scripts=['bin/filter_swiss', 'bin/varalign'],
+    scripts=['bin/filter_swiss', 'bin/varalign', 'bin/index_pfam'],
     install_requires=DEPENDENCIES,
     url='https://github.com/stuartmac/VarAlign/',
     license=__license__,
