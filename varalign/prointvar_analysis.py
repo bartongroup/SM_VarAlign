@@ -407,10 +407,11 @@ def main(path_to_alignment, override, only_sifts_best, max_pdbs, n_proc):
         log.info('Reading {}...'.format(data_prefix + '_prointvar_structure_table.p.gz'))
         structure_table = pd.read_pickle(data_prefix + '_prointvar_structure_table.p.gz')
         log.info('Loaded {} atom-atom records from file.'.format(len(structure_table)))
-    # Log head of table
-    table_head = structure_table.head().to_string()
-    table_head = '### '.join(('\n' + table_head).splitlines(keepends=True))[1:]  # Prepend "### "
-    log.info('Alignment contacts table head:\n%s', table_head)
+    # TODO: Find a way to neatly log tables
+    # # Log head of table
+    # table_head = structure_table.head().to_string()
+    # table_head = '### '.join(('\n' + table_head).splitlines(keepends=True))[1:]  # Prepend "### "
+    # log.info('Alignment contacts table head:\n%s', table_head)
     # Basic statistics: N mapped PDBs, sequences and residues
     # NB. some PDBs map to multiple sequences (e.g. heterodimers in LBD)
     seq_pdb_map = structure_table[['UniProt_dbAccessionId_A', 'SOURCE_ID_A', 'PDB_dbAccessionId_A']].drop_duplicates()
