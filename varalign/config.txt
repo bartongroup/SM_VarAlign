@@ -33,6 +33,7 @@ sifts_extension = .xml.gz
 validation_extension = _validation.xml
 
 [Gnomad]
+# TODO: Having a default here results in an error on different systems without appropriate advice
 #gnomad = /Volumes/smacgowan/NOBACK/resources/gnomad/gnomad.exomes.r2.0.1.sites.vcf.gz
 #gnomad = /Users/smacgowan/Datasets/multisample_genotypes.recal_snp.vep.vcf.gz
 gnomad = /Users/smacgowan/Datasets/gnomad_data/exomes/gnomad.exomes.r2.0.2.sites.vcf.bgz

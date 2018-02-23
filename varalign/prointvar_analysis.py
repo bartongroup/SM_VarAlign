@@ -15,7 +15,7 @@ import numpy as np
 import pandas as pd
 import tqdm
 from matplotlib.backends.backend_pdf import PdfPages
-from prointvar import merger
+from prointvar import merger  # TODO: Document that requires my patched version.
 
 from varalign import prointvar_stats
 from varalign import cli
@@ -361,6 +361,7 @@ def main(path_to_alignment, override, only_sifts_best, max_pdbs, n_proc):
         # TODO: log some download statuses
 
         # Process all downloaded structural data with ProIntVar
+        # FIXME: Not applied if data is reloaded!
         if only_sifts_best:
             to_load = downloaded.query('sifts_index == 1')['pdb_id'].dropna().unique()
         elif max_pdbs:
