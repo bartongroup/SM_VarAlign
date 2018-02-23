@@ -189,8 +189,10 @@ def _classify_contacts(prointvar_table, residue=True, protein=True, polymer=True
     # ATOM_B classification
     if residue:
         residue = _new_series('interaction_type')
-        residue[_query_mask('group_PDB_B == "HETATM" & ATOM_B != "HOH"')] = 'Protein-Ligand'  # TODO: Picks up modified residues, e.g. MSE
-        residue[_query_mask('group_PDB_B == "HETATM" & ATOM_B == "HOH"')] = 'Protein-Water'
+        # TODO: Is label_comp_id_B the best field?
+        # I could also use auth_comp_id_B. I think I should be able to use PDB_dbResName_B but this is nan for waters...
+        residue[_query_mask('group_PDB_B == "HETATM" & label_comp_id_B != "HOH"')] = 'Protein-Ligand'  # TODO: Picks up modified residues, e.g. MSE
+        residue[_query_mask('group_PDB_B == "HETATM" & label_comp_id_B == "HOH"')] = 'Protein-Water'
         residue[_query_mask('group_PDB_A == "ATOM" & group_PDB_B == "ATOM"')] = 'Protein-Protein'  # TODO: Would Residue-Residue be better?
     else:
         residue = None
