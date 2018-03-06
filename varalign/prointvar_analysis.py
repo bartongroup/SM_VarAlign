@@ -27,6 +27,7 @@ log.setLevel('INFO')
 
 def _format_structure_data(pdb):
     # Read structure data
+    log.info('Generating ProIntVar tables for pdb ID: {}'.format(pdb))  # FIXME: interferes with tqdm progress...
     try:
         pdbx, dssp, sifts, contacts = merger.table_generator(pdb_id=pdb, bio=False, contacts=True,
                                                              override=False, residue_agg=True, dssp=False)
@@ -43,6 +44,7 @@ def _format_structure_data(pdb):
         log.error('{} failed with ValueError'.format(pdb))
         return None
     # Merge tables
+    log.info('Merging ProIntVar sub-tables...')
     table = merger.TableMerger(pdbx_table=pdbx, sifts_table=sifts,
                                contacts_table=contacts, dssp_table=dssp).merge()
     return table
