@@ -19,6 +19,10 @@ class Reader(vcf.Reader):
     def __init__(self, *args, **kwargs):
         super(Reader, self).__init__(*args, **kwargs)
 
+        # Override default ascii encoding for better compatibility
+        if 'encoding' not in kwargs.keys():
+            self.encoding = 'utf_8'
+
         # Log some key metadata
         log.info('Loading %s...', self.filename)
         log.info('File format: {}'.format(self.metadata.get('fileformat')))
