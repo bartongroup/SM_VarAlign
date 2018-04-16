@@ -58,7 +58,7 @@ class Reader(vcf.Reader):
         # Parse FORMAT header
         format_header = pd.DataFrame([v for k, v in list(self.formats.items())], dtype='str')
         try:
-        log.info('FORMAT fields: {}'.format(str(list(format_header.id))))
+            log.info('FORMAT fields: {}'.format(str(list(format_header.id))))
         except AttributeError:
             log.info('No FORMAT header.')
         self.format_header = format_header
@@ -66,7 +66,7 @@ class Reader(vcf.Reader):
         # Parse FILTER header
         filter_header = pd.DataFrame([v for k, v in list(self.filters.items())], dtype='str')
         try:
-        log.info('FILTER flags: {}'.format(str(list(filter_header.id))))
+            log.info('FILTER flags: {}'.format(str(list(filter_header.id))))
         except AttributeError:
             log.info('No FILTER header.')
         self.filter_header = filter_header
