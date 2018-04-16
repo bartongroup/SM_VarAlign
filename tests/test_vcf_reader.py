@@ -32,3 +32,15 @@ class TestVCFReader(TestCase):
         parser = gnomad.Reader(filename=os.path.join(os.path.dirname(__file__), 'data', 'sample_clinvar_vep.vcf.gz'),
                                encoding='ascii')
         self.assertEqual(parser.encoding, 'ascii')
+
+    def test_clinvar_parsing_completes(self):
+        """Ensure `gnomad.Reader.vcf_row_to_table` doesn't raise ValueError parsing ClinVar records.
+
+         For example, due to absence of allele specific INFO fields (see issue #2).
+         """
+        parser = gnomad.Reader(filename=os.path.join(os.path.dirname(__file__), 'data', 'sample_clinvar_vep.vcf.gz'))
+        variants = [r for r in parser.fetch('1')]
+        try:
+            parser.vcf_row_to_table(variants)
+        except ValueError:
+            self.fail('`gnomad.Reader.vcf_row_to_table` raised ValueError for ClinVar VCF.')

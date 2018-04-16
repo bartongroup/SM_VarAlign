@@ -220,16 +220,26 @@ class Reader(vcf.Reader):
         site_info.index.name = 'SITE'
         # Split allele INFO fields
         tables = []
-        for site_num, variant in enumerate(variants):
-            info_dict = variant.INFO
-            allele_info_records = {k: info_dict[k] for k in self.info_allele_fields if k in info_dict}
-            fields, both_allele_values = list(zip(*list(allele_info_records.items())))
-            for allele_num, single_allele_values in enumerate(zip(*both_allele_values)):
-                allele_entry = dict(list(zip(fields, single_allele_values)))
-                allele_entry['ALLELE_NUM'] = allele_num
-                allele_entry['SITE'] = site_num
-                tables.append(allele_entry)
-        split_allele_info = pd.DataFrame(tables).set_index(['SITE', 'ALLELE_NUM'])
+        if self.info_allele_fields:
+            for site_num, variant in enumerate(variants):
+                info_dict = variant.INFO
+                # FIXME: Need to handle absence of these types of fields
+                allele_info_records = {k: info_dict[k] for k in self.info_allele_fields if k in info_dict}
+                fields, both_allele_values = list(zip(*list(allele_info_records.items())))
+                for allele_num, single_allele_values in enumerate(zip(*both_allele_values)):
+                    allele_entry = dict(list(zip(fields, single_allele_values)))
+                    allele_entry['ALLELE_NUM'] = allele_num
+                    allele_entry['SITE'] = site_num
+                    tables.append(allele_entry)
+            split_allele_info = pd.DataFrame(tables).set_index(['SITE', 'ALLELE_NUM'])
+            split_allele_info.columns = pd.MultiIndex.from_tuples([('Allele_INFO', x)
+                                                                   for x in split_allele_info.columns],
+                                                                  names=['Type', 'Field'])
+        else:
+            split_allele_info = pd.DataFrame()
+        # Unbound info
+        if include_unbound_info:
+            pass
 
         # Create MultiIndex for sub-table columns
         row_record.columns = pd.MultiIndex.from_tuples([('Row', x) for x in row_record.columns],
@@ -238,8 +248,6 @@ class Reader(vcf.Reader):
                                                       names=['Type', 'Field'])
         site_info.columns = pd.MultiIndex.from_tuples([('Site_INFO', x) for x in site_info.columns],
                                                       names=['Type', 'Field'])
-        split_allele_info.columns = pd.MultiIndex.from_tuples([('Allele_INFO', x) for x in split_allele_info.columns],
-                                                              names=['Type', 'Field'])
 
         # Merge all the sub-tables
         log.info('Joining sub-tables...')
@@ -248,7 +256,8 @@ class Reader(vcf.Reader):
         if source_ids:
             merged_variant_table = merged_variant_table.join(source_id_series)
         # 2. Merged at allele level
-        merged_variant_table = merged_variant_table.join(split_allele_info)
+        if not split_allele_info.empty:
+            merged_variant_table = merged_variant_table.join(split_allele_info)
         merged_variant_table = merged_variant_table.join(vep_table)
         # 3. Add Feature [and source_ids] to index
         log.info('Formatting result...')
