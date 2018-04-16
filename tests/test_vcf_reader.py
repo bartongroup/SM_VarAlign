@@ -44,3 +44,10 @@ class TestVCFReader(TestCase):
             parser.vcf_row_to_table(variants)
         except ValueError:
             self.fail('`gnomad.Reader.vcf_row_to_table` raised ValueError for ClinVar VCF.')
+
+    def test_clinvar_table_include_clnsig(self):
+        """Ensure CLNSIG field is parsed by `Reader.vcf_row_to_table`."""
+        parser = gnomad.Reader(filename=os.path.join(os.path.dirname(__file__), 'data', 'sample_clinvar_vep.vcf.gz'))
+        variants = [r for r in parser.fetch('1')]
+        table = parser.vcf_row_to_table(variants, include_other_info=True)
+        self.assertTrue('CLNSIG' in table['Other_INFO'].columns)

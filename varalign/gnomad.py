@@ -35,18 +35,29 @@ class Reader(vcf.Reader):
 
         # Parse INFO header
         info_header = pd.DataFrame([v for k, v in list(self.infos.items())], dtype='str')
+        # PyVCF parses the VCF codes to int or None as follows:
+        # field_counts = {
+        #     '.': None,  # Unknown number of values
+        #     'A': -1,  # Equal to the number of alternate alleles in a given record
+        #     'G': -2,  # Equal to the number of genotypes in a given record
+        #     'R': -3,  # Equal to the number of alleles including reference in a given record
+        # }
         info_flag_num = 0
         info_value_num = 1
         info_allele_num = -1
         info_flag_fields = info_header.query('num == @info_flag_num').id.tolist()
         info_value_fields = info_header.query('num == @info_value_num').id.tolist()
         info_allele_fields = info_header.query('num == @info_allele_num').id.tolist()
+        info_other_fields = set(info_header[info_header['num'].isnull()].id)
+        info_other_fields.discard('CSQ')
         log.info('INFO flags: {}'.format(str(info_flag_fields)))
         log.info('INFO value: {}'.format(str(info_value_fields)))
         log.info('INFO per allele: {}'.format(str(info_allele_fields)))
+        log.info('Other INFO fields: {}'.format(str(info_other_fields)))
         self.info_flag_fields = info_flag_fields
         self.info_value_fields = info_value_fields
         self.info_allele_fields = info_allele_fields
+        self.info_other_fields = info_other_fields
 
         # Annotations that need special handling during variant allele expansion
         standard_num_values = [info_flag_num, info_value_num, info_allele_num]
@@ -178,7 +189,7 @@ class Reader(vcf.Reader):
 
         return allelic_records
 
-    def vcf_row_to_table(self, variants, source_ids=None):
+    def vcf_row_to_table(self, variants, source_ids=None, include_other_info=False):
         """
         Parse PyVCF Variant to a DataFrame.
 
@@ -238,8 +249,16 @@ class Reader(vcf.Reader):
         else:
             split_allele_info = pd.DataFrame()
         # Unbound info
-        if include_unbound_info:
-            pass
+        if include_other_info and self.info_other_fields:
+            log.info('Processing "Other" INFO fields...')
+            other_info = self.tabulate_variant_info(variants, split=False)
+            available_info_other_fields = [x for x in self.info_other_fields if x in other_info.columns]
+            other_info = other_info[available_info_other_fields]
+            other_info.index.name = 'SITE'
+            other_info.columns = pd.MultiIndex.from_tuples([('Other_INFO', x) for x in other_info.columns],
+                                                           names=['Type', 'Field'])
+        else:
+            other_info = pd.DataFrame()
 
         # Create MultiIndex for sub-table columns
         row_record.columns = pd.MultiIndex.from_tuples([('Row', x) for x in row_record.columns],
@@ -255,6 +274,8 @@ class Reader(vcf.Reader):
         merged_variant_table = row_record.join(site_info)
         if source_ids:
             merged_variant_table = merged_variant_table.join(source_id_series)
+        if not other_info.empty:
+            merged_variant_table = merged_variant_table.join(other_info)
         # 2. Merged at allele level
         if not split_allele_info.empty:
             merged_variant_table = merged_variant_table.join(split_allele_info)
