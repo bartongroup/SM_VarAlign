@@ -30,6 +30,10 @@ class TestAlign_Variants(TestCase):
         os.makedirs(test_dir)
         os.chdir(test_dir)
 
+        # Copy cache to test execution dir
+        test_cache = os.path.join(os.path.dirname(__file__), 'data', 'prointvar.sqlite')
+        os.symlink(test_cache, os.path.join(test_dir, 'prointvar.sqlite'))
+
         # Execute pipeline
         test_alignment = os.path.join(os.path.dirname(__file__), 'data', 'sample_swissprot_PF00001.18_full.sto')
         main(path_to_alignment=test_alignment, max_gaussians=5, n_groups=1, override=True, species='HUMAN')
