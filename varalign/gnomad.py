@@ -296,10 +296,11 @@ class Reader(vcf.Reader):
 
         return merged_variant_table
 
-    def get_gnomad_variants(self, aln_info_table):
+    def get_gnomad_variants(self, aln_info_table, include_other_info=False):
         """
 
         :param aln_info_table:
+        :param include_other_info:
         :return:
         """
         # NB. gnomad fetcher is packed into a generator, which is extracted in the following list comp.
