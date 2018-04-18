@@ -265,10 +265,11 @@ def map_variants_to_alignment(variants_df, residue_column_map):
     return aligned_variants
 
 
-def align_variants(aln_info_table, species='HUMAN'):
+def align_variants(aln_info_table, species='HUMAN', path_to_vcf=defaults.gnomad):
     """
 
     :param species:
+    :param path_to_vcf:
     :return:
     """
 
@@ -279,8 +280,8 @@ def align_variants(aln_info_table, species='HUMAN'):
 
     # ----- Fetch variants for the mapped genomic ranges -----
     # Load the VCF with extended vcf.Reader
-    vcf_is_compressed = True if defaults.gnomad.endswith('bgz') else None  # pyvcf doesn't recognise .bgz
-    parser = gnomad.Reader(filename=defaults.gnomad, compressed=vcf_is_compressed)
+    vcf_is_compressed = True if path_to_vcf.endswith('bgz') else None  # pyvcf doesn't recognise .bgz
+    parser = gnomad.Reader(filename=path_to_vcf, compressed=vcf_is_compressed)
     variants_table = parser.get_gnomad_variants(aln_info_table)
 
     # ----- Add source UniProt identifiers to the table -----
