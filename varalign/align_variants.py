@@ -265,11 +265,12 @@ def map_variants_to_alignment(variants_df, residue_column_map):
     return aligned_variants
 
 
-def align_variants(aln_info_table, species='HUMAN', path_to_vcf=defaults.gnomad):
+def align_variants(aln_info_table, species='HUMAN', path_to_vcf=defaults.gnomad, include_other_info=False):
     """
 
     :param species:
     :param path_to_vcf:
+    :param include_other_info:
     :return:
     """
 
@@ -282,7 +283,7 @@ def align_variants(aln_info_table, species='HUMAN', path_to_vcf=defaults.gnomad)
     # Load the VCF with extended vcf.Reader
     vcf_is_compressed = True if path_to_vcf.endswith('bgz') else None  # pyvcf doesn't recognise .bgz
     parser = gnomad.Reader(filename=path_to_vcf, compressed=vcf_is_compressed)
-    variants_table = parser.get_gnomad_variants(aln_info_table)
+    variants_table = parser.get_gnomad_variants(aln_info_table, include_other_info=include_other_info)
 
     # ----- Add source UniProt identifiers to the table -----
     # Create UniProt ID series that shares an index with the variant table
