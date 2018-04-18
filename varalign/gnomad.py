@@ -312,7 +312,8 @@ class Reader(vcf.Reader):
 
         # pass VCF records and source_ids
         n = 1000  # chunking seems to interact with redundant rows... Fix by adding chunk ID with `keys`
-        variants_table = pd.concat([self.vcf_row_to_table(*list(zip(*all_variants[i:i + n])))
+        variants_table = pd.concat([self.vcf_row_to_table(*list(zip(*all_variants[i:i + n])),
+                                                          include_other_info=include_other_info)
                                     for i in tqdm.tqdm(range(0, len(all_variants), n), desc='Parsing variants...')],
                                    keys=list(range(0, len(all_variants), n)))
 
