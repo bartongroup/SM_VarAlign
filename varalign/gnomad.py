@@ -296,10 +296,11 @@ class Reader(vcf.Reader):
 
         return merged_variant_table
 
-    def get_gnomad_variants(self, aln_info_table):
+    def get_gnomad_variants(self, aln_info_table, include_other_info=False):
         """
 
         :param aln_info_table:
+        :param include_other_info:
         :return:
         """
         # NB. gnomad fetcher is packed into a generator, which is extracted in the following list comp.
@@ -311,7 +312,8 @@ class Reader(vcf.Reader):
 
         # pass VCF records and source_ids
         n = 1000  # chunking seems to interact with redundant rows... Fix by adding chunk ID with `keys`
-        variants_table = pd.concat([self.vcf_row_to_table(*list(zip(*all_variants[i:i + n])))
+        variants_table = pd.concat([self.vcf_row_to_table(*list(zip(*all_variants[i:i + n])),
+                                                          include_other_info=include_other_info)
                                     for i in tqdm.tqdm(range(0, len(all_variants), n), desc='Parsing variants...')],
                                    keys=list(range(0, len(all_variants), n)))
 
