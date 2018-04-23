@@ -16,5 +16,6 @@ class Test_filter_extra_domain_contacts(TestCase):
         table = pd.read_pickle(os.path.join(data_path, '4iqr_residue_B146_structure_table.p.gz'))
         info = pd.read_pickle(os.path.join(data_path, 'p41235_pf00104.29_alignment_info.p.gz'))
         filtered = _filter_extra_domain_contacts(table, info)
-        residues = filtered['label_comp_id_B'].str.cat(filtered['PDB_dbResNum_B'])  # ResName/ResNum format e.g. ASN144
-        self.assertIn('PHE286', residues)
+        # ResName/ResNum format e.g. ASN144
+        self.assertIn('PHE286', filtered['label_comp_id_B'].str.cat(filtered['PDB_dbResNum_B']).tolist())
+        self.assertIn('ALA278', filtered['label_comp_id_A'].str.cat(filtered['PDB_dbResNum_A']).tolist())
