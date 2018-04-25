@@ -51,3 +51,9 @@ class Test_alignment_contact_processing(TestCase):
         # NB. PHE286 is converted from ATOM_A to ATOM_B
         self.assertIn('PHE286', sorted_['label_comp_id_A'].str.cat(sorted_['PDB_dbResNum_A']).tolist())
         self.assertIn('ALA278', sorted_['label_comp_id_A'].str.cat(sorted_['PDB_dbResNum_A']).tolist())
+
+    def test_ab_sort_preserves_index(self):
+        """Test `_sort_ab_contacts` does not filter anything"""
+        mapped = prointvar_analysis._merge_alignment_columns_to_contacts(self.mappings, self.table)
+        sorted_ = prointvar_analysis._sort_ab_contacts(mapped)  # sort (under test)
+        self.assertListEqual(sorted_.index.tolist(), mapped.index.tolist())
