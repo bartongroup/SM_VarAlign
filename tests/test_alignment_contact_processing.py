@@ -57,3 +57,8 @@ class Test_alignment_contact_processing(TestCase):
         mapped = prointvar_analysis._merge_alignment_columns_to_contacts(self.mappings, self.table)
         sorted_ = prointvar_analysis._sort_ab_contacts(mapped)  # sort (under test)
         self.assertListEqual(sorted_.index.tolist(), mapped.index.tolist())
+
+    def test_alignment_column_merge_preserves_index(self):
+        """Test `_merge_alignment_columns_to_contacts` does not filter anything"""
+        mapped = prointvar_analysis._merge_alignment_columns_to_contacts(self.mappings, self.table)
+        self.assertListEqual(mapped.index.tolist(), self.table.index.tolist())
