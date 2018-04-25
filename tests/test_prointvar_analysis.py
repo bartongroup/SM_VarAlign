@@ -52,6 +52,19 @@ class TestProintvarAnalysis(TestCase):
         os.chdir(TestProintvarAnalysis.start_dir)
         shutil.rmtree(TestProintvarAnalysis.test_dir)
 
+    def updateReferenceData(self):
+        """Update the reference data used for testing."""
+        # Generate new data
+        self.setUpClass()
+        self.setUp()
+
+        # Delete old, copy new
+        shutil.rmtree(self.standard_path)
+        shutil.copytree(self.test_dir, self.standard_path)
+
+        # Clean up
+        self.tearDownClass()
+
     def test_expected_output_exists(self):
         cmpfiles_errors = self.comparison[2]
         message = 'The following file(s) appear to be missing: {}.'.format(cmpfiles_errors)
