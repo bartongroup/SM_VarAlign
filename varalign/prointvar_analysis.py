@@ -118,7 +118,8 @@ def _sort_ab_contacts(aligned_contacts_table):
     aligned_contacts_table = pd.concat(
         [aligned_contacts_table.query('Alignment_column_A <= Alignment_column_B'),
          aligned_contacts_table.query('Alignment_column_A > Alignment_column_B').rename(columns=rename_dict),
-         aligned_contacts_table.query('Alignment_column_B != Alignment_column_B')  # NaN fields, value != value
+         aligned_contacts_table.query('Alignment_column_B != Alignment_column_B'),  # NaN fields, value != value
+         aligned_contacts_table.query('Alignment_column_A != Alignment_column_A').rename(columns=rename_dict)
          ]
     )
     return aligned_contacts_table
