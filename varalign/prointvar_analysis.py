@@ -85,7 +85,7 @@ def _merge_alignment_columns_to_contacts(alignment_mappings, contacts_table):
     # Map ATOM_A contacts to alignment
     contacts_table = pd.merge(alignment_mappings, contacts_table,
                               right_on=['UniProt_dbAccessionId_A', 'UniProt_dbResNum_A'],
-                              left_index=True, how='inner')
+                              left_index=True, how='right')
     log.info('{} atom-atom records after adding ATOM_A alignment columns.'.format(len(contacts_table)))
     # Map ATOM_B contacts to alignment
     alignment_mappings.index.rename(['UniProt_dbAccessionId_B', 'UniProt_dbResNum_B'], inplace=True)
@@ -118,9 +118,12 @@ def _sort_ab_contacts(aligned_contacts_table):
     aligned_contacts_table = pd.concat(
         [aligned_contacts_table.query('Alignment_column_A <= Alignment_column_B'),
          aligned_contacts_table.query('Alignment_column_A > Alignment_column_B').rename(columns=rename_dict),
-         aligned_contacts_table.query('Alignment_column_B != Alignment_column_B')  # NaN fields, value != value
+         aligned_contacts_table.query('Alignment_column_B != Alignment_column_B'),  # NaN fields, value != value
+         aligned_contacts_table.query('Alignment_column_A != Alignment_column_A').rename(columns=rename_dict)
          ]
     )
+    # Handle duplication of entries where Alignment_column_A and _B are noth Nan
+    aligned_contacts_table = aligned_contacts_table[~aligned_contacts_table.index.duplicated()]
     return aligned_contacts_table
 
 
