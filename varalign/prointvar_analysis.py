@@ -73,6 +73,7 @@ def _format_mapping_table(alignment_info_table, alignment_mapping_table):
     aln_uniprot_ids = alignment_info_table.set_index('seq_id').loc[:, 'uniprot_id']
     aln_uniprot_ids.index.name = 'SOURCE_ID'
     mapping_table = alignment_mapping_table.join(aln_uniprot_ids)
+    # TODO: Are these inplace mods ok?
     mapping_table.reset_index(inplace=True)
     mapping_table.loc[:, 'Protein_position'] = mapping_table.loc[:, 'Protein_position'].astype(str)
     mapping_table.set_index(['uniprot_id', 'Protein_position'], inplace=True)
@@ -83,11 +84,13 @@ def _format_mapping_table(alignment_info_table, alignment_mapping_table):
 
 def _merge_alignment_columns_to_contacts(alignment_mappings, contacts_table):
     # Map ATOM_A contacts to alignment
+    # TODO: either need 2 right merges sequentially or 2 left seperately and a final merge...
     contacts_table = pd.merge(alignment_mappings, contacts_table,
                               right_on=['UniProt_dbAccessionId_A', 'UniProt_dbResNum_A'],
                               left_index=True, how='right')
     log.info('{} atom-atom records after adding ATOM_A alignment columns.'.format(len(contacts_table)))
     # Map ATOM_B contacts to alignment
+    # FIXME: inplace modification is dangerous, e.g. this function would fail on second run...
     alignment_mappings.index.rename(['UniProt_dbAccessionId_B', 'UniProt_dbResNum_B'], inplace=True)
     contacts_table = pd.merge(alignment_mappings, contacts_table,
                               right_on=['UniProt_dbAccessionId_B', 'UniProt_dbResNum_B'],
@@ -172,6 +175,7 @@ def _filter_extra_domain_contacts(prointvar_table, alignment_info):
                                                                   alignment_info=alignment_info,
                                                                   ResNum_field='UniProt_dbResNum_B')
          ])
+    # Handle duplication of intradomain (self) interactions
     prointvar_table = prointvar_table[~prointvar_table.index.duplicated()]
     log.info('{} atom-atom records remain with >=1 residue in alignment sequence.'.format(len(prointvar_table)))
     return prointvar_table

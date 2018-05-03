@@ -14,6 +14,10 @@ log = logging.getLogger(__name__)
 class Reader(vcf.Reader):
     """
     Extension of PyVCF vcf.Reader class that parses VCF data to a Pandas DataFrame.
+
+    VCF compatibility requirements:
+        - VEP annotated
+        - VEP ALLELE_NUM annotation
     """
 
     def __init__(self, *args, **kwargs):
