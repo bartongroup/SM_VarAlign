@@ -18,7 +18,7 @@ $ git clone https://github.com/stuartmac/VarAlign.git
 # Set up conda environment with all requirements
 $ cd VarAlign
 $ conda env create -f environment.yml
-$ source activate varalign-env
+$ source activate varalign-env-py3
 
 # Install VarAlign
 $ pip install .
