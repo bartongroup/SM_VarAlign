@@ -9,7 +9,7 @@ from varalign import aacon
 class TestGet_aacon(TestCase):
     def test_aacon(self):
         # Reformat the test alignment
-        alignment_path = os.path.join(os.path.dirname(__file__), 'data', 'issues', '006', 'peptide_fJ_with_ACCs.sto')
+        alignment_path = os.path.join(os.path.dirname(__file__), 'issues', '006', 'peptide_fJ_with_ACCs.sto')
         alignment = AlignIO.read(alignment_path, 'stockholm')
         reformatted, _ = aacon._reformat_alignment_for_aacon(alignment)
 
