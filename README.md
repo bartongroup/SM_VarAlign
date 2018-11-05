@@ -49,6 +49,9 @@ Install and configure ProIntVar. (NB. ProIntVar requires Python 3.)
 $ source activate varalign-env-py3
 $ git clone https://github.com/bartongroup/ProIntVar-Core.git
 $ cd ProIntVar-Core
+
+# Patch ProIntVar and install
+$ git apply /path/to/VarAlign/ProIntVar.patch
 $ pip install .
 
 # Configure ProIntVar
