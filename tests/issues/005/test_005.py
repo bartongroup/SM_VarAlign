@@ -23,11 +23,13 @@ class MyTestCase(unittest.TestCase):
         shutil.rmtree(os.path.join('.varalign', 'aligned_variants_data'), ignore_errors=True)
         os.chdir(cls.original_dir)
 
-
     def test_something(self):
         test_alignment = os.path.join(os.path.dirname(__file__), 'ttc6_sub.sto')
-        varalign.align_variants.main(path_to_alignment=test_alignment, max_gaussians=5, n_groups=1, override=True, species='HUMAN')
-        self.assertEqual(True, False)
+        try:
+            varalign.align_variants.main(path_to_alignment=test_alignment, max_gaussians=5, n_groups=1, override=True,
+                                         species='HUMAN')
+        except ValueError:
+            self.fail('align_variants.main failed with value error.')
 
 
 if __name__ == '__main__':

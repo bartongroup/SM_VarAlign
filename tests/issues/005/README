@@ -2,7 +2,8 @@ This example was discovered after running `varalign` on the SMART TPR alignment 
 sequences did not have any variants mapped despite manual inspection of gnomAD indicating that variants were present
 in those sequences. The sequences in this alignment were one set of these sequences.
 
-The included VCF file was obtained by an initial run of `varalign`. This VCF was then processed as follows:
+The included VCF file was obtained by an initial run of `varalign` with variant filters relaxed. This VCF was then
+processed as follows:
 
 # cp results/alignment_variants.vcf ttc6_sub.sto_variants.vcf
 # bcftools sort ttc6_sub.sto_variants.vcf > ttc6_sub.sto_variants_sorted.vcf
