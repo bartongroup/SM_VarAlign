@@ -8,7 +8,6 @@ import requests_cache
 from varalign.config import defaults
 
 default_server = defaults.api_ensembl
-requests_cache.install_cache(os.path.join('.varalign', 'ensembl_cache'))
 
 # Globals for rate-limiting
 reqs_per_sec = 15
@@ -59,7 +58,9 @@ def get_xrefs(query_id, species='homo_sapiens', features=('gene', 'transcript', 
 
     endpoint = "/xrefs/symbol"
     ext = '/'.join([endpoint, species, query_id]) + "?"
-    r = requests.get(server+ext, headers={"Content-Type": "application/json"})
+
+    with requests_cache.CachedSession(os.path.join('.varalign', 'ensembl_cache')) as s:
+        r = s.get(server+ext, headers={"Content-Type": "application/json"})
 
     if not r.ok:
         r.raise_for_status()
@@ -78,7 +79,9 @@ def get_genomic_range(query_id, server=default_server):
 
     endpoint = '/lookup/id'
     ext = '/'.join([endpoint, query_id]) + "?"
-    r = requests.get(server+ext, headers={"Content-Type": "application/json"})
+
+    with requests_cache.CachedSession(os.path.join('.varalign', 'ensembl_cache')) as s:
+        r = s.get(server+ext, headers={"Content-Type": "application/json"})
 
     if not r.ok:
         r.raise_for_status()
