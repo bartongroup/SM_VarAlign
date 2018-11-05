@@ -1,9 +1,12 @@
 import filecmp
 import os
 import shutil
+
 from unittest import TestCase, expectedFailure
 
 import pandas as pd
+
+from Bio import AlignIO
 from pandas.api.types import is_bool_dtype, is_numeric_dtype
 
 from varalign.six import add_move, MovedModule; add_move(MovedModule('mock', 'mock', 'unittest.mock'))
@@ -41,6 +44,7 @@ class TestAlign_Variants(TestCase):
 
         cls.start_dir = start_dir
         cls.test_dir = test_dir
+        cls.test_alignment = test_alignment
 
     def setUp(self):
         """Set up test environment"""
@@ -111,9 +115,34 @@ class TestAlign_Variants(TestCase):
         message = 'The following column(s) do not match their standards. Format: column (rmse).: {}'.format(mismatches)
         self.assertFalse(mismatches, message)
 
-
     @expectedFailure
     def test_pdf_output_is_consistent(self):
         cmpfiles_mismatch = [f for f in self.comparison[1] if f.endswith('.pdf')]  # PDF only
         message = 'The following file(s) do not match their standards: {}'.format(cmpfiles_mismatch)
         self.assertFalse(cmpfiles_mismatch, message)
+
+    def test_mapped_variant_ref_matches_residue(self):
+        """Check the ref residues in VEP/Amino_acids match the residues in the mapped sequence."""
+        # Need the variant table and the alignment
+        aligned_variants = pd.read_pickle(os.path.join(TestAlign_Variants.test_dir, '.varalign',
+                                          'aligned_variants_data', 'sample_swissprot_PF00001.18_full.sto_variants.p.gz')
+                                          )
+        alignment = AlignIO.read(TestAlign_Variants.test_alignment, 'stockholm')
+
+        # Compare ref residues in VEP/Amino_acids to the alignment
+        sequence_lookup = [s.id for s in alignment]
+        all_match = []
+        for sn, sid in enumerate(sequence_lookup):
+            try:
+                # Parse reference residues
+                variant_refs = aligned_variants.loc[sid, ('VEP', 'Amino_acids')].str.split('/').str[0].dropna()
+            except KeyError:
+                continue
+            # Parse alignment sequence
+            sequence = str(alignment[sn].seq).replace('-', '')
+            offset = alignment[sn].annotations['start']
+            comparisons = [sequence[position - offset].upper() == residue
+                           for position, residue in variant_refs.iteritems()]  # iterate over residue number, aa pairs
+            all_match.append(all(comparisons))
+
+        self.assertTrue(all(all_match), "Variant record reference residues (from VEP) don't match sequence.")
