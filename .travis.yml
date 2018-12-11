@@ -49,7 +49,7 @@ install:
   # Install ProIntVar (https://github.com/bartongroup/ProIntVar)
   - cd $HOME
   - source activate varalign-env-py3
-  - git clone https://github.com/bartongroup/ProIntVar.git
+  - git clone git@github.com:bartongroup/ProIntVar.git
   - cd ProIntVar
   # Patch ProIntVar and install
   - git apply ${TRAVIS_BUILD_DIR}/ProIntVar.patch
