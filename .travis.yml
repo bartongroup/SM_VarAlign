@@ -26,6 +26,8 @@ install:
 
   # Set up conda environment with all requirements
   - cd $TRAVIS_BUILD_DIR
+  - conda config --add channels conda-forge
+  - conda config --add channels bioconda
   - conda env create -f environment.yml
   - source activate varalign-env-py3
   # Install VarAlign
@@ -41,16 +43,16 @@ install:
   - cd arpeggio
   - python arpeggio.py -h
   # Store Arpeggio paths for ProIntVar config
-  - ARPEGGIO_PATH=$(readlink -f arpeggio.py)
-  - ARPEGGIO_PYTHON=$(which python)
-  - ARPEGGIO_PYTHON_PATH=$(python -c 'import sys; print sys.path[-2]')
+  - export ARPEGGIO_PATH=$(readlink -f arpeggio.py)
+  - export ARPEGGIO_PYTHON=$(which python)
+  - export ARPEGGIO_PYTHON_PATH=$(python -c 'import sys; print sys.path[-2]')
   # Install ProIntVar (https://github.com/bartongroup/ProIntVar)
   - cd $HOME
   - source activate varalign-env-py3
-  - git clone https://github.com/bartongroup/ProIntVar-Core.git
-  - cd ProIntVar-Core
+  - git clone https://github.com/bartongroup/ProIntVar.git
+  - cd ProIntVar
   # Patch ProIntVar and install
-  - git apply /path/to/VarAlign/ProIntVar.patch
+  - git apply ${TRAVIS_BUILD_DIR}/ProIntVar.patch
   - pip install .
   # Configure ProIntVar
   - ProIntVar-Core-config-setup prointvar_config.ini
