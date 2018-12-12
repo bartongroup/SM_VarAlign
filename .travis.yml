@@ -55,7 +55,7 @@ install:
   - git apply ${TRAVIS_BUILD_DIR}/ProIntVar.patch
   - pip install .
   # Configure ProIntVar
-  - ProIntVar-Core-config-setup prointvar_config.ini
+  - ProIntVar-config-setup prointvar_config.ini
   # *** Edit the following values in prointvar_config.ini ***
   # arpeggio_bin = /path/to/arpeggio/arpeggio.py
   # python_exe = /path/to/anaconda/envs/arpeggio/bin/python
@@ -63,7 +63,7 @@ install:
   - sed -i "s:/path/to/arpeggio/arpeggio.py:${ARPEGGIO_PATH}:" prointvar_config.ini
   - sed -i "s:/path/to/anaconda/envs/arpeggio/bin/python:${ARPEGGIO_PYTHON}:" prointvar_config.ini
   - sed -i "s:/path/to/anaconda/envs/arpeggio/python/lib/site-packages/:${ARPEGGIO_PYTHON_PATH}:" prointvar_config.ini
-  - ProIntVar-Core-config-load prointvar_config.ini
+  - ProIntVar-config-load --yes prointvar_config.ini
 
   # Return to build dir
   - cd $TRAVIS_BUILD_DIR
