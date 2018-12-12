@@ -46,6 +46,7 @@ install:
   - export ARPEGGIO_PATH=$(readlink -f arpeggio.py)
   - export ARPEGGIO_PYTHON=$(which python)
   - export ARPEGGIO_PYTHON_PATH=$(python -c 'import sys; print sys.path[-2]')
+  #- export ARPEGGIO_PYTHON_PATH=$(echo $PYTHONPATH)
   # Install ProIntVar (https://github.com/bartongroup/ProIntVar)
   - cd $HOME
   - source activate varalign-env-py3
@@ -61,8 +62,8 @@ install:
   # python_exe = /path/to/anaconda/envs/arpeggio/bin/python
   # python_path = /path/to/anaconda/envs/arpeggio/python/lib/site-packages/
   - sed -i "s:/path/to/arpeggio/arpeggio.py:${ARPEGGIO_PATH}:" prointvar_config.ini
-  - sed -i "s:/path/to/anaconda/envs/arpeggio/bin/python:${ARPEGGIO_PYTHON}:" prointvar_config.ini
-  - sed -i "s:/path/to/anaconda/envs/arpeggio/python/lib/site-packages/:${ARPEGGIO_PYTHON_PATH}:" prointvar_config.ini
+  - sed -i "s:/path/to/bin/python:${ARPEGGIO_PYTHON}:" prointvar_config.ini
+  - sed -i "s:/path/to/bin/python/lib/site-packages/:${ARPEGGIO_PYTHON_PATH}:" prointvar_config.ini
   - ProIntVar-config-load --yes prointvar_config.ini
 
   # Return to build dir
