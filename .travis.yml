@@ -61,9 +61,10 @@ install:
   # arpeggio_bin = /path/to/arpeggio/arpeggio.py
   # python_exe = /path/to/anaconda/envs/arpeggio/bin/python
   # python_path = /path/to/anaconda/envs/arpeggio/python/lib/site-packages/
-  - sed -i "s:/path/to/arpeggio/arpeggio.py:${ARPEGGIO_PATH}:" prointvar_config.ini
-  - sed -i "s:/path/to/bin/python:${ARPEGGIO_PYTHON}:" prointvar_config.ini
-  - sed -i "s:/path/to/bin/python/lib/site-packages/:${ARPEGGIO_PYTHON_PATH}:" prointvar_config.ini
+  - sed -i "s:arpeggio_bin = /path/to/arpeggio/arpeggio.py:arpeggio_bin = ${ARPEGGIO_PATH}:" prointvar_config.ini
+  - sed -i "s:python_exe = /path/to/bin/python:python_exe = ${ARPEGGIO_PYTHON}:" prointvar_config.ini
+  - sed -i "s:python_path = /path/to/bin/python/lib/site-packages/:python_path = ${ARPEGGIO_PYTHON_PATH}:" prointvar_config.ini
+  - sed -i "s:db_root = .:db_root = ./.prointvar:" prointvar_config.ini
   - ProIntVar-config-load --yes prointvar_config.ini
 
   # Return to build dir
