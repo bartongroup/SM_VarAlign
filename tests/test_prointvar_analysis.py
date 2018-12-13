@@ -19,7 +19,7 @@ class TestProintvarAnalysis(TestCase):
         test_dir = os.path.join(os.path.dirname(__file__), 'tmp')
         prointvar_db_path = os.path.join(os.path.dirname(__file__), 'data', 'prointvar_analysis_test_expected',
                                          '.prointvar')
-        shutil.copytree(prointvar_db_path, test_dir)  # Copy .prointvar
+        shutil.copytree(prointvar_db_path, os.path.join(test_dir, '.prointvar'))  # Copy .prointvar
         os.chdir(test_dir)
 
         # Execute pipeline
