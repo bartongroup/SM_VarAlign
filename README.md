@@ -28,9 +28,8 @@ $ source activate varalign-env-py3
 # Install VarAlign
 $ pip install .
 
-# Check it works
-$ cd tests/data
-$ python ../../varalign/align_variants.py sample_swissprot_PF00001.18_full.sto
+# Run tests (some will probably fail, in particular ProIntVar isn't installed yet!)
+$ python -m unittest discover tests
 ```
 
 ### Enabling structural analysis
