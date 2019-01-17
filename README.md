@@ -90,7 +90,7 @@ $ cp /path/to/VarAlign/varalign/config.txt ./
 
 # Edit the settings as you require
 
-# Testing that the new values are correctly loaded by ProIntVar
+# Testing that the new values are correctly loaded by VarAlign
 $ python
 >>> from varalign.config import defaults
 >>> defaults.gnomad
