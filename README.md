@@ -69,9 +69,9 @@ $ ProIntVar-config-setup prointvar_config.ini
 
 $ ProIntVar-config-load prointvar_config.ini
 
-# Check it works (after running `align_variants.py` as above)
-$ cd path/to/VarAlign/tests/data
-$ python ../../varalign/prointvar_analysis.py sample_swissprot_PF00001.18_full.sto
+# Check it works (rerun VarAlign tests)
+$ cd path/to/VarAlign/
+$ python -m unittest discover tests
 ```
 
 
