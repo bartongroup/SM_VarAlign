@@ -16,6 +16,11 @@ Installing VarAlign (uses Conda)
 $ git clone https://github.com/stuartmac/VarAlign.git
 
 # Set up conda environment with all requirements
+# You may need to add Bioconda channels:
+$ conda config --add channels defaults
+$ conda config --add channels bioconda
+$ conda config --add channels conda-forge
+$
 $ cd VarAlign
 $ conda env create -f environment.yml
 $ source activate varalign-env-py3
