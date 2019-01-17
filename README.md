@@ -70,6 +70,7 @@ $ ProIntVar-config-setup prointvar_config.ini
 $ ProIntVar-config-load prointvar_config.ini
 
 # Check it works (rerun VarAlign tests)
+# If you ran the tests earlier you may see a FileExists error for .../VarAlign/tests/tmp, delete this and try again.
 $ cd path/to/VarAlign/
 $ python -m unittest discover tests
 ```
