@@ -42,6 +42,7 @@ $ conda create -n arpeggio python=2 pip numpy biopython openbabel
 $ source activate arpeggio
 
 # Get patched Arpeggio
+# Remember to leave the VarAlign folder if you're following this in order!
 $ git clone https://bitbucket.org/biomadeira/arpeggio
 $ cd arpeggio
 $ python arpeggio.py -h
