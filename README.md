@@ -85,7 +85,7 @@ Setting up a config file in the working directory
 ```sh
 $ cd /path/to/desired/working/dir/
 
-# Get a copy of the template config.ini file shipped with ProIntVar
+# Get a copy of the template config file shipped with VarAlign
 $ cp /path/to/VarAlign/varalign/config.txt ./
 
 # Edit the settings as you require
