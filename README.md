@@ -102,3 +102,9 @@ $ python
 I recommend you download a Pfam alignment that has at least a few human sequences and then try:
 
 `varalign --species HUMAN <YOUR_ALIGNMENT>`
+
+
+## Known issues on our cluster
+AACon is bundled with VarAlign and needs java to run. Some nodes on our cluster are missing java so you may wish to install java-jdk in the conda environment.
+
+I have gnomad downloaded under my homedir in .../NOBACK/resources/gnomad/, set this up in config.txt if you like.
