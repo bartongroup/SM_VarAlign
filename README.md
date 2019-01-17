@@ -96,3 +96,8 @@ $ python
 >>> defaults.gnomad
 './sample_swissprot_PF00001.18_full.vcf.gz'
 ```
+
+
+## Run the pipeline
+I recommend you download a Pfam alignment that has at least a few human sequences and then try:
+`varalign --species HUMAN <YOUR_ALIGNMENT>`
