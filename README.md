@@ -100,4 +100,5 @@ $ python
 
 ## Run the pipeline
 I recommend you download a Pfam alignment that has at least a few human sequences and then try:
+
 `varalign --species HUMAN <YOUR_ALIGNMENT>`
