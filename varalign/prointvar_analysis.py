@@ -125,8 +125,8 @@ def _sort_ab_contacts(aligned_contacts_table):
          aligned_contacts_table.query('Alignment_column_A != Alignment_column_A').rename(columns=rename_dict)
          ]
     )
-    # Handle duplication of entries where Alignment_column_A and _B are noth Nan
-    aligned_contacts_table = aligned_contacts_table[~aligned_contacts_table.index.duplicated()]
+    # Handle duplication of entries where Alignment_column_A and _B are both Nan
+    aligned_contacts_table = _dedupe_ab_contacts(aligned_contacts_table)
     return aligned_contacts_table
 
 
