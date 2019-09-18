@@ -391,23 +391,29 @@ def main(path_to_alignment, override, only_sifts_best, max_pdbs, n_proc):
         tabs = list(tqdm.tqdm(p.imap(_format_structure_data, to_load), total=len(to_load)))
         structure_table = pd.concat(tabs)
         log.info('{} atom-atom records created.'.format(len(structure_table)))  # Shouldn't this be even?
+        pdf_debug = PdfPages('debug.pdf')  # *** DEBUG ***
+        _plot_3v31a_contact_map(structure_table, pdf_debug)  # *** DEBUG ***
 
         # Filter non-alignment residues from the table
         log.info('Filtering extra-domain contacts (i.e. neither atom maps to the alignment)...')
         structure_table = _filter_extra_domain_contacts(structure_table, aln_info)
+        _plot_3v31a_contact_map(structure_table, pdf_debug)  # *** DEBUG ***
 
         # Remove each contact's duplicate row
         log.info('Removing contact duplicates...')
         structure_table = _dedupe_ab_contacts(structure_table)
+        _plot_3v31a_contact_map(structure_table, pdf_debug)  # *** DEBUG ***
 
         # Add alignment columns to table
         log.info('Mapping contact residues to alignment...')
         aln_mappings = _format_mapping_table(aln_info, indexed_mapping_table)
         structure_table = _merge_alignment_columns_to_contacts(aln_mappings, structure_table)
+        _plot_3v31a_contact_map(structure_table, pdf_debug)  # *** DEBUG ***
 
         # Sort A/B contact
         log.info('Sorting contacts so that alignment column atom A <= that of atom B...')
         structure_table = _sort_ab_contacts(structure_table)
+        _plot_3v31a_contact_map(structure_table, pdf_debug)  # *** DEBUG ***
 
         # Make sure all columns are present even if unpopulated
         # TODO: This avoids KeyErrors below when there are no mappings present, but is this best approach?
@@ -419,10 +425,13 @@ def main(path_to_alignment, override, only_sifts_best, max_pdbs, n_proc):
         # Classify contacts
         log.info('Classifying contact residue topology...')
         structure_table = pd.concat([structure_table, _classify_contacts(structure_table)], axis=1)
+        _plot_3v31a_contact_map(structure_table, pdf_debug)  # *** DEBUG ***
 
         # Write structure table
         log.info('Writing {} atom-atom records to file...'.format(len(structure_table)))
         structure_table.to_pickle(data_prefix + '_prointvar_structure_table.p.gz')
+        _plot_3v31a_contact_map(structure_table, pdf_debug)  # *** DEBUG ***
+        pdf_debug.close()  # *** DEBUG ***
     else:
         log.info('Reading {}...'.format(data_prefix + '_prointvar_structure_table.p.gz'))
         structure_table = pd.read_pickle(data_prefix + '_prointvar_structure_table.p.gz')
@@ -488,6 +497,23 @@ def main(path_to_alignment, override, only_sifts_best, max_pdbs, n_proc):
     plt.close()
     pdf.close()
     log.info('DONE.')
+
+
+# DEBUG
+def _plot_3v31a_contact_map(structure_df, pdf):
+    _3v31_contacts = structure_df.query('PDB_dbAccessionId_A == "3v31"')
+    fig = plt.figure(figsize=(8, 8))
+    chain_a = _3v31_contacts.query('PDB_dbChainId_A == "A" & PDB_dbChainId_B == "A"')
+    contact_map = pd.crosstab(chain_a.PDB_dbResNum_A.values, chain_a.PDB_dbResNum_B.values)
+    rix = contact_map.index
+    cix = contact_map.columns
+    contact_map.index = contact_map.index.astype(int)
+    contact_map.columns = contact_map.columns.astype(int)
+    contact_map = contact_map.reindex(index=pd.RangeIndex(int(rix.min()), int(rix.max())),
+                                      columns=pd.RangeIndex(int(cix.min()), int(cix.max())))
+    contact_map = contact_map.fillna(0)
+    plt.imshow(contact_map)
+    pdf.savefig()
 
 
 if __name__ == '__main__':
