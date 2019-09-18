@@ -155,28 +155,26 @@ def _filter_extra_domain_contacts(prointvar_table, alignment_info):
     :param alignment_info:
     :return:
     """
-    def _filter_by_sequence_range(g, alignment_info, ResNum_field):
+    def _filter_by_sequence_range(g, alignment_info, ResNum_fields):
         uniprot_id = g.name
-        start_ends = alignment_info.query('uniprot_id == @uniprot_id')['start_end']  # Could be > 1 range
-        if start_ends.empty:
+        start_ends = [alignment_info.query('uniprot_id == @x')['start_end']
+                      for x in uniprot_id]  # Could be > 1 range per id
+        if start_ends[0].empty and start_ends[1].empty:
             return None
         else:
             in_seq_range = []
-            for test_range in start_ends:
-                in_seq_range.append(pd.to_numeric(g[ResNum_field]).between(*test_range))
+            for ResNum_field, test_ranges in zip(ResNum_fields, start_ends):
+                for test_range in test_ranges:
+                    in_seq_range.append(pd.to_numeric(g[ResNum_field]).between(*test_range))
             result = pd.concat(in_seq_range, axis=1).any(axis=1)
             return g[result]
 
-    prointvar_table = pd.concat(
-        [prointvar_table.groupby('UniProt_dbAccessionId_A').apply(_filter_by_sequence_range,
-                                                                  alignment_info=alignment_info,
-                                                                  ResNum_field='UniProt_dbResNum_A'),
-         prointvar_table.groupby('UniProt_dbAccessionId_B').apply(_filter_by_sequence_range,
-                                                                  alignment_info=alignment_info,
-                                                                  ResNum_field='UniProt_dbResNum_B')
-         ])
+    prointvar_table = (prointvar_table
+                       .groupby(['UniProt_dbAccessionId_A', 'UniProt_dbAccessionId_B'])
+                       .apply(_filter_by_sequence_range, alignment_info=alignment_info,
+                              ResNum_fields=['UniProt_dbResNum_A', 'UniProt_dbResNum_B'])
+                      )
     # Handle duplication of intradomain (self) interactions
-    prointvar_table = prointvar_table[~prointvar_table.index.duplicated()]
     log.info('{} atom-atom records remain with >=1 residue in alignment sequence.'.format(len(prointvar_table)))
     return prointvar_table
 
