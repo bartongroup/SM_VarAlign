@@ -118,15 +118,16 @@ def _sort_ab_contacts(aligned_contacts_table):
             return x
 
     rename_dict = {c: _swap_ending(c) for c in aligned_contacts_table.columns}
+    # The last query swaps A/B for records where Alignment_column_A is NaN only if Alignment_column_B is not NaN.
+    # This latter condition prevents duplicating the rows that are included by the former (i.e. 3rd) query.
     aligned_contacts_table = pd.concat(
         [aligned_contacts_table.query('Alignment_column_A <= Alignment_column_B'),
          aligned_contacts_table.query('Alignment_column_A > Alignment_column_B').rename(columns=rename_dict),
          aligned_contacts_table.query('Alignment_column_B != Alignment_column_B'),  # NaN fields, value != value
-         aligned_contacts_table.query('Alignment_column_A != Alignment_column_A').rename(columns=rename_dict)
+         aligned_contacts_table.query('Alignment_column_A != Alignment_column_A &'
+                                      'Alignment_column_B == Alignment_column_B').rename(columns=rename_dict)
          ]
     )
-    # Handle duplication of entries where Alignment_column_A and _B are both Nan
-    aligned_contacts_table = _dedupe_ab_contacts(aligned_contacts_table)
     return aligned_contacts_table
 
 
