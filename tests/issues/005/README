@@ -1,0 +1,23 @@
+This example was discovered after running `varalign` on the SMART TPR alignment during work with Maxim Tsenkov. Some TPR
+sequences did not have any variants mapped despite manual inspection of gnomAD indicating that variants were present
+in those sequences. The sequences in this alignment were one set of these sequences.
+
+The included VCF file was obtained by an initial run of `varalign` with variant filters relaxed. This VCF was then
+processed as follows:
+
+# cp results/alignment_variants.vcf ttc6_sub.sto_variants.vcf
+# bcftools sort ttc6_sub.sto_variants.vcf > ttc6_sub.sto_variants_sorted.vcf
+# bcftools norm -d all ttc6_sub.sto_variants_sorted.vcf > ttc6_sub.sto_variants_sorted_normed_dedup.vcf
+# bgzip ttc6_sub.sto_variants_sorted_normed_dedup.vcf
+# tabix ttc6_sub.sto_variants_sorted_normed_dedup.vcf.gz
+
+Note that bcftools norm -d all was used to deduplicate the VCF as each variant was included once for each sequence in
+the alignment. Presumably this is because the sequences are all from the same protein. Running `align_variants.py` with
+the unduplicated VCF was noticeably slower than looking up the gnomAD VCF. I did not investigate this further but the
+VCF output by the pipeline should probably be deduplicated automatically though this is a separate issue.
+
+Also note that I had to add the contig annotation to the header as bcftools was complaining about it being missing:
+
+##contig=<ID=14,length=107349540>
+
+This was in the gnomAD VCF but it isn't written in the alignment VCF produced by the pipeline.

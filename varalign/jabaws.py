@@ -44,17 +44,9 @@ def apply_column_mask(alignment, column_mask):
     ranges = list(pairwise(boundary_indexes))
 
     # Now use those block lengths to build new family
-    # 1) Initialise new family
-    start, stop = ranges[0]
+    masked_alignment = alignment[:, :0]  # Copy alignment metadata
     keep_range = not column_mask[0]
-    if not keep_range:
-        start, stop = ranges[1]
-        keep_range = not keep_range
-    masked_alignment = alignment[:, start:stop]
-    keep_range = not keep_range
-
-    # 2) Proceed through remaining ranges
-    for start, stop in ranges[2:]:
+    for start, stop in ranges:
         if keep_range:
             masked_alignment = masked_alignment + alignment[:, start:stop]
         keep_range = not keep_range

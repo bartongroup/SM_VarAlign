@@ -1,23 +1,23 @@
 <?xml version='1.0' encoding='UTF-8' standalone='yes'?>
-<entry xmlns:align="http://www.ebi.ac.uk/pdbe/docs/sifts/alignment.xsd" xmlns:data="http://www.ebi.ac.uk/pdbe/docs/sifts/dataTypes.xsd" xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns="http://www.ebi.ac.uk/pdbe/docs/sifts/eFamily.xsd" dbSource="PDBe" dbVersion="2.0" dbCoordSys="PDBe" dbAccessionId="2ki9" dbEntryVersion="2011-07-13" date="2018-04-21" xsi:schemaLocation="http://www.ebi.ac.uk/pdbe/docs/sifts/eFamily.xsd http://www.ebi.ac.uk/pdbe/docs/sifts/eFamily.xsd">
+<entry xmlns:align="http://www.ebi.ac.uk/pdbe/docs/sifts/alignment.xsd" xmlns:data="http://www.ebi.ac.uk/pdbe/docs/sifts/dataTypes.xsd" xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns="http://www.ebi.ac.uk/pdbe/docs/sifts/eFamily.xsd" dbSource="PDBe" dbVersion="2.0" dbCoordSys="PDBe" dbAccessionId="2ki9" dbEntryVersion="2011-07-13" date="2018-12-09" xsi:schemaLocation="http://www.ebi.ac.uk/pdbe/docs/sifts/eFamily.xsd http://www.ebi.ac.uk/pdbe/docs/sifts/eFamily.xsd">
   <rdf:RDF>
     <rdf:Description rdf:about="self">
       <dc:rights rdf:resource="http://pdbe.org/sifts">
         Copyright notice: (c) 2004-2018, EMBL-EBI, PDBe-UniProt
-        Jose M. Dana, Nidhi Tyagi, Claire O'Donovan, Maria J. Martin, Sameer Velankar.
+        Jose M. Dana, Nidhi Tyagi, Aleksandras Gutmanas, Claire O'Donovan, Maria J. Martin, Sameer Velankar.
         The information included is supplied as-is, under the terms and conditions of the licence agreement.
         </dc:rights>
     </rdf:Description>
   </rdf:RDF>
   <listDB>
-    <db dbSource="Pfam" dbCoordSys="UniProt" dbVersion="31.0"/>
-    <db dbSource="InterPro" dbCoordSys="PDBresnum" dbVersion="68.0"/>
+    <db dbSource="Pfam" dbCoordSys="UniProt" dbVersion="32.0"/>
+    <db dbSource="InterPro" dbCoordSys="PDBresnum" dbVersion="71.0"/>
     <db dbSource="CATH" dbCoordSys="PDBresnum" dbVersion="4.2.0"/>
-    <db dbSource="EC" dbCoordSys="UniProt" dbVersion="16.18"/>
-    <db dbSource="UniProt" dbCoordSys="UniProt" dbVersion="2018.04"/>
+    <db dbSource="EC" dbCoordSys="UniProt" dbVersion="49.18"/>
+    <db dbSource="UniProt" dbCoordSys="UniProt" dbVersion="2018.11"/>
     <db dbSource="SCOP" dbCoordSys="PDBresnum" dbVersion="1.75"/>
-    <db dbSource="GO" dbCoordSys="UniProt" dbVersion="20180326"/>
-    <db dbSource="PDB" dbCoordSys="PDBresnum" dbVersion="16.18"/>
+    <db dbSource="GO" dbCoordSys="UniProt" dbVersion="20181201"/>
+    <db dbSource="PDB" dbCoordSys="PDBresnum" dbVersion="49.18"/>
   </listDB>
   <entity type="protein" entityId="A">
     <segment segId="2ki9_A_1_33" start="1" end="33">

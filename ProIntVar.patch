@@ -1,0 +1,75 @@
+diff --git a/prointvar/arpeggio.py b/prointvar/arpeggio.py
+index d6be494..397c397 100644
+--- a/prointvar/arpeggio.py
++++ b/prointvar/arpeggio.py
+@@ -667,10 +667,10 @@ class ARPEGGIOrunner(object):
+             new_output_amri = nfilename + ".amri"
+             new_output_ari = nfilename + ".ari"
+             new_output_ri = nfilename + ".ri"
+-            shutil.copyfile(output_amam, new_output_amam)
+-            shutil.copyfile(output_amri, new_output_amri)
+-            shutil.copyfile(output_ari, new_output_ari)
+-            shutil.copyfile(output_ri, new_output_ri)
++            # shutil.copyfile(output_amam, new_output_amam)
++            # shutil.copyfile(output_amri, new_output_amri)
++            # shutil.copyfile(output_ari, new_output_ari)
++            # shutil.copyfile(output_ri, new_output_ri)
+ 
+         if hydro_method == "arpeggio":
+             shutil.copyfile(output_hydro, self.inputfile_h)
+diff --git a/prointvar/merger.py b/prointvar/merger.py
+index 54e9b7e..84b2c59 100644
+--- a/prointvar/merger.py
++++ b/prointvar/merger.py
+@@ -182,30 +182,16 @@ def contacts_mmcif_table_merger(contacts_table, mmcif_table, suffix='A'):
+     :return: merged pandas DataFrame
+     """
+ 
+-    if ('new_seq_id' in mmcif_table and 'new_asym_id' in mmcif_table and
+-            'RES_FULL_{}'.format(suffix) in contacts_table and
+-            'CHAIN_{}'.format(suffix) in contacts_table):
+-
+-        new_col_names = {k: '{}_{}'.format(k, suffix) for k in list(mmcif_table)}
+-        mmcif_table = mmcif_table.rename(columns=new_col_names)
+-
+-        table = contacts_table.merge(mmcif_table, how='left',
+-                                     right_on=['new_seq_id_{}'.format(suffix),
+-                                               'new_asym_id_{}'.format(suffix)],
+-                                     left_on=['RES_FULL_{}'.format(suffix),
+-                                              'CHAIN_{}'.format(suffix)],
+-                                     suffixes=('', '_{}'.format(suffix)))
+-
+-    elif ('auth_seq_id_full' in mmcif_table and 'label_asym_id' in mmcif_table and
++    if ('auth_seq_id_full' in mmcif_table and 'label_asym_id' in mmcif_table and
+             'RES_FULL_{}'.format(suffix) in contacts_table and
+             'CHAIN_{}'.format(suffix) in contacts_table):
+ 
+         new_col_names = {k: '{}_{}'.format(k, suffix) for k in list(mmcif_table)}
+         mmcif_table = mmcif_table.rename(columns=new_col_names)
+ 
+-        table = contacts_table.merge(mmcif_table, how='inner',
++        table = contacts_table.merge(mmcif_table, how='right',  # Inner loses all ligand contacts if not in sifts...
+                                      right_on=['auth_seq_id_full_{}'.format(suffix),
+-                                               'label_asym_id_{}'.format(suffix)],
++                                               'auth_asym_id_{}'.format(suffix)],
+                                      left_on=['RES_FULL_{}'.format(suffix),
+                                               'CHAIN_{}'.format(suffix)],
+                                      suffixes=('', '_{}'.format(suffix)))
+@@ -413,7 +399,7 @@ def table_generator(uniprot_id=None, pdb_id=None, chain=None, res=None,
+                 if bio:
+                     # write new PDB file used by arpeggio using 'pro_format' defined in
+                     # pdbx.py ('write_pdb_from_table' method)
+-                    g.run(override=override, pro_format=True)
++                    g.run(override=override, pro_format=False)
+                 else:
+                     g.run(override=override)
+             if os.path.exists(outputarp):
+@@ -421,7 +407,7 @@ def table_generator(uniprot_id=None, pdb_id=None, chain=None, res=None,
+                 contacts_table = r.contacts(residue_agg=residue_agg,
+                                             collapsed_cont=True, col_method="full",
+                                             ignore_consecutive=False, numb_res=3,
+-                                            parse_special=True)
++                                            parse_special=False)
+             else:
+                 contacts_table = None
+         else:

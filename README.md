@@ -16,16 +16,20 @@ Installing VarAlign (uses Conda)
 $ git clone https://github.com/stuartmac/VarAlign.git
 
 # Set up conda environment with all requirements
+# You may need to add Bioconda channels:
+$ conda config --add channels defaults
+$ conda config --add channels bioconda
+$ conda config --add channels conda-forge
+$
 $ cd VarAlign
 $ conda env create -f environment.yml
-$ source activate varalign-env
+$ source activate varalign-env-py3
 
 # Install VarAlign
 $ pip install .
 
-# Check it works
-$ cd tests/data
-$ python ../../varalign/align_variants.py sample_swissprot_PF00001.18_full.sto
+# Run tests (some will probably fail, in particular ProIntVar isn't installed yet!)
+$ python -m unittest discover tests
 ```
 
 ### Enabling structural analysis
@@ -38,6 +42,7 @@ $ conda create -n arpeggio python=2 pip numpy biopython openbabel
 $ source activate arpeggio
 
 # Get patched Arpeggio
+# Remember to leave the VarAlign folder if you're following this in order!
 $ git clone https://bitbucket.org/biomadeira/arpeggio
 $ cd arpeggio
 $ python arpeggio.py -h
@@ -47,23 +52,27 @@ Install and configure ProIntVar. (NB. ProIntVar requires Python 3.)
 ```
 # Install ProIntVar (https://github.com/bartongroup/ProIntVar)
 $ source activate varalign-env-py3
-$ git clone https://github.com/bartongroup/ProIntVar-Core.git
-$ cd ProIntVar-Core
+$ git clone https://github.com/bartongroup/ProIntVar.git
+$ cd ProIntVar
+
+# Patch ProIntVar and install
+$ git apply /path/to/VarAlign/ProIntVar.patch
 $ pip install .
 
 # Configure ProIntVar
-$ ProIntVar-Core-config-setup prointvar_config.ini
+$ ProIntVar-config-setup prointvar_config.ini
 
 # *** Edit the following values in prointvar_config.ini ***
 # arpeggio_bin = /path/to/arpeggio/arpeggio.py
 # python_exe = /path/to/anaconda/envs/arpeggio/bin/python
 # python_path = /path/to/anaconda/envs/arpeggio/python/lib/site-packages/
 
-$ ProIntVar-Core-config-load prointvar_config.ini
+$ ProIntVar-config-load prointvar_config.ini
 
-# Check it works (after running `align_variants.py` as above)
-$ cd path/to/VarAlign/tests/data
-$ python ../../varalign/prointvar_analysis.py sample_swissprot_PF00001.18_full.sto
+# Check it works (rerun VarAlign tests)
+# If you ran the tests earlier you may see a FileExists error for .../VarAlign/tests/tmp, delete this and try again.
+$ cd path/to/VarAlign/
+$ python -m unittest discover tests
 ```
 
 
@@ -76,14 +85,26 @@ Setting up a config file in the working directory
 ```sh
 $ cd /path/to/desired/working/dir/
 
-# Get a copy of the template config.ini file shipped with ProIntVar
+# Get a copy of the template config file shipped with VarAlign
 $ cp /path/to/VarAlign/varalign/config.txt ./
 
 # Edit the settings as you require
 
-# Testing that the new values are correctly loaded by ProIntVar
+# Testing that the new values are correctly loaded by VarAlign
 $ python
 >>> from varalign.config import defaults
 >>> defaults.gnomad
 './sample_swissprot_PF00001.18_full.vcf.gz'
 ```
+
+
+## Run the pipeline
+I recommend you download a Pfam alignment that has at least a few human sequences and then try:
+
+`varalign --species HUMAN <YOUR_ALIGNMENT>`
+
+
+## Known issues on our cluster
+AACon is bundled with VarAlign and needs java to run. Some nodes on our cluster are missing java so you may wish to install java-jdk in the conda environment.
+
+I have gnomad downloaded under my homedir in .../NOBACK/resources/gnomad/, set this up in config.txt if you like.

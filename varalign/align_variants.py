@@ -265,7 +265,7 @@ def map_variants_to_alignment(variants_df, residue_column_map):
     return aligned_variants
 
 
-def align_variants(aln_info_table, species='HUMAN', path_to_vcf=defaults.gnomad, include_other_info=False):
+def align_variants(aln_info_table, species='HUMAN', path_to_vcf=None, include_other_info=False):
     """
 
     :param species:
@@ -273,6 +273,9 @@ def align_variants(aln_info_table, species='HUMAN', path_to_vcf=defaults.gnomad,
     :param include_other_info:
     :return:
     """
+    # Reload module defaults (patch aware)
+    if path_to_vcf is None:
+        path_to_vcf = defaults.gnomad
 
     # ----- Map sequences to genome -----
     # TODO: If get transcript ID can use to filter variant table

@@ -73,6 +73,7 @@ def _format_mapping_table(alignment_info_table, alignment_mapping_table):
     aln_uniprot_ids = alignment_info_table.set_index('seq_id').loc[:, 'uniprot_id']
     aln_uniprot_ids.index.name = 'SOURCE_ID'
     mapping_table = alignment_mapping_table.join(aln_uniprot_ids)
+    # TODO: Are these inplace mods ok?
     mapping_table.reset_index(inplace=True)
     mapping_table.loc[:, 'Protein_position'] = mapping_table.loc[:, 'Protein_position'].astype(str)
     mapping_table.set_index(['uniprot_id', 'Protein_position'], inplace=True)
@@ -83,11 +84,13 @@ def _format_mapping_table(alignment_info_table, alignment_mapping_table):
 
 def _merge_alignment_columns_to_contacts(alignment_mappings, contacts_table):
     # Map ATOM_A contacts to alignment
+    # TODO: either need 2 right merges sequentially or 2 left seperately and a final merge...
     contacts_table = pd.merge(alignment_mappings, contacts_table,
                               right_on=['UniProt_dbAccessionId_A', 'UniProt_dbResNum_A'],
                               left_index=True, how='right')
     log.info('{} atom-atom records after adding ATOM_A alignment columns.'.format(len(contacts_table)))
     # Map ATOM_B contacts to alignment
+    # FIXME: inplace modification is dangerous, e.g. this function would fail on second run...
     alignment_mappings.index.rename(['UniProt_dbAccessionId_B', 'UniProt_dbResNum_B'], inplace=True)
     contacts_table = pd.merge(alignment_mappings, contacts_table,
                               right_on=['UniProt_dbAccessionId_B', 'UniProt_dbResNum_B'],
@@ -115,15 +118,16 @@ def _sort_ab_contacts(aligned_contacts_table):
             return x
 
     rename_dict = {c: _swap_ending(c) for c in aligned_contacts_table.columns}
+    # The last query swaps A/B for records where Alignment_column_A is NaN only if Alignment_column_B is not NaN.
+    # This latter condition prevents duplicating the rows that are included by the former (i.e. 3rd) query.
     aligned_contacts_table = pd.concat(
         [aligned_contacts_table.query('Alignment_column_A <= Alignment_column_B'),
          aligned_contacts_table.query('Alignment_column_A > Alignment_column_B').rename(columns=rename_dict),
          aligned_contacts_table.query('Alignment_column_B != Alignment_column_B'),  # NaN fields, value != value
-         aligned_contacts_table.query('Alignment_column_A != Alignment_column_A').rename(columns=rename_dict)
+         aligned_contacts_table.query('Alignment_column_A != Alignment_column_A &'
+                                      'Alignment_column_B == Alignment_column_B').rename(columns=rename_dict)
          ]
     )
-    # Handle duplication of entries where Alignment_column_A and _B are noth Nan
-    aligned_contacts_table = aligned_contacts_table[~aligned_contacts_table.index.duplicated()]
     return aligned_contacts_table
 
 
@@ -152,27 +156,31 @@ def _filter_extra_domain_contacts(prointvar_table, alignment_info):
     :param alignment_info:
     :return:
     """
-    def _filter_by_sequence_range(g, alignment_info, ResNum_field):
+    def _filter_by_sequence_range(g, alignment_info, ResNum_fields):
         uniprot_id = g.name
-        start_ends = alignment_info.query('uniprot_id == @uniprot_id')['start_end']  # Could be > 1 range
-        if start_ends.empty:
+        start_ends = [alignment_info.query('uniprot_id == @x')['start_end']
+                      for x in uniprot_id]  # Could be > 1 range per id
+        if start_ends[0].empty and start_ends[1].empty:
             return None
         else:
             in_seq_range = []
-            for test_range in start_ends:
-                in_seq_range.append(pd.to_numeric(g[ResNum_field]).between(*test_range))
+            for ResNum_field, test_ranges in zip(ResNum_fields, start_ends):
+                for test_range in test_ranges:
+                    in_seq_range.append(pd.to_numeric(g[ResNum_field]).between(*test_range))
             result = pd.concat(in_seq_range, axis=1).any(axis=1)
             return g[result]
 
-    prointvar_table = pd.concat(
-        [prointvar_table.groupby('UniProt_dbAccessionId_A').apply(_filter_by_sequence_range,
-                                                                  alignment_info=alignment_info,
-                                                                  ResNum_field='UniProt_dbResNum_A'),
-         prointvar_table.groupby('UniProt_dbAccessionId_B').apply(_filter_by_sequence_range,
-                                                                  alignment_info=alignment_info,
-                                                                  ResNum_field='UniProt_dbResNum_B')
-         ])
-    prointvar_table = prointvar_table[~prointvar_table.index.duplicated()]
+    # .groupby will drop rows with NaN in the groupby field. This means they vanish if either the _A or _B field is NaN.
+    prointvar_table = prointvar_table.fillna({'UniProt_dbAccessionId_A': 'nan', 'UniProt_dbAccessionId_B': 'nan'})
+    prointvar_table = (prointvar_table
+                       .groupby(['UniProt_dbAccessionId_A', 'UniProt_dbAccessionId_B'])
+                       .apply(_filter_by_sequence_range, alignment_info=alignment_info,
+                              ResNum_fields=['UniProt_dbResNum_A', 'UniProt_dbResNum_B'])
+                      )
+    # TODO: Determine how NaN will be handled throughout the library per data column.
+    # for now set these back to NaN until I resolve what to do generally
+    prointvar_table = prointvar_table.replace({'UniProt_dbAccessionId_A': 'nan', 'UniProt_dbAccessionId_B': 'nan'},
+                                              np.nan)
     log.info('{} atom-atom records remain with >=1 residue in alignment sequence.'.format(len(prointvar_table)))
     return prointvar_table
 
