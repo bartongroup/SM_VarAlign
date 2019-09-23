@@ -170,12 +170,17 @@ def _filter_extra_domain_contacts(prointvar_table, alignment_info):
             result = pd.concat(in_seq_range, axis=1).any(axis=1)
             return g[result]
 
+    # .groupby will drop rows with NaN in the groupby field. This means they vanish if either the _A or _B field is NaN.
+    prointvar_table = prointvar_table.fillna({'UniProt_dbAccessionId_A': 'nan', 'UniProt_dbAccessionId_B': 'nan'})
     prointvar_table = (prointvar_table
                        .groupby(['UniProt_dbAccessionId_A', 'UniProt_dbAccessionId_B'])
                        .apply(_filter_by_sequence_range, alignment_info=alignment_info,
                               ResNum_fields=['UniProt_dbResNum_A', 'UniProt_dbResNum_B'])
                       )
-    # Handle duplication of intradomain (self) interactions
+    # TODO: Determine how NaN will be handled throughout the library per data column.
+    # for now set these back to NaN until I resolve what to do generally
+    prointvar_table = prointvar_table.replace({'UniProt_dbAccessionId_A': 'nan', 'UniProt_dbAccessionId_B': 'nan'},
+                                              np.nan)
     log.info('{} atom-atom records remain with >=1 residue in alignment sequence.'.format(len(prointvar_table)))
     return prointvar_table
 
