@@ -130,7 +130,8 @@ def _map_uniprot_to_genome(uniprot, species='homo_sapiens', collapse=True):
         log.info('Removed %s non-standard sequence regions from %s.', len(non_standard_ranges), uniprot)
     # Check for no mapping
     if len(ensembl_ranges) == 0:
-        raise ValueError('Could not map {} to the genome.'.format(uniprot))  # TODO: handle this...
+        log.warn('Could not map {} to the genome.'.format(uniprot))
+        return None
     # Collapse ranges if desired
     if collapse:
         ensembl_ranges = ensembl.merge_ranges(ensembl_ranges, min_gap=1000)
@@ -287,6 +288,9 @@ def align_variants(aln_info_table, species='HUMAN', path_to_vcf=None, include_ot
     vcf_is_compressed = True if path_to_vcf.endswith('bgz') else None  # pyvcf doesn't recognise .bgz
     parser = gnomad.Reader(filename=path_to_vcf, compressed=vcf_is_compressed)
     variants_table = parser.get_gnomad_variants(aln_info_table, include_other_info=include_other_info)
+    if variants_table.empty:
+        log.warn('No variants found.')
+        return variants_table
 
     # ----- Add source UniProt identifiers to the table -----
     # Create UniProt ID series that shares an index with the variant table
