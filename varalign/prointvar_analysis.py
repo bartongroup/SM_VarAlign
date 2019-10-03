@@ -43,6 +43,9 @@ def _format_structure_data(pdb):
         # TODO: This error can be caused by ProIntVar trying to parse empty special contacts from arpeggio
         log.error('{} failed with ValueError'.format(pdb))
         return None
+    except IndexError as e:
+        log.error('{} failed with IndexError'.format(pdb))
+        return None
     # Merge tables
     log.info('Merging ProIntVar sub-tables...')
     table = merger.TableMerger(pdbx_table=pdbx, sifts_table=sifts,
@@ -85,7 +88,7 @@ def _format_mapping_table(alignment_info_table, alignment_mapping_table):
 def _merge_alignment_columns_to_contacts(alignment_mappings, contacts_table):
     # Map ATOM_A contacts to alignment
     # TODO: either need 2 right merges sequentially or 2 left seperately and a final merge...
-    contacts_table = pd.merge(alignment_mappings, contacts_table,
+    contacts_table = pd.merge(alignment_mappings, contacts_table.reset_index(drop=True),  # reset_index to avoid duplicated index level and column label ambiguity in recent pandas
                               right_on=['UniProt_dbAccessionId_A', 'UniProt_dbResNum_A'],
                               left_index=True, how='right')
     log.info('{} atom-atom records after adding ATOM_A alignment columns.'.format(len(contacts_table)))
@@ -275,7 +278,7 @@ def _classify_contacts(prointvar_table, residue=True, protein=True, polymer=True
             hierarchy[match[[0, 1]].all(1)] = 'level_2'
             hierarchy[match[[0, 1, 2]].all(1)] = 'level_3'
             hierarchy[match[[0, 1, 2, 3]].all(1)] = 'level_4'
-        except AttributeError:
+        except (AttributeError, KeyError, ValueError):
             log.info('Could not classify contacts by CATH hierarchy. There may be no relevant mappings.')
             hierarchy = None
     else:
@@ -393,7 +396,12 @@ def main(path_to_alignment, override, only_sifts_best, max_pdbs, n_proc):
             to_load = downloaded['pdb_id'].dropna().unique()
         p = multiprocessing.Pool(n_proc)
         tabs = list(tqdm.tqdm(p.imap(_format_structure_data, to_load), total=len(to_load)))
-        structure_table = pd.concat(tabs)
+        try:
+            structure_table = pd.concat(tabs)
+        except ValueError:
+            # Most likely nothing to concatenate due absense of PDBs
+            log.info('DONE (no structural data processed).')    
+            return
         log.info('{} atom-atom records created.'.format(len(structure_table)))  # Shouldn't this be even?
 
         # Filter non-alignment residues from the table
