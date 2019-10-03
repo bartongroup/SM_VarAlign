@@ -26,9 +26,14 @@ def _structure_column_counts(aligned_prointvar_table, query, unique_sequences_na
 
     # Repeat for ATOM_B
     # Group interactions at each column and summarise
-    gr_b = sub_table.groupby(['SOURCE_ID_B', 'Alignment_column_B']).size().groupby('Alignment_column_B')
-    n_unique_sequences = n_unique_sequences.add(gr_b.size(), fill_value=0)
-    n_interactions = n_interactions.add(gr_b.sum(), fill_value=0)
+    try:
+        gr_b = sub_table.groupby(['SOURCE_ID_B', 'Alignment_column_B']).size().groupby('Alignment_column_B')
+        n_unique_sequences = n_unique_sequences.add(gr_b.size(), fill_value=0)
+        n_interactions = n_interactions.add(gr_b.sum(), fill_value=0)
+    except ValueError:
+        # Knonw to occur when counting ligand interactions since only in rare cases is a mappable residue a "ligand"
+        # E.g., YCM modified cysteines
+        pass
 
     # Format results
     n_unique_sequences.name = unique_sequences_name
