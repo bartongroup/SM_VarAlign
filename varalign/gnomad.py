@@ -49,7 +49,10 @@ class Reader(vcf.Reader):
         info_flag_num = 0
         info_value_num = 1
         info_allele_num = -1
+        log.info('gnomAD header:\n%s', info_header.head().to_string())
+        log.info('gnomAD header types:\n%s', info_header.dtypes.to_string())
         info_flag_fields = info_header.query('num == @info_flag_num').id.tolist()
+        log.info('gnomAD info value header:\n%s', info_header.query('num == @info_value_num').to_string())
         info_value_fields = info_header.query('num == @info_value_num').id.tolist()
         info_allele_fields = info_header.query('num == @info_allele_num').id.tolist()
         info_other_fields = set(info_header[info_header['num'].isnull()].id)
