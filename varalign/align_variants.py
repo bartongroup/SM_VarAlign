@@ -98,6 +98,11 @@ def _default_variant_filter(variants_table):
                                       variants_table[('VEP', 'TREMBL')])
     trembl_matches_source[:] = False  # OVERRIDE TREMBL TO KEEP ONLY SWISSPROT
     # Apply filter
+    locals_ = locals()
+    _ = [log.info('{} variants pass {} filter'.format(locals_[v].sum(), v))
+         for v in ['is_canonical', 'is_protein_coding', 'is_not_modifier', 'is_ccds',
+                   'swissprot_matches_source', 'trembl_matches_source', 'at_protein_position']
+        ]
     filtered_variants = variants_table.loc[is_canonical & is_protein_coding & is_not_modifier & is_ccds &
                                            (swissprot_matches_source | trembl_matches_source) &
                                            at_protein_position].copy()
@@ -301,6 +306,7 @@ def align_variants(aln_info_table, species='HUMAN', path_to_vcf=None, include_ot
     variants_table = variants_table.join(source_uniprot_ids)
 
     # ----- Filter variant table -----
+    log.info('Variants before filtering:\t{}'.format(len(variants_table)))
     filtered_variants = _default_variant_filter(variants_table)
     log.info('Redundant rows:\t{}'.format(sum(filtered_variants.reset_index('Feature').index.duplicated())))
     filtered_variants.reset_index(level=0, drop=True, inplace=True)  # Remove chunk ID
