@@ -102,3 +102,8 @@ class TestProintvarAnalysis(TestCase):
         self.assertFalse(mismatched_tables, message)
 
     # TODO: Test output consistency for numeric data at a lower precision? (Implement when add rounding)
+
+
+if __name__ == '__main__':
+    t = TestProintvarAnalysis()
+    t.updateReferenceData()
