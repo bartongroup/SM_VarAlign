@@ -10,7 +10,7 @@ dependencies:
 - biopython
 - matplotlib>=2.0.2,<=2.1.1
 - numpy
-- pandas==0.20.3
+- pandas
 - pysam
 - requests
 - requests-cache>=0.4.13  # Version required for ProteoFAV and ProIntVar
