@@ -19,6 +19,7 @@ dependencies:
 - scikit-learn
 - tqdm
 - pyvcf
+- java-jdk
 - pip:
   - proteofav
 #  - prointvar-core
