@@ -1,3 +1,7 @@
 VarAlign.egg-info
 dev_notebook.ipynb
 environment-py2.yml
+*.DS_Store
+.ipynb_checkpoints
+*~
+__pycache__
