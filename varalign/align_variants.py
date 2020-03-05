@@ -349,7 +349,13 @@ def main(path_to_alignment, max_gaussians=5, n_groups=1, override=False, species
         chunked_info = _chunk_table(alignment_info, chunk_size)
         n_chunks = len(list(range(0, len(alignment_info), chunk_size)))
         for chunk in tqdm.tqdm(chunked_info, desc='Alignment chunks...', total=n_chunks):
+            try:
             _alignment_variant_table = align_variants(chunk)
+            except AttributeError:
+                # ignore AttributeError: 'NoneType' object has no attribute 'empty' from checking for empty variant
+                # table in align_variants()
+                # TODO: isn't gnomad parser supposed to return an empty DF if there are no variants?
+                continue
             vartable_chunks.append(_alignment_variant_table)
         alignment_variant_table = pd.concat(vartable_chunks)
 
