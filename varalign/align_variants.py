@@ -340,7 +340,7 @@ def main(path_to_alignment, max_gaussians=5, n_groups=1, override=False, species
     # Run align variants pipeline in chunks
     # Parse alignment info
     log.info('Generating alignment info table...')
-    alignment_info = alignments.alignment_info_table(alignment, species)
+    alignment_info = alignments.alignment_info_table(alignment)  # Skips non-human structures bug
     log.info('Alignment info table head:\n%s', alignment_info.head().to_string())
     if override or not is_data_available:
         # TODO: Chunk size should be optimised? Also, its effectiveness depends on human sequences in each chunk...
@@ -350,7 +350,7 @@ def main(path_to_alignment, max_gaussians=5, n_groups=1, override=False, species
         n_chunks = len(list(range(0, len(alignment_info), chunk_size)))
         for chunk in tqdm.tqdm(chunked_info, desc='Alignment chunks...', total=n_chunks):
             try:
-            _alignment_variant_table = align_variants(chunk)
+                _alignment_variant_table = align_variants(chunk)
             except AttributeError:
                 # ignore AttributeError: 'NoneType' object has no attribute 'empty' from checking for empty variant
                 # table in align_variants()
@@ -480,6 +480,7 @@ def main(path_to_alignment, max_gaussians=5, n_groups=1, override=False, species
     # Conservation plane plot: Missense Scores vs. Shenkin
     plot_data = column_summary[subset_mask_gmm]
     plot_data = plot_data.assign(pass_alpha=plot_data['pvalue'] < 0.1)
+    log.info('plot_data:\n%s', plot_data.head().to_string())
     # TODO: plot.scatter throws AttributeError with pandas 0.22.0 or matplotlib 2.1.2
     #ax = plot_data.plot.scatter('shenkin', 'oddsratio', c='pass_alpha',  # Valdar is well correlated...
     #                            colorbar=False,
