@@ -47,6 +47,11 @@ consequences =
 #additional =
 #consequences =
 
+[internal]
+# added for SMART TPR memory error
+#chunk_size = 500
+chunk_size = 50
+
 # Not used at the moment
 #api_cath = http://www.cathdb.info/version/v4_0_0/api/rest/superfamily/
 #web_cath = http://www.cathdb.info/version/v4_0_0/superfamily/

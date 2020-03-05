@@ -344,7 +344,7 @@ def main(path_to_alignment, max_gaussians=5, n_groups=1, override=False, species
     log.info('Alignment info table head:\n%s', alignment_info.head().to_string())
     if override or not is_data_available:
         # TODO: Chunk size should be optimised? Also, its effectiveness depends on human sequences in each chunk...
-        chunk_size = 500
+        chunk_size = int(defaults.chunk_size)  # For SMART TPR memory error
         vartable_chunks = []
         chunked_info = _chunk_table(alignment_info, chunk_size)
         n_chunks = len(list(range(0, len(alignment_info), chunk_size)))
