@@ -46,11 +46,11 @@ class Reader(vcf.Reader):
         #     'G': -2,  # Equal to the number of genotypes in a given record
         #     'R': -3,  # Equal to the number of alleles including reference in a given record
         # }
-        info_flag_num = 0
-        info_value_num = 1
-        info_allele_num = -1
         log.info('gnomAD header:\n%s', info_header.head().to_string())
         log.info('gnomAD header types:\n%s', info_header.dtypes.to_string())
+        info_flag_num = '0.0'
+        info_value_num = '1.0'
+        info_allele_num = '-1.0'
         info_flag_fields = info_header.query('num == @info_flag_num').id.tolist()
         log.info('gnomAD info value header:\n%s', info_header.query('num == @info_value_num').to_string())
         info_value_fields = info_header.query('num == @info_value_num').id.tolist()

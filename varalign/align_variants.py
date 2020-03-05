@@ -481,14 +481,14 @@ def main(path_to_alignment, max_gaussians=5, n_groups=1, override=False, species
     plot_data = column_summary[subset_mask_gmm]
     plot_data = plot_data.assign(pass_alpha=plot_data['pvalue'] < 0.1)
     # TODO: plot.scatter throws AttributeError with pandas 0.22.0 or matplotlib 2.1.2
-    ax = plot_data.plot.scatter('shenkin', 'oddsratio', c='pass_alpha',  # Valdar is well correlated...
-                                colorbar=False,
-                                logy=True, figsize=(10, 10))
-    _ = plt.setp(ax.get_xticklabels(), visible=True)
-    plt.title('Missense Score vs. Shenkin')
-    pdf.attach_note('Missense Score vs. Shenkin')
-    pdf.savefig(metadata={'creationDate': None})
-    plt.close()
+    #ax = plot_data.plot.scatter('shenkin', 'oddsratio', c='pass_alpha',  # Valdar is well correlated...
+    #                            colorbar=False,
+    #                            logy=True, figsize=(10, 10))
+    #_ = plt.setp(ax.get_xticklabels(), visible=True)
+    #plt.title('Missense Score vs. Shenkin')
+    #pdf.attach_note('Missense Score vs. Shenkin')
+    #pdf.savefig(metadata={'creationDate': None})
+    #plt.close()
 
     # Other aggregations, some of these just produce the plot
     # Variants per sequence histogram
