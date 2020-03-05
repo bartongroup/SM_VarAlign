@@ -65,6 +65,7 @@ class Reader(vcf.Reader):
         self.info_value_fields = info_value_fields
         self.info_allele_fields = info_allele_fields
         self.info_other_fields = info_other_fields
+        self.info_header = info_header
 
         # Annotations that need special handling during variant allele expansion
         standard_num_values = [info_flag_num, info_value_num, info_allele_num]
