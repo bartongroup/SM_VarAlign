@@ -25,12 +25,12 @@ log = logging.getLogger(__name__)
 log.setLevel('INFO')
 
 
-def _format_structure_data(pdb):
+def _format_structure_data(pdb, aln_info):
     # Read structure data
     log.info('Generating ProIntVar tables for pdb ID: {}'.format(pdb))  # FIXME: interferes with tqdm progress...
     try:
-        pdbx, dssp, sifts, contacts = merger.table_generator(pdb_id=pdb, bio=False, contacts=True,
-                                                             override=False, residue_agg=True, dssp=False)
+        pdbx, dssp, sifts, contacts = merger.table_generator(aln_info=aln_info, pdb_id=pdb, bio=True, contacts=True,
+                                                             override=True, residue_agg=True, dssp=True, dssp_unbound=True)
         # TODO: Re-enable override
     except FileNotFoundError as e:
         # TODO: raise or don't catch this once prointvar bugs worked out...
@@ -39,6 +39,7 @@ def _format_structure_data(pdb):
     except OSError as e:
         log.error('{} failed with OSError'.format(pdb))
         return None
+        #raise
     except ValueError as e:
         # TODO: This error can be caused by ProIntVar trying to parse empty special contacts from arpeggio
         log.error('{} failed with ValueError'.format(pdb))
@@ -47,6 +48,7 @@ def _format_structure_data(pdb):
     log.info('Merging ProIntVar sub-tables...')
     table = merger.TableMerger(pdbx_table=pdbx, sifts_table=sifts,
                                contacts_table=contacts, dssp_table=dssp).merge()
+    log.info('{} has finished being processed'.format(pdb))
     return table
 
 
@@ -57,7 +59,7 @@ def _download_structure_data(alignment_info_table, logfile='prointvar_download')
             with open(logfile + '.log.' + uniprot_id, 'w') as process_err:
                 # TODO: Add `--bio` flag once bio units are fixed
                 exit_code = subprocess.call(
-                    ['ProIntVar', 'download', '--mmcif', '--pdb', '--sifts', '--best_structures', uniprot_id],
+                    ['ProIntVar', 'download', '--mmcif', '--pdb', '--bio', '--sifts', '--best_structures', uniprot_id],
                     stdout=process_out, stderr=process_err)
                 sifts_best_order = pd.read_table(process_out.name, header=None,
                                                  names=['sifts_index', 'pdb_id', 'chain_id'])
@@ -141,6 +143,7 @@ def _dedupe_ab_contacts(contacts_table):
     # TODO: these are SIFTS PDB records and they may be wrong for bio units
     atom_id_fields = ['PDB_dbAccessionId', 'PDB_dbChainId', 'PDB_dbResNum', 'PDB_entityId']
     atom_id_fields = ['{}_{}'.format(field, ab) for ab in ['A', 'B'] for field in atom_id_fields]
+    log.info("These are the atom_id_fields: {}".format(atom_id_fields)) #JAVIER DID THIS 
     is_duplicated = contacts_table[atom_id_fields].apply(frozenset, axis=1, raw=True).duplicated()
     log.info('Removing {} duplicates...'.format(sum(is_duplicated)))
     contacts_table = contacts_table.loc[~is_duplicated]
@@ -349,7 +352,7 @@ def alignment_ppi_plot(data, axis=None):
     _stem_and_line_plot(data, line='sequences_with_contacts', stems='protein_protein_interactions', axis=axis)
 
 
-def main(path_to_alignment, override, only_sifts_best, max_pdbs, n_proc):
+def main(path_to_alignment, override, only_sifts_best, max_pdbs, n_proc, download_strucs = False):
     # Read data produced by `align_variants.py`
     input_alignment_filename = os.path.basename(path_to_alignment)
     av_data_prefix = os.path.join(os.path.dirname(path_to_alignment), '.varalign', 'aligned_variants_data',
@@ -379,9 +382,16 @@ def main(path_to_alignment, override, only_sifts_best, max_pdbs, n_proc):
         log_dir = os.path.join('.varalign', 'prointvar', 'download_logs')
         make_dir_if_needed(log_dir)
         download_logfile = os.path.join(log_dir, input_alignment_filename + '_prointvar_download')
-        status, downloaded = _download_structure_data(aln_info, download_logfile)
+        if download_strucs or not os.path.isfile(data_prefix + '_sifts_result_table.p.gz'): # JAVIER DID THIS
+            status, downloaded = _download_structure_data(aln_info, download_logfile)
+            downloaded.to_pickle((data_prefix + '_sifts_result_table.p.gz')) # JAVIER DID THIS
+            log.info('Writing sifts results to {}'.format(data_prefix + '_sifts_result_table.p.gz'))
+        else:
+            log.info('Reading {}...'.format(data_prefix + '_sifts_result_table.p.gz'))
+            downloaded = pd.read_pickle(data_prefix + '_sifts_result_table.p.gz')
+            log.info('Loaded sifts results table from file.')
         # TODO: log some download statuses
-
+        
         # Process all downloaded structural data with ProIntVar
         # FIXME: Not applied if data is reloaded!
         if only_sifts_best:
@@ -392,16 +402,21 @@ def main(path_to_alignment, override, only_sifts_best, max_pdbs, n_proc):
         else:
             to_load = downloaded['pdb_id'].dropna().unique()
         p = multiprocessing.Pool(n_proc)
-        tabs = list(tqdm.tqdm(p.imap(_format_structure_data, to_load), total=len(to_load)))
+        aln_infos = [aln_info for i in range(0, len(to_load))]
+        zipped_input = list(zip(to_load, aln_infos))
+        tabs = list(tqdm.tqdm(p.starmap(_format_structure_data, zipped_input), total=len(to_load)))
         structure_table = pd.concat(tabs)
         log.info('{} atom-atom records created.'.format(len(structure_table)))  # Shouldn't this be even?
-
+        #structure_table.to_pickle("/cluster/gjb_lab/2394007/varalign_runs/varalign_subset/struc_not_deduped.p.gz") #javier did this
+        
         # Filter non-alignment residues from the table
         log.info('Filtering extra-domain contacts (i.e. neither atom maps to the alignment)...')
         structure_table = _filter_extra_domain_contacts(structure_table, aln_info)
 
         # Remove each contact's duplicate row
         log.info('Removing contact duplicates...')
+        print("Saving structure table without deduping")# JAVIER DID THIS
+        #structure_table.to_pickle("/cluster/gjb_lab/2394007/varalign_runs/varalign_subset/struc_not_deduped.p.gz") #javier did this
         structure_table = _dedupe_ab_contacts(structure_table)
 
         # Add alignment columns to table

@@ -300,7 +300,7 @@ class Reader(vcf.Reader):
 
         return merged_variant_table
 
-    def get_gnomad_variants(self, aln_info_table, include_other_info=False):
+    def get_gnomad_variants(self, aln_info_table, include_other_info=False, write_vcf_out = False, out_vcf_path = None):
         """
 
         :param aln_info_table:
@@ -323,9 +323,15 @@ class Reader(vcf.Reader):
 
         # Write alignment variants to a VCF
         # TODO: add alignment to file name? (needs refactoring...)
-        with open(os.path.join('results', 'alignment_variants.vcf'), 'w') as vcf_out:
-            vcf_writer = vcf.Writer(vcf_out, self)
-            for v, _ in all_variants:
-                vcf_writer.write_record(v)
+        if write_vcf_out: # added by JSU. Not really interested in writing this.
+            if out_vcf_path != None:
+                log.info("Variants will be written to {}".format(out_vcf_path))
+                pass
+            else:
+                out_vcf_path = os.path.join('results', 'alignment_variants.vcf')
+            with open(out_vcf_path, 'w') as vcf_out:
+                vcf_writer = vcf.Writer(vcf_out, self)
+                for v, _ in all_variants:
+                    vcf_writer.write_record(v)
 
         return variants_table

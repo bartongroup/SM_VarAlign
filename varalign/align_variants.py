@@ -130,13 +130,77 @@ def _map_uniprot_to_genome(uniprot, species='homo_sapiens', collapse=True):
         log.info('Removed %s non-standard sequence regions from %s.', len(non_standard_ranges), uniprot)
     # Check for no mapping
     if len(ensembl_ranges) == 0:
-        raise ValueError('Could not map {} to the genome.'.format(uniprot))  # TODO: handle this...
+        log.warn('Could not map {} to the genome.'.format(uniprot))
+        return None
     # Collapse ranges if desired
     if collapse:
         ensembl_ranges = ensembl.merge_ranges(ensembl_ranges, min_gap=1000)
     return ensembl_ranges
 
+### ADDED BY JSU
 
+def get_genome_mappings_JSU(aln_info_table, species):
+    """
+    :param aln_info_table:
+    :param species:
+    :return:
+    """
+    # TODO: If get transcript ID can use to filter variant table (duplicate)
+    genomic_ranges = [
+        (row.seq_id, _map_uniprot_to_genome_JSU(row.uniprot_id, row.start_end, species=species))
+        for row in tqdm.tqdm(aln_info_table.itertuples(), total=len(aln_info_table), desc='Mapping sequences...')
+    ]
+    if len(genomic_ranges) == 0:
+        log.error('Failed to map any sequences to the genome... Are you sure there are human sequences?')
+        raise ValueError
+    log.info("Mapped {} sequences to genome.".format(len(genomic_ranges)))
+    # Format to table
+    genomic_mapping_table = pd.DataFrame(genomic_ranges, columns=['seq_id', 'genomic_ranges'])
+    return genomic_mapping_table
+
+def _map_uniprot_to_genome_JSU(uniprot, region, species='homo_sapiens', collapse=True):
+    """
+    Map a UniProt entry to the genome.
+    :param uniprot:
+    :param species:
+    :param collapse:
+    :return:
+    """
+    # Map to Gene IDs
+    ensembl_genes = ensembl.get_xrefs(uniprot, species=species,
+                                      features='gene')  # TODO: This could be transcrpts or translations...
+    if len(ensembl_genes) == 0:
+        return None  # no mapping
+    try:
+        assert len(ensembl_genes) == 1
+    except AssertionError as e:
+        log.warning("{}/{}-{} maps to multiple genes: {}".format(uniprot, str(region[0]), str(region[1]), ensembl_genes))
+
+    canonical_transcripts = [ensembl.get_canonical_transcript(x) for x in ensembl_genes]
+    ensembl_ranges = [ensembl.get_genomic_range_JSU(x, region) for x in canonical_transcripts]
+    for i in range(len(ensembl_ranges)):
+        #if ensembl_ranges[i] == tuple():
+        #    continue
+        log.info('Mapped {}/{}-{} to gene {}, transcript {} on chr: {}, {}-{}'.format(uniprot, str(region[0]), str(region[1]), ensembl_genes[i], canonical_transcripts[i], *ensembl_ranges[i]))
+    # Identify and remove non-standard sequence regions
+    #ensembl_ranges = [i for i in ensembl_ranges if i != tuple()] #filtering out those empty mappings resulting of HTTPError 500
+    non_standard_ranges = [i for i, x in enumerate(ensembl_ranges) if x[0] not in ensembl.standard_regions]
+    if len(non_standard_ranges) > 0:
+        non_standard_ranges.sort(reverse=True)
+        [ensembl_genes.pop(i) for i in non_standard_ranges]
+        [ensembl_ranges.pop(i) for i in non_standard_ranges]
+        log.info('Removed %s non-standard sequence regions from %s.', len(non_standard_ranges), uniprot)
+    # Check for no mapping
+    if len(ensembl_ranges) == 0:
+        log.error('Could not map {} to the genome.'.format(uniprot))  # TODO: handle this...
+        #raise ValueError('Could not map {} to the genome.'.format(uniprot))  # TODO: handle this...
+    # Collapse ranges if desired
+    else:
+        if collapse:
+            ensembl_ranges = ensembl.merge_ranges(ensembl_ranges, min_gap=1000)
+    return ensembl_ranges 
+
+### ADDED BY JSU 
 def _mapping_table(alignment_info):
     """
     Construct a alignment column to sequence residue mapping table.
@@ -265,7 +329,7 @@ def map_variants_to_alignment(variants_df, residue_column_map):
     return aligned_variants
 
 
-def align_variants(aln_info_table, species='HUMAN', path_to_vcf=None, include_other_info=False):
+def align_variants(aln_info_table, species='HUMAN', path_to_vcf=None, include_other_info=False, write_vcf_out = False, out_vcf_path = None):
     """
 
     :param species:
@@ -279,14 +343,15 @@ def align_variants(aln_info_table, species='HUMAN', path_to_vcf=None, include_ot
 
     # ----- Map sequences to genome -----
     # TODO: If get transcript ID can use to filter variant table
-    genomic_mapping_table = get_genome_mappings(aln_info_table, species)
+    genomic_mapping_table = get_genome_mappings_JSU(aln_info_table, species) ### this might change things ###
     aln_info_table = aln_info_table.merge(genomic_mapping_table, on=['seq_id'], how='left')
 
     # ----- Fetch variants for the mapped genomic ranges -----
     # Load the VCF with extended vcf.Reader
     vcf_is_compressed = True if path_to_vcf.endswith('bgz') else None  # pyvcf doesn't recognise .bgz
     parser = gnomad.Reader(filename=path_to_vcf, compressed=vcf_is_compressed)
-    variants_table = parser.get_gnomad_variants(aln_info_table, include_other_info=include_other_info)
+    log.info("VERY IMPORTANT INCLUDE_OTHER_INFO IS PASSED HERE AS {}".format(include_other_info))
+    variants_table = parser.get_gnomad_variants(aln_info_table, include_other_info=include_other_info, write_vcf_out = write_vcf_out, out_vcf_path=out_vcf_path)
 
     # ----- Add source UniProt identifiers to the table -----
     # Create UniProt ID series that shares an index with the variant table
@@ -330,65 +395,86 @@ def main(path_to_alignment, max_gaussians=5, n_groups=1, override=False, species
     # Run align variants pipeline in chunks
     # Parse alignment info
     log.info('Generating alignment info table...')
-    alignment_info = alignments.alignment_info_table(alignment, species)
-    log.info('Alignment info table head:\n%s', alignment_info.head().to_string())
-    if override or not is_data_available:
+    alignment_info = alignments.alignment_info_table(alignment)
+    alignment_info_variants = alignments.alignment_info_table(alignment, species)
+    log.info('Alignment info table head:\n%s', alignment_info_variants.head().to_string())
+    if not is_data_available:
         # TODO: Chunk size should be optimised? Also, its effectiveness depends on human sequences in each chunk...
         chunk_size = 500
         vartable_chunks = []
-        chunked_info = _chunk_table(alignment_info, chunk_size)
-        n_chunks = len(list(range(0, len(alignment_info), chunk_size)))
+        chunked_info = _chunk_table(alignment_info_variants, chunk_size)
+        n_chunks = len(list(range(0, len(alignment_info_variants), chunk_size)))
         for chunk in tqdm.tqdm(chunked_info, desc='Alignment chunks...', total=n_chunks):
             _alignment_variant_table = align_variants(chunk)
             vartable_chunks.append(_alignment_variant_table)
         alignment_variant_table = pd.concat(vartable_chunks)
 
         indexed_mapping_table = _mapping_table(alignment_info)  # TODO: Should be passed or returned by align_variants?
+        indexed_mapping_table_variants = _mapping_table(alignment_info_variants)  # TODO: Should be passed or returned by align_variants?
         # Write data
         _dump_table_and_log(alignment_info.to_pickle, data_prefix + '_info.p.gz', 'Alignment info table pickle')
         _dump_table_and_log(alignment_variant_table.to_pickle, data_prefix + '_variants.p.gz',
                             'Alignment variant table pickle')
         _dump_table_and_log(indexed_mapping_table.to_pickle, data_prefix + '_mappings.p.gz',
                             'Alignment mapping table pickle')
+        _dump_table_and_log(indexed_mapping_table_variants.to_pickle, data_prefix + '_mappings_variants.p.gz',
+                            'Variant containing alignment mapping table pickle')
     else:
         log.info('Loading data for {}...'.format(path_to_alignment))
         alignment_info = pd.read_pickle(data_prefix + '_info.p.gz')
         alignment_variant_table = pd.read_pickle(data_prefix + '_variants.p.gz')
         indexed_mapping_table = pd.read_pickle(data_prefix + '_mappings.p.gz')
+        indexed_mapping_table_variants = pd.read_pickle(data_prefix + '_mappings_variants.p.gz')
 
     # AACon
     # Run AACon and save results
-    conservation_methods = [x for x in aacon.aacon_methods if x != 'LANDGRAF']  # TODO: reinstate Landgraf when fixed
-    alignment_conservation = aacon.get_aacon(alignment, methods=conservation_methods)
-    _dump_table_and_log(alignment_conservation.to_csv, results_prefix + '_aacon_scores.csv',
-                        'Formatted AACons results')
+    if not os.path.exists(results_prefix + '_aacon_scores.csv'):
+        conservation_methods = [x for x in aacon.aacon_methods if x != 'LANDGRAF']  # TODO: reinstate Landgraf when fixed
+        alignment_conservation = aacon.get_aacon(alignment, methods=conservation_methods)
+        _dump_table_and_log(alignment_conservation.to_csv, results_prefix + '_aacon_scores.csv',
+                            'Formatted AACons results')
+    elif os.path.exists(results_prefix + '_aacon_scores.csv'):
+        alignment_conservation = pd.read_csv(results_prefix + '_aacon_scores.csv')
+        log.info('AAcon table already exists! Reading it from {}'.format(results_prefix + '_aacon_scores.csv'))
 
     # The remainder is pretty much all analysis, plotting and formatting (e.g., to Jalview output)
 
     # Calculate column variant aggregations and save results
     # Count variants over columns
+    #if not os.path.exists(results_prefix + '.col_var_counts.csv'):
     column_variant_counts = analysis_toolkit.count_column_variant_consequences(alignment_variant_table)
     _dump_table_and_log(column_variant_counts.to_csv, results_prefix + '.col_var_counts.csv',
                         'Column variant counts')
-    # Count *rare* variants over columns
-    rare_maf_threshold = 0.001
-    is_rare = alignment_variant_table[('Allele_INFO', 'AF_POPMAX')] < rare_maf_threshold
-    column_rare_counts = analysis_toolkit.count_column_variant_consequences(alignment_variant_table[is_rare])
-    _dump_table_and_log(column_rare_counts.to_csv, results_prefix + '.col_rare_counts.csv',
-                        'Column rare variant counts')
+    #elif os.path.exists(results_prefix + '.col_var_counts.csv'):
+    #    column_variant_counts = pd.read_csv(results_prefix + '.col_var_counts.csv')
+    #    log.info('Column variant counts table already exists! Reading it from {}'.format(results_prefix + '.col_var_counts.csv'))
+    # # Count *rare* variants over columns
+    # rare_maf_threshold = 0.001
+    # is_rare = alignment_variant_table[('Allele_INFO', 'AF_POPMAX')] < rare_maf_threshold
+    # column_rare_counts = analysis_toolkit.count_column_variant_consequences(alignment_variant_table[is_rare])
+    # _dump_table_and_log(column_rare_counts.to_csv, results_prefix + '.col_rare_counts.csv',
+    #                     'Column rare variant counts')
     # Count ClinVar annotations for *missense* variants over columns
+    #if not os.path.exists(results_prefix + '.col_mis_clinvar.csv'):
     is_missense = alignment_variant_table[('VEP', 'Consequence')] == 'missense_variant'
     column_missense_clinvar = analysis_toolkit.count_column_clinvar(alignment_variant_table[is_missense])
     _dump_table_and_log(column_missense_clinvar.to_csv, results_prefix + '.col_mis_clinvar.csv',
-                        'Column missense variant ClinVar annotation frequencies')
+                            'Column missense variant ClinVar annotation frequencies')
+    #elif os.path.exists(results_prefix + '.col_mis_clinvar.csv'):
+    #    column_missense_clinvar = pd.read_csv(results_prefix + '.col_mis_clinvar.csv')
+    #    log.info('Column missense variant ClinVar table already exists! Reading it from {}'.format(results_prefix + '.col_mis_clinvar.csv'))
     # Count ClinVar annotations for *synonymous* variants over columns
+    #if not os.path.exists(results_prefix + '.col_syn_clinvar.csv'):
     is_synonymous = alignment_variant_table[('VEP', 'Consequence')] == 'synonymous_variant'
     column_synonymous_clinvar = analysis_toolkit.count_column_clinvar(alignment_variant_table[is_synonymous])
     _dump_table_and_log(column_synonymous_clinvar.to_csv, results_prefix + '.col_syn_clinvar.csv',
-                        'Column synonymous variant ClinVar annotation frequencies')
+                            'Column synonymous variant ClinVar annotation frequencies')
+    #elif os.path.exists(results_prefix + '.col_syn_clinvar.csv'):
+    #    column_synonymous_clinvar = pd.read_csv(results_prefix + '.col_syn_clinvar.csv')
+    #    log.info('Column synonymous variant ClinVar table already exists! Reading it from {}'.format(results_prefix + '.col_syn_clinvar.csv'))
     # Use mapping table to calculate human residue occupancy
     # TODO: Adjust for unmapped seqs
-    column_occupancy = _occupancy_from_mapping_table(indexed_mapping_table)
+    column_occupancy = _occupancy_from_mapping_table(indexed_mapping_table_variants)
     # Merge required data for further standard analyses; this is saved after missense scores are added
     column_summary = column_variant_counts.join([column_missense_clinvar, column_occupancy, alignment_conservation])
 
@@ -488,7 +574,7 @@ def main(path_to_alignment, max_gaussians=5, n_groups=1, override=False, species
     residue_counts = alignment_variant_table.pipe(analysis_toolkit._aggregate_annotation,
                                                   ('VEP', 'Consequence'),
                                                   aggregate_by=['SOURCE_ID', 'Protein_position'])
-    residue_counts = residue_counts.reindex(indexed_mapping_table.index).fillna(0)  # Fill in residues with no variants
+    residue_counts = residue_counts.reindex(indexed_mapping_table_variants.index).fillna(0)  # Fill in residues with no variants
     residue_counts['missense_variant'].astype(int).value_counts().plot.bar(ax=axes[0], width=1, facecolor='black',
                                                                            edgecolor='black')
     axes[0].set_title('Missense Variants per Residue')
@@ -511,13 +597,13 @@ def main(path_to_alignment, max_gaussians=5, n_groups=1, override=False, species
     cmd = cmd_mask[cmd_mask].index
     cme = cme_mask[cme_mask].index
     # Save residues in selection
-    indexed_mapping_table.reset_index().set_index(('Alignment', 'Column')).loc[umd].to_csv(
+    indexed_mapping_table_variants.reset_index().set_index(('Alignment', 'Column')).loc[umd].to_csv(
         results_prefix + '.umdres.csv')
-    indexed_mapping_table.reset_index().set_index(('Alignment', 'Column')).loc[ume].to_csv(
+    indexed_mapping_table_variants.reset_index().set_index(('Alignment', 'Column')).loc[ume].to_csv(
         results_prefix + '.umeres.csv')
-    indexed_mapping_table.reset_index().set_index(('Alignment', 'Column')).loc[cmd].to_csv(
+    indexed_mapping_table_variants.reset_index().set_index(('Alignment', 'Column')).loc[cmd].to_csv(
         results_prefix + '.cmdres.csv')
-    indexed_mapping_table.reset_index().set_index(('Alignment', 'Column')).loc[cme].to_csv(
+    indexed_mapping_table_variants.reset_index().set_index(('Alignment', 'Column')).loc[cme].to_csv(
         results_prefix + '.cmeres.csv')
     # Write marking jalview tracks
     alignment_column_index = list(range(1, alignment.get_alignment_length() + 1))

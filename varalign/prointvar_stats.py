@@ -27,7 +27,7 @@ def _structure_column_counts(aligned_prointvar_table, query, unique_sequences_na
     # Repeat for ATOM_B
     # Group interactions at each column and summarise
     gr_b = sub_table.groupby(['SOURCE_ID_B', 'Alignment_column_B']).size().groupby('Alignment_column_B')
-    n_unique_sequences = n_unique_sequences.add(gr_b.size(), fill_value=0)  # TODO: Double check this, I think its right
+    n_unique_sequences = n_unique_sequences.add(gr_b.size(), fill_value=0)
     n_interactions = n_interactions.add(gr_b.sum(), fill_value=0)
 
     # Format results
