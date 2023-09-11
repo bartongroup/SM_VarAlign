@@ -4,14 +4,14 @@
 # Run 'pip install -r requirements.txt' to install these dependencies
 
 biopython
-matplotlib>=2.0.2,<=2.1.1
+matplotlib
 numpy
-pandas>=0.20.3
-#prointvar-core
+pandas
+#prointvar
 proteofav
 pysam
 requests
-requests_cache>=0.4.13  # Version required for ProteoFAV and ProIntVar
+requests_cache
 scipy
 seaborn
 scikit-learn

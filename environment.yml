@@ -8,12 +8,12 @@ dependencies:
 - python=3
 - pip
 - biopython
-- matplotlib>=2.0.2,<=2.1.1
+- matplotlib
 - numpy
 - pandas
 - pysam
 - requests
-- requests-cache>=0.4.13  # Version required for ProteoFAV and ProIntVar
+- requests-cache
 - scipy
 - seaborn
 - scikit-learn
@@ -22,4 +22,6 @@ dependencies:
 - java-jdk
 - pip:
   - proteofav
-#  - prointvar-core
+  # - git+ssh://git@github.com/bartongroup/SM_VarAlign.git
+  - -e /Users/smacgowan/OneDrive-Projects/230908a-varalign-1.0/public/SM_VarAlign
+  - git+ssh://git@github.com/bartongroup/ProIntVar.git@f5ae6dae6e505d45be2c13ab7b44e6ed44c414a8#egg=ProIntVar-Core
