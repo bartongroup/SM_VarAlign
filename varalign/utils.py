@@ -8,11 +8,12 @@ import re
 
 import requests
 from Bio.Align import MultipleSeqAlignment
-from Bio.Alphabet import IUPAC
 from Bio.Seq import Seq
 from varalign.six.moves import urllib
 
 from varalign.retry import retry
+
+ALIGNMENT_CHARS = set('ACDEFGHIKLMNPQRSTVWY-')
 
 log = logging.getLogger(__name__)
 log.setLevel('INFO')
@@ -123,7 +124,7 @@ def sanitise_alignment(aln):
         new_seq_str = new_seq_str.replace('.', '-')
 
         # Check if there's anything left weird
-        unk_chars = set(new_seq_str).difference(set(IUPAC.IUPACProtein.letters + '-'))
+        unk_chars = set(new_seq_str).difference(ALIGNMENT_CHARS)
         if unk_chars:
             log.warning('Unrecognised characters ({}) remain in {}.'.format(''.join(unk_chars),
                                                                             seqrec.id))

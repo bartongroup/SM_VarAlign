@@ -6,10 +6,9 @@ from subprocess import call
 
 import pandas as pd
 from Bio import AlignIO  # Needs PR #768 #769 patched
-from Bio.Alphabet import IUPAC
 
 from varalign import pfam
-from varalign.utils import filter_alignment, sanitise_alignment
+from varalign.utils import filter_alignment, sanitise_alignment, ALIGNMENT_CHARS
 
 log = logging.getLogger(__name__)
 logging.captureWarnings(True)
@@ -116,12 +115,11 @@ if __name__ == '__main__':
 
     # Remove empty columns and those with unknown characters
     log.info('Removing empty and unrecognised columns...')
-    allowed_chars = IUPAC.IUPACProtein.letters + '-'
     is_empty_column = []
     contains_unk_chars = []
     for column in range(family.get_alignment_length()):
         is_empty_column.append(all([x == '-' for x in family[:, column]]))
-        contains_unk_chars.append(any([x not in allowed_chars for x in family[:, column]]))
+        contains_unk_chars.append(any([x not in ALIGNMENT_CHARS for x in family[:, column]]))
     log.info('Removed empty columns: {}'.format(','.join([str(i + 1) for i, x in enumerate(is_empty_column) if x])))
     log.info('Removed malformed columns: {}'.format(','.join([str(i + 1) for i, x in enumerate(contains_unk_chars) if x])))
     column_mask = [x | y for x, y in zip(is_empty_column, contains_unk_chars)]

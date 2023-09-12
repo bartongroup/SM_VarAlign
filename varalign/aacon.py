@@ -5,11 +5,10 @@ import subprocess
 
 import pandas as pd
 from Bio import AlignIO  # Needs PR #768 #769 patched
-from Bio.Alphabet import IUPAC
 
 import varalign
 from varalign.jabaws import apply_column_mask
-from varalign.utils import sanitise_alignment, make_dir_if_needed
+from varalign.utils import sanitise_alignment, make_dir_if_needed, ALIGNMENT_CHARS
 
 log = logging.getLogger(__name__)
 log.setLevel('INFO')
@@ -32,12 +31,11 @@ def _reformat_alignment_for_aacon(aln):
     aacon_alignment = sanitise_alignment(aln)
 
     # Identify empty columns and those with unknown characters
-    allowed_chars = IUPAC.IUPACProtein.letters + '-'
     is_empty_column = []
     contains_unk_chars = []
     for column in range(aacon_alignment.get_alignment_length()):
         is_empty_column.append(all([x == '-' for x in aacon_alignment[:, column]]))
-        contains_unk_chars.append(any([x not in allowed_chars for x in aacon_alignment[:, column]]))
+        contains_unk_chars.append(any([x not in ALIGNMENT_CHARS for x in aacon_alignment[:, column]]))
 
     # Remove those columns
     column_mask = [x | y for x, y in zip(is_empty_column, contains_unk_chars)]
