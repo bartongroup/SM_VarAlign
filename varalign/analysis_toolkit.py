@@ -1,3 +1,4 @@
+import numpy as np
 import pandas as pd
 import seaborn as sns
 from scipy import stats
@@ -21,6 +22,16 @@ def _aggregate_annotation(aligned_variant_table, annotation_column, aggregate_by
     return grouped.size().unstack(fill_value=fill_value)
 
 
+def linregress_resilient(x, y):
+    """Perform linear regression resilient to error cases."""
+    try:
+        return stats.linregress(x, y)
+    except ValueError:
+        # ValueError: Cannot calculate a linear regression if all x values are identical
+        # Try adding jitter to x
+        x += np.random.normal(0, 0.0001, len(x))
+        return stats.linregress(x, y)
+
 def _comparative_regression(column_variant_counts, regressor='Human_res_occupancy', filter_mask=None,
                             confounder_variable=None):
     """Return table of regression parameters for missense / synonymous counts vs. a regressor.
@@ -32,25 +43,25 @@ def _comparative_regression(column_variant_counts, regressor='Human_res_occupanc
     """
     regressions = []
     # Regressions for all columns
-    regressions.append(stats.linregress(x=column_variant_counts[regressor],
-                                        y=column_variant_counts['missense_variant'])._asdict())
-    regressions.append(stats.linregress(x=column_variant_counts[regressor],
-                                        y=column_variant_counts['synonymous_variant'])._asdict())
+    regressions.append(linregress_resilient(x=column_variant_counts[regressor],
+                                            y=column_variant_counts['missense_variant'])._asdict())
+    regressions.append(linregress_resilient(x=column_variant_counts[regressor],
+                                            y=column_variant_counts['synonymous_variant'])._asdict())
     row_names = ['missense', 'synonymous']
     if filter_mask is not None:
         # Regressions for filtered columns
-        regressions.append(stats.linregress(x=column_variant_counts[filter_mask][regressor],
-                                            y=column_variant_counts[filter_mask]['missense_variant'])._asdict())
-        regressions.append(stats.linregress(x=column_variant_counts[filter_mask][regressor],
-                                            y=column_variant_counts[filter_mask]['synonymous_variant'])._asdict())
+        regressions.append(linregress_resilient(x=column_variant_counts[filter_mask][regressor],
+                                                y=column_variant_counts[filter_mask]['missense_variant'])._asdict())
+        regressions.append(linregress_resilient(x=column_variant_counts[filter_mask][regressor],
+                                                y=column_variant_counts[filter_mask]['synonymous_variant'])._asdict())
         row_names += ['filtered_missense', 'filtered_synonymous']
 
     if confounder_variable is not None:
         # Regressions including confounder
-        regressions.append(stats.linregress(x=column_variant_counts[[regressor, confounder_variable]],
-                                            y=column_variant_counts['missense_variant'])._asdict())
-        regressions.append(stats.linregress(x=column_variant_counts[[regressor, confounder_variable]],
-                                            y=column_variant_counts['synonymous_variant'])._asdict())
+        regressions.append(linregress_resilient(x=column_variant_counts[[regressor, confounder_variable]],
+                                                y=column_variant_counts['missense_variant'])._asdict())
+        regressions.append(linregress_resilient(x=column_variant_counts[[regressor, confounder_variable]],
+                                                y=column_variant_counts['synonymous_variant'])._asdict())
         row_names += ['_missense', 'filtered_synonymous']
 
     results = pd.DataFrame(regressions, index=row_names)
