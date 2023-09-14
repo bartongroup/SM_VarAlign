@@ -3,9 +3,13 @@ VarAlign is a python module that aggregates human genetic variation over the col
 
 ## Table of Contents
 
-- [Installing](#installing)
-  - [Enabling structural analysis](#enabling-structural-analysis)
-- [Configuration](#configuration)
+- [VarAlign](#varalign)
+  - [Table of Contents](#table-of-contents)
+  - [Installing](#installing)
+    - [Enabling structural analysis](#enabling-structural-analysis)
+  - [Configuration](#configuration)
+  - [Run the pipeline](#run-the-pipeline)
+  - [Known issues on our cluster](#known-issues-on-our-cluster)
 
 ## Installing
 
@@ -36,7 +40,7 @@ $ python -m unittest discover tests
 *\*requires ProIntVar and Arpeggio*
 
 Arpeggio needs to go in a seperate environment because it requires Python 2.
-```
+```sh
 # Setup environment with arpeggio dependencies
 $ conda create -n arpeggio python=2 pip numpy biopython openbabel
 $ source activate arpeggio
@@ -49,7 +53,7 @@ $ python arpeggio.py -h
 ```
 
 Install and configure ProIntVar. (NB. ProIntVar requires Python 3.)
-```
+```sh
 # Install ProIntVar (https://github.com/bartongroup/ProIntVar)
 $ source activate varalign-env-py3
 $ git clone https://github.com/bartongroup/ProIntVar.git
