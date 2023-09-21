@@ -34,7 +34,7 @@ validation_extension = _validation.xml
 
 [Gnomad]
 # TODO: Having a default here results in an error on different systems without appropriate advice
-gnomad = /homes/smacgowan/NOBACK/resources/gnomad/gnomad.exomes.r2.0.1.sites.vcf.gz
+gnomad = ...
 
 [VEP_Filter]
 # vep_filter is used to filter variant VEP tables via DataFrame.query
