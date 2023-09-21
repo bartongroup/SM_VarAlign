@@ -3,7 +3,7 @@
 #
 # Run 'conda env create -f environment.yml' in a new conda environment.
 
-name: varalign-env-py3-new_run
+name: varalign
 dependencies:
 - python=3
 - pip
