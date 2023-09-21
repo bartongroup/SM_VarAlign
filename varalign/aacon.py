@@ -42,7 +42,7 @@ def _reformat_alignment_for_aacon(aln):
     # Remove those columns
     column_mask = [x | y for x, y in zip(is_empty_column, contains_unk_chars)]
     orig_col_nums = [ind + 1 for ind, x in enumerate(column_mask) if not x]
-    aacon_alignment = apply_column_mask(aacon_alignment, is_empty_column)
+    aacon_alignment = apply_column_mask(aacon_alignment, column_mask)  # TODO: substitute illegal characters instead of masking those columns
 
     # Log modifications
     if any(is_empty_column):

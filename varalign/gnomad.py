@@ -46,10 +46,13 @@ class Reader(vcf.Reader):
         #     'G': -2,  # Equal to the number of genotypes in a given record
         #     'R': -3,  # Equal to the number of alleles including reference in a given record
         # }
-        info_flag_num = 0
-        info_value_num = 1
-        info_allele_num = -1
+        log.info('gnomAD header:\n%s', info_header.head().to_string())
+        log.info('gnomAD header types:\n%s', info_header.dtypes.to_string())
+        info_flag_num = '0.0'
+        info_value_num = '1.0'
+        info_allele_num = '-1.0'
         info_flag_fields = info_header.query('num == @info_flag_num').id.tolist()
+        log.info('gnomAD info value header:\n%s', info_header.query('num == @info_value_num').to_string())
         info_value_fields = info_header.query('num == @info_value_num').id.tolist()
         info_allele_fields = info_header.query('num == @info_allele_num').id.tolist()
         info_other_fields = set(info_header[info_header['num'].isnull()].id)
@@ -62,6 +65,7 @@ class Reader(vcf.Reader):
         self.info_value_fields = info_value_fields
         self.info_allele_fields = info_allele_fields
         self.info_other_fields = info_other_fields
+        self.info_header = info_header
 
         # Annotations that need special handling during variant allele expansion
         standard_num_values = [info_flag_num, info_value_num, info_allele_num]
@@ -316,11 +320,15 @@ class Reader(vcf.Reader):
 
         # pass VCF records and source_ids
         n = 1000  # chunking seems to interact with redundant rows... Fix by adding chunk ID with `keys`
-        variants_table = pd.concat([self.vcf_row_to_table(*list(zip(*all_variants[i:i + n])),
-                                                          include_other_info=include_other_info)
-                                    for i in tqdm.tqdm(range(0, len(all_variants), n), desc='Parsing variants...')],
-                                   keys=list(range(0, len(all_variants), n)))
-
+        try:
+            variants_table = pd.concat([self.vcf_row_to_table(*list(zip(*all_variants[i:i + n])),
+                                                              include_other_info=include_other_info)
+                                        for i in tqdm.tqdm(range(0, len(all_variants), n), desc='Parsing variants...')],
+                                       keys=list(range(0, len(all_variants), n)))
+        except ValueError:
+            # probably no variants leading to no objects to concatenate
+            return None
+        
         # Write alignment variants to a VCF
         # TODO: add alignment to file name? (needs refactoring...)
         with open(os.path.join('results', 'alignment_variants.vcf'), 'w') as vcf_out:

@@ -10,7 +10,7 @@ from varalign.config import defaults
 default_server = defaults.api_ensembl
 
 # Globals for rate-limiting
-reqs_per_sec = 15
+reqs_per_sec = 1  # normally 15 but I will run 15 famlies concurrently 
 req_count = 0
 last_req = 0
 

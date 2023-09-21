@@ -7,10 +7,10 @@ db_sifts = ...
 db_validation = ...
 db_germline_variants = ...
 db_somatic_variants = ...
-db_root = /Users/smacgowan/Downloads
+db_root = .
 
 [Downloads]
-uniprot_cache = /Users/smacgowan/Downloads
+uniprot_cache = .
 
 [Addresses]
 api_pdbe = http://www.ebi.ac.uk/pdbe/api/
@@ -34,9 +34,7 @@ validation_extension = _validation.xml
 
 [Gnomad]
 # TODO: Having a default here results in an error on different systems without appropriate advice
-#gnomad = /Volumes/smacgowan/NOBACK/resources/gnomad/gnomad.exomes.r2.0.1.sites.vcf.gz
-#gnomad = /Users/smacgowan/Datasets/multisample_genotypes.recal_snp.vep.vcf.gz
-gnomad = /Users/smacgowan/Datasets/gnomad_data/exomes/gnomad.exomes.r2.0.2.sites.vcf.bgz
+gnomad = /homes/smacgowan/NOBACK/resources/gnomad/gnomad.exomes.r2.0.1.sites.vcf.gz
 
 [VEP_Filter]
 # vep_filter is used to filter variant VEP tables via DataFrame.query
@@ -48,6 +46,11 @@ consequences =
 #canonical = False
 #additional =
 #consequences =
+
+[internal]
+# added for SMART TPR memory error
+#chunk_size = 500
+chunk_size = 50
 
 # Not used at the moment
 #api_cath = http://www.cathdb.info/version/v4_0_0/api/rest/superfamily/

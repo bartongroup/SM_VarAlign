@@ -98,6 +98,11 @@ def _default_variant_filter(variants_table):
                                       variants_table[('VEP', 'TREMBL')])
     trembl_matches_source[:] = False  # OVERRIDE TREMBL TO KEEP ONLY SWISSPROT
     # Apply filter
+    locals_ = locals()
+    _ = [log.info('{} variants pass {} filter'.format(locals_[v].sum(), v))
+         for v in ['is_canonical', 'is_protein_coding', 'is_not_modifier', 'is_ccds',
+                   'swissprot_matches_source', 'trembl_matches_source', 'at_protein_position']
+        ]
     filtered_variants = variants_table.loc[is_canonical & is_protein_coding & is_not_modifier & is_ccds &
                                            (swissprot_matches_source | trembl_matches_source) &
                                            at_protein_position].copy()
@@ -130,7 +135,8 @@ def _map_uniprot_to_genome(uniprot, species='homo_sapiens', collapse=True):
         log.info('Removed %s non-standard sequence regions from %s.', len(non_standard_ranges), uniprot)
     # Check for no mapping
     if len(ensembl_ranges) == 0:
-        raise ValueError('Could not map {} to the genome.'.format(uniprot))  # TODO: handle this...
+        log.warn('Could not map {} to the genome.'.format(uniprot))
+        return None
     # Collapse ranges if desired
     if collapse:
         ensembl_ranges = ensembl.merge_ranges(ensembl_ranges, min_gap=1000)
@@ -287,6 +293,9 @@ def align_variants(aln_info_table, species='HUMAN', path_to_vcf=None, include_ot
     vcf_is_compressed = True if path_to_vcf.endswith('bgz') else None  # pyvcf doesn't recognise .bgz
     parser = gnomad.Reader(filename=path_to_vcf, compressed=vcf_is_compressed)
     variants_table = parser.get_gnomad_variants(aln_info_table, include_other_info=include_other_info)
+    if variants_table.empty:
+        log.warn('No variants found.')
+        return variants_table
 
     # ----- Add source UniProt identifiers to the table -----
     # Create UniProt ID series that shares an index with the variant table
@@ -297,6 +306,7 @@ def align_variants(aln_info_table, species='HUMAN', path_to_vcf=None, include_ot
     variants_table = variants_table.join(source_uniprot_ids)
 
     # ----- Filter variant table -----
+    log.info('Variants before filtering:\t{}'.format(len(variants_table)))
     filtered_variants = _default_variant_filter(variants_table)
     log.info('Redundant rows:\t{}'.format(sum(filtered_variants.reset_index('Feature').index.duplicated())))
     filtered_variants.reset_index(level=0, drop=True, inplace=True)  # Remove chunk ID
@@ -330,16 +340,22 @@ def main(path_to_alignment, max_gaussians=5, n_groups=1, override=False, species
     # Run align variants pipeline in chunks
     # Parse alignment info
     log.info('Generating alignment info table...')
-    alignment_info = alignments.alignment_info_table(alignment, species)
+    alignment_info = alignments.alignment_info_table(alignment)  # Skips non-human structures bug
     log.info('Alignment info table head:\n%s', alignment_info.head().to_string())
     if override or not is_data_available:
         # TODO: Chunk size should be optimised? Also, its effectiveness depends on human sequences in each chunk...
-        chunk_size = 500
+        chunk_size = int(defaults.chunk_size)  # For SMART TPR memory error
         vartable_chunks = []
         chunked_info = _chunk_table(alignment_info, chunk_size)
         n_chunks = len(list(range(0, len(alignment_info), chunk_size)))
         for chunk in tqdm.tqdm(chunked_info, desc='Alignment chunks...', total=n_chunks):
-            _alignment_variant_table = align_variants(chunk)
+            try:
+                _alignment_variant_table = align_variants(chunk)
+            except AttributeError:
+                # ignore AttributeError: 'NoneType' object has no attribute 'empty' from checking for empty variant
+                # table in align_variants()
+                # TODO: isn't gnomad parser supposed to return an empty DF if there are no variants?
+                continue
             vartable_chunks.append(_alignment_variant_table)
         alignment_variant_table = pd.concat(vartable_chunks)
 
@@ -464,15 +480,16 @@ def main(path_to_alignment, max_gaussians=5, n_groups=1, override=False, species
     # Conservation plane plot: Missense Scores vs. Shenkin
     plot_data = column_summary[subset_mask_gmm]
     plot_data = plot_data.assign(pass_alpha=plot_data['pvalue'] < 0.1)
+    log.info('plot_data:\n%s', plot_data.head().to_string())
     # TODO: plot.scatter throws AttributeError with pandas 0.22.0 or matplotlib 2.1.2
-    ax = plot_data.plot.scatter('shenkin', 'oddsratio', c='pass_alpha',  # Valdar is well correlated...
-                                colorbar=False,
-                                logy=True, figsize=(10, 10))
-    _ = plt.setp(ax.get_xticklabels(), visible=True)
-    plt.title('Missense Score vs. Shenkin')
-    pdf.attach_note('Missense Score vs. Shenkin')
-    pdf.savefig(metadata={'creationDate': None})
-    plt.close()
+    #ax = plot_data.plot.scatter('shenkin', 'oddsratio', c='pass_alpha',  # Valdar is well correlated...
+    #                            colorbar=False,
+    #                            logy=True, figsize=(10, 10))
+    #_ = plt.setp(ax.get_xticklabels(), visible=True)
+    #plt.title('Missense Score vs. Shenkin')
+    #pdf.attach_note('Missense Score vs. Shenkin')
+    #pdf.savefig(metadata={'creationDate': None})
+    #plt.close()
 
     # Other aggregations, some of these just produce the plot
     # Variants per sequence histogram
