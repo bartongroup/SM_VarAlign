@@ -142,7 +142,7 @@ class TestAlign_Variants(TestCase):
             sequence = str(alignment[sn].seq).replace('-', '')
             offset = alignment[sn].annotations['start']
             comparisons = [sequence[position - offset].upper() == residue
-                           for position, residue in variant_refs.iteritems()]  # iterate over residue number, aa pairs
+                           for position, residue in variant_refs.items()]  # iterate over residue number, aa pairs
             all_match.append(all(comparisons))
 
         self.assertTrue(all(all_match), "Variant record reference residues (from VEP) don't match sequence.")
