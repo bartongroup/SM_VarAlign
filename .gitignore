@@ -5,3 +5,4 @@ environment-py2.yml
 .ipynb_checkpoints
 *~
 __pycache__
+tmp/
