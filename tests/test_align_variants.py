@@ -84,6 +84,19 @@ class TestAlign_Variants(TestCase):
 
         os.chdir(TestAlign_Variants.start_dir)
         shutil.rmtree(TestAlign_Variants.test_dir)
+        
+    def updateReferenceData(self):
+        """Update the reference data used for testing."""
+        # Generate new data
+        self.setUpClass()
+        self.setUp()
+
+        # Delete old, copy new
+        shutil.rmtree(self.standard_path)
+        shutil.copytree(self.test_dir, self.standard_path)
+
+        # Clean up
+        self.tearDownClass()
 
     def test_expected_output_exists(self):
         cmpfiles_errors = self.comparison[2]
@@ -146,3 +159,8 @@ class TestAlign_Variants(TestCase):
             all_match.append(all(comparisons))
 
         self.assertTrue(all(all_match), "Variant record reference residues (from VEP) don't match sequence.")
+
+
+if __name__ == '__main__':
+    t = TestAlign_Variants()
+    t.updateReferenceData()
