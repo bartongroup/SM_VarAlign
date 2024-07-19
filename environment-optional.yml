@@ -1,0 +1,25 @@
+
+# This requirements file lists all third-party dependencies for this project.
+#
+# Run 'conda env create -f environment.yml' in a new conda environment.
+
+name: varalign
+dependencies:
+- python=3
+- pip
+- biopython
+- matplotlib>=2.0.2,<=2.1.1
+- numpy
+- pandas
+- pysam
+- requests
+- requests-cache>=0.4.13  # Version required for ProteoFAV and ProIntVar
+- scipy
+- seaborn
+- scikit-learn
+- tqdm
+- pyvcf
+- java-jdk
+- pip:
+  - proteofav
+#  - prointvar-core
