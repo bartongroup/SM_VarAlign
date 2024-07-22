@@ -28,46 +28,28 @@ log = logging.getLogger(__name__)
 log.setLevel('INFO')
 
 
-def _chunk_alignment(aln, n):
-    """
-    Return a generator that provides chunks of an alignment (sequence-wise).
-
-    :param aln: Multiple sequence alignment.
-    :param n: Chunk size.
-    :return: Generator of n-sized alignment chunks.
-    """
-    return (aln[i:i + n] for i in range(0, len(aln), n))
+def chunk_alignment(aln, n):
+    """Return a generator that provides chunks of an alignment (sequence-wise)."""
+    for i in range(0, len(aln), n):
+        yield aln[i:i + n]
 
 
-def _chunk_table(table, n):
-    """
-    Return a generator that provides chunks of a DataFrame (row-wise).
-
-    :param table: DataFrame.
-    :param n: Chunk size.
-    :return: Generator of n-sized alignment chunks.
-    """
-    return (table.iloc[i:i + n] for i in range(0, len(table), n))
+def chunk_table(table, n):
+    """Return a generator that provides chunks of a DataFrame (row-wise)."""
+    for i in range(0, len(table), n):
+        yield table.iloc[i:i + n]
 
 
-def _dump_table_and_log(method, path, what):
+def save_table_and_log(method, path, description):
     method(path)
-    log.info('{} saved to {}'.format(what, path))
+    log.info(f'{description} saved to {path}')
 
 
-def _build_vep_filter(canonical=eval(defaults.canonical), consequences=defaults.consequences,
-                      additional=defaults.additional):
-    """
-    Build a VEP filter string suitable for DataFrame.query().
-
-    :param canonical:
-    :param consequences:
-    :param additional:
-    :return:
-    """
+def build_vep_filter(canonical=eval(defaults.canonical), consequences=defaults.consequences, additional=defaults.additional):
+    """Build a VEP filter string suitable for DataFrame.query()."""
     query = []
     if consequences != ['']:
-        query.append('Consequence in {}'.format(consequences))
+        query.append(f'Consequence in {consequences}')
     if canonical:
         query.append('CANONICAL == "YES"')
     if additional != '':
@@ -336,7 +318,7 @@ def main(path_to_alignment, max_gaussians=5, n_groups=1, override=False, species
         # TODO: Chunk size should be optimised? Also, its effectiveness depends on human sequences in each chunk...
         chunk_size = int(defaults.chunk_size)  # For SMART TPR memory error
         vartable_chunks = []
-        chunked_info = _chunk_table(alignment_info, chunk_size)
+        chunked_info = chunk_table(alignment_info, chunk_size)
         n_chunks = len(list(range(0, len(alignment_info), chunk_size)))
         for chunk in tqdm.tqdm(chunked_info, desc='Alignment chunks...', total=n_chunks):
             try:
@@ -351,10 +333,10 @@ def main(path_to_alignment, max_gaussians=5, n_groups=1, override=False, species
 
         indexed_mapping_table = _mapping_table(alignment_info)  # TODO: Should be passed or returned by align_variants?
         # Write data
-        _dump_table_and_log(alignment_info.to_pickle, data_prefix + '_info.p.gz', 'Alignment info table pickle')
-        _dump_table_and_log(alignment_variant_table.to_pickle, data_prefix + '_variants.p.gz',
+        save_table_and_log(alignment_info.to_pickle, data_prefix + '_info.p.gz', 'Alignment info table pickle')
+        save_table_and_log(alignment_variant_table.to_pickle, data_prefix + '_variants.p.gz',
                             'Alignment variant table pickle')
-        _dump_table_and_log(indexed_mapping_table.to_pickle, data_prefix + '_mappings.p.gz',
+        save_table_and_log(indexed_mapping_table.to_pickle, data_prefix + '_mappings.p.gz',
                             'Alignment mapping table pickle')
     else:
         log.info('Loading data for {}...'.format(path_to_alignment))
@@ -366,7 +348,7 @@ def main(path_to_alignment, max_gaussians=5, n_groups=1, override=False, species
     # Run AACon and save results
     conservation_methods = [x for x in aacon.aacon_methods if x != 'LANDGRAF']  # TODO: reinstate Landgraf when fixed
     alignment_conservation = aacon.get_aacon(alignment, methods=conservation_methods)
-    _dump_table_and_log(alignment_conservation.to_csv, results_prefix + '_aacon_scores.csv',
+    save_table_and_log(alignment_conservation.to_csv, results_prefix + '_aacon_scores.csv',
                         'Formatted AACons results')
 
     # The remainder is pretty much all analysis, plotting and formatting (e.g., to Jalview output)
@@ -374,23 +356,23 @@ def main(path_to_alignment, max_gaussians=5, n_groups=1, override=False, species
     # Calculate column variant aggregations and save results
     # Count variants over columns
     column_variant_counts = analysis_toolkit.count_column_variant_consequences(alignment_variant_table)
-    _dump_table_and_log(column_variant_counts.to_csv, results_prefix + '.col_var_counts.csv',
+    save_table_and_log(column_variant_counts.to_csv, results_prefix + '.col_var_counts.csv',
                         'Column variant counts')
     # Count *rare* variants over columns
     rare_maf_threshold = 0.001
     is_rare = alignment_variant_table[('Allele_INFO', 'AF_POPMAX')] < rare_maf_threshold
     column_rare_counts = analysis_toolkit.count_column_variant_consequences(alignment_variant_table[is_rare])
-    _dump_table_and_log(column_rare_counts.to_csv, results_prefix + '.col_rare_counts.csv',
+    save_table_and_log(column_rare_counts.to_csv, results_prefix + '.col_rare_counts.csv',
                         'Column rare variant counts')
     # Count ClinVar annotations for *missense* variants over columns
     is_missense = alignment_variant_table[('VEP', 'Consequence')] == 'missense_variant'
     column_missense_clinvar = analysis_toolkit.count_column_clinvar(alignment_variant_table[is_missense])
-    _dump_table_and_log(column_missense_clinvar.to_csv, results_prefix + '.col_mis_clinvar.csv',
+    save_table_and_log(column_missense_clinvar.to_csv, results_prefix + '.col_mis_clinvar.csv',
                         'Column missense variant ClinVar annotation frequencies')
     # Count ClinVar annotations for *synonymous* variants over columns
     is_synonymous = alignment_variant_table[('VEP', 'Consequence')] == 'synonymous_variant'
     column_synonymous_clinvar = analysis_toolkit.count_column_clinvar(alignment_variant_table[is_synonymous])
-    _dump_table_and_log(column_synonymous_clinvar.to_csv, results_prefix + '.col_syn_clinvar.csv',
+    save_table_and_log(column_synonymous_clinvar.to_csv, results_prefix + '.col_syn_clinvar.csv',
                         'Column synonymous variant ClinVar annotation frequencies')
     # Use mapping table to calculate human residue occupancy
     # TODO: Adjust for unmapped seqs
@@ -409,13 +391,13 @@ def main(path_to_alignment, max_gaussians=5, n_groups=1, override=False, species
     # This checks whether missense and synonymous variant counts are correlated with column occupancy before and
     # after column filtering
     variants_vs_occ = analysis_toolkit._comparative_regression(column_summary, 'occupancy', filter_mask=subset_mask_gmm)
-    _dump_table_and_log(variants_vs_occ.to_csv, results_prefix + '.variant_occ_regression.csv',
+    save_table_and_log(variants_vs_occ.to_csv, results_prefix + '.variant_occ_regression.csv',
                         'Variant vs. occupancy regression parameters')
     # TODO: Test variants_vs_occ.loc['filtered_missense', 'pvalue'] > 0.05
     # Conservation plane with Shenkin score
     shenkin_regressions = analysis_toolkit._comparative_regression(column_summary, 'shenkin',
                                                                    filter_mask=subset_mask_gmm)
-    _dump_table_and_log(shenkin_regressions.to_csv, results_prefix + '.variant_shenkin_regression.csv',
+    save_table_and_log(shenkin_regressions.to_csv, results_prefix + '.variant_shenkin_regression.csv',
                         'Variant vs. Shenkin regression parameters')
     _interpret_regression_results(shenkin_regressions, action=log.info)
 
@@ -423,12 +405,12 @@ def main(path_to_alignment, max_gaussians=5, n_groups=1, override=False, species
     missense_scores = analysis_toolkit._column_variant_scores(column_summary[subset_mask_gmm],
                                                               variant_class='missense_variant',
                                                               occupancy='occupancy')
-    _dump_table_and_log(missense_scores.to_csv, results_prefix + '.col_missense_scores.csv', 'Column missense scores')
+    save_table_and_log(missense_scores.to_csv, results_prefix + '.col_missense_scores.csv', 'Column missense scores')
     column_summary = column_summary.join(missense_scores)
     # Add shenkin percentile rank
     column_summary = column_summary.join(column_summary.loc[subset_mask_gmm, 'shenkin'].rank(pct=True),
                                          rsuffix='_percentile')
-    _dump_table_and_log(column_summary.to_csv, results_prefix + '.col_summary.csv', 'Column summary data')
+    save_table_and_log(column_summary.to_csv, results_prefix + '.col_summary.csv', 'Column summary data')
 
     # Plot output
     pdf = PdfPages(results_prefix + '.figures.pdf', metadata={'creationDate': None})
