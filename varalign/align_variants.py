@@ -75,38 +75,28 @@ def _build_vep_filter(canonical=eval(defaults.canonical), consequences=defaults.
     return ' & '.join(query)
 
 
-def _default_variant_filter(variants_table):
-    """
-    Apply standard filters to a alignment derived variant table.
+def default_variant_filter(variants_table):
+    """Apply standard filters to an alignment derived variant table."""
+    filters = {
+        'is_canonical': variants_table[('VEP', 'CANONICAL')] == 'YES',
+        'is_ccds': variants_table[('VEP', 'CCDS')] != '',
+        'is_protein_coding': variants_table[('VEP', 'BIOTYPE')] == 'protein_coding',
+        'at_protein_position': variants_table[('VEP', 'Protein_position')] != '',
+        'is_not_modifier': variants_table[('VEP', 'IMPACT')] != 'MODIFIER',
+        'swissprot_matches_source': variants_table['External', 'SOURCE_ACCESSION'] == variants_table['VEP', 'SWISSPROT'],
+        'trembl_matches_source': vectorize(lambda x, y: x in y)(variants_table[('External', 'SOURCE_ACCESSION')],
+                                                                variants_table[('VEP', 'TREMBL')])
+    }
+    filters['trembl_matches_source'][:] = False  # OVERRIDE TREMBL TO KEEP ONLY SWISSPROT
 
-    :param variants_table:
-    :return:
-    """
-    # See version 1 of notebook for other ideas (e.g. Protin_position in UniProt range...)
-    # Reduce transcript duplication
-    is_canonical = variants_table[('VEP', 'CANONICAL')] == 'YES'
-    is_ccds = variants_table[('VEP', 'CCDS')] != ''
-    # Only want those that can map to a residue
-    is_protein_coding = variants_table[('VEP', 'BIOTYPE')] == 'protein_coding'
-    at_protein_position = variants_table[('VEP', 'Protein_position')] != ''
-    # Filter least useful effects
-    is_not_modifier = variants_table[('VEP', 'IMPACT')] != 'MODIFIER'
-    # Source protein filter
-    swissprot_matches_source = (variants_table['External', 'SOURCE_ACCESSION'] == variants_table['VEP', 'SWISSPROT'])
-    vcontains = vectorize(lambda x, y: x in y)
-    trembl_matches_source = vcontains(variants_table[('External', 'SOURCE_ACCESSION')],
-                                      variants_table[('VEP', 'TREMBL')])
-    trembl_matches_source[:] = False  # OVERRIDE TREMBL TO KEEP ONLY SWISSPROT
-    # Apply filter
-    locals_ = locals()
-    _ = [log.info('{} variants pass {} filter'.format(locals_[v].sum(), v))
-         for v in ['is_canonical', 'is_protein_coding', 'is_not_modifier', 'is_ccds',
-                   'swissprot_matches_source', 'trembl_matches_source', 'at_protein_position']
-        ]
-    filtered_variants = variants_table.loc[is_canonical & is_protein_coding & is_not_modifier & is_ccds &
-                                           (swissprot_matches_source | trembl_matches_source) &
-                                           at_protein_position].copy()
-    return filtered_variants
+    for name, condition in filters.items():
+        log.info(f'{condition.sum()} variants pass {name} filter')
+
+    combined_filter = filters['is_canonical'] & filters['is_protein_coding'] & filters['is_not_modifier'] & \
+                      filters['is_ccds'] & (filters['swissprot_matches_source'] | filters['trembl_matches_source']) & \
+                      filters['at_protein_position']
+
+    return variants_table.loc[combined_filter].copy()
 
 
 def _map_uniprot_to_genome(uniprot, species='homo_sapiens', collapse=True):
@@ -307,7 +297,7 @@ def align_variants(aln_info_table, species='HUMAN', path_to_vcf=None, include_ot
 
     # ----- Filter variant table -----
     log.info('Variants before filtering:\t{}'.format(len(variants_table)))
-    filtered_variants = _default_variant_filter(variants_table)
+    filtered_variants = default_variant_filter(variants_table)
     log.info('Redundant rows:\t{}'.format(sum(filtered_variants.reset_index('Feature').index.duplicated())))
     filtered_variants.reset_index(level=0, drop=True, inplace=True)  # Remove chunk ID
     log.info('Total rows:\t{}'.format(len(filtered_variants)))
