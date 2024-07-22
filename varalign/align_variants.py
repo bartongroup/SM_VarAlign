@@ -81,37 +81,28 @@ def default_variant_filter(variants_table):
     return variants_table.loc[combined_filter].copy()
 
 
-def _map_uniprot_to_genome(uniprot, species='homo_sapiens', collapse=True):
-    """
-    Map a UniProt entry to the genome.
-
-    :param uniprot:
-    :param species:
-    :param collapse:
-    :return:
-    """
-    # Map to Gene IDs
-    ensembl_genes = ensembl.get_xrefs(uniprot, species=species,
-                                      features='gene')  # TODO: This could be transcrpts or translations...
-    if len(ensembl_genes) == 0:
-        return None  # no mapping
-    ensembl_ranges = [ensembl.get_genomic_range(x) for x in ensembl_genes]
-    for i in range(len(ensembl_genes)):
-        log.info('Mapped {} to {} on chr: {}, {}-{}'.format(uniprot, ensembl_genes[i], *ensembl_ranges[i]))
-    # Identify and remove non-standard sequence regions
-    non_standard_ranges = [i for i, x in enumerate(ensembl_ranges) if x[0] not in ensembl.standard_regions]
-    if len(non_standard_ranges) > 0:
-        non_standard_ranges.sort(reverse=True)
-        [ensembl_genes.pop(i) for i in non_standard_ranges]
-        [ensembl_ranges.pop(i) for i in non_standard_ranges]
-        log.info('Removed %s non-standard sequence regions from %s.', len(non_standard_ranges), uniprot)
-    # Check for no mapping
-    if len(ensembl_ranges) == 0:
-        log.warn('Could not map {} to the genome.'.format(uniprot))
+def map_uniprot_to_genome(uniprot, species='homo_sapiens', collapse=True):
+    """Map a UniProt entry to the genome."""
+    ensembl_genes = ensembl.get_xrefs(uniprot, species=species, features='gene')
+    if not ensembl_genes:
         return None
-    # Collapse ranges if desired
+
+    ensembl_ranges = [ensembl.get_genomic_range(x) for x in ensembl_genes]
+    for gene, gen_range in zip(ensembl_genes, ensembl_ranges):
+        log.info(f'Mapped {uniprot} to {gene} on chr: {gen_range}')
+
+    non_standard_ranges = [i for i, gen_range in enumerate(ensembl_ranges) if gen_range[0] not in ensembl.standard_regions]
+    for index in sorted(non_standard_ranges, reverse=True):
+        del ensembl_genes[index]
+        del ensembl_ranges[index]
+
+    if not ensembl_ranges:
+        log.warning(f'Could not map {uniprot} to the genome.')
+        return None
+
     if collapse:
         ensembl_ranges = ensembl.merge_ranges(ensembl_ranges, min_gap=1000)
+
     return ensembl_ranges
 
 
@@ -209,7 +200,7 @@ def get_genome_mappings(aln_info_table, species):
     """
     # TODO: If get transcript ID can use to filter variant table (duplicate)
     genomic_ranges = [
-        (row.seq_id, _map_uniprot_to_genome(row.uniprot_id, species=species))
+        (row.seq_id, map_uniprot_to_genome(row.uniprot_id, species=species))
         for row in tqdm.tqdm(aln_info_table.itertuples(), total=len(aln_info_table), desc='Mapping sequences...')
     ]
     if len(genomic_ranges) == 0:
