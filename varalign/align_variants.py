@@ -21,10 +21,14 @@ from varalign import cli
 from varalign.config import defaults
 from varalign.utils import make_dir_if_needed
 
+# Constants
+LOG_FILENAME = 'align_variants.log'
+RESULTS_PATH = 'results'
+DATA_PATH = os.path.join('.varalign', 'aligned_variants_data')
 
 # Set up logging
 logging.basicConfig(
-    filename='align_variants.log',
+    filename=LOG_FILENAME,
     format='%(asctime)s %(name)s [%(levelname)-8s] - %(message)s',
     level=logging.INFO
 )
@@ -44,6 +48,7 @@ def chunk_table(table, n):
 
 
 def save_table_and_log(method, path, description):
+    """Save a table and log the action."""
     method(path)
     log.info(f'{description} saved to {path}')
 
@@ -236,14 +241,12 @@ def run_aacon(alignment, results_prefix):
 
 
 def main(path_to_alignment, max_gaussians=5, n_groups=1, override=False, species='HUMAN'):
-    # Results and data will be written in these folders
-    results_path = 'results'
-    make_dir_if_needed(results_path)
+    """Main function to align variants."""
+    make_dir_if_needed(RESULTS_PATH)
     input_alignment_filename = os.path.basename(path_to_alignment)
-    results_prefix = os.path.join(results_path, input_alignment_filename)
-    data_path = os.path.join('.varalign', 'aligned_variants_data')
-    make_dir_if_needed(data_path)
-    data_prefix = os.path.join(data_path, input_alignment_filename)
+    results_prefix = os.path.join(RESULTS_PATH, input_alignment_filename)
+    make_dir_if_needed(DATA_PATH)
+    data_prefix = os.path.join(DATA_PATH, input_alignment_filename)
     alignment = AlignIO.read(path_to_alignment, format='stockholm')
 
     is_data_available = all([
