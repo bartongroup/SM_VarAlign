@@ -122,155 +122,102 @@ def construct_mapping_table(alignment_info):
     return indexed_map_table
 
 
-def _occupancy_from_mapping_table(indexed_mapping_table):
-    """
-    Calculate column occupancy from a mapping table.
-
-    :param indexed_mapping_table:
-    :return:
-    """
+def calculate_column_occupancy(indexed_mapping_table):
+    """Calculate column occupancy from a mapping table."""
     column_occupancy = indexed_mapping_table[('Alignment', 'Column')].value_counts().sort_index()
     column_occupancy.name = 'occupancy'
     return column_occupancy
 
 
-def _interpret_regression_results(regression_table, p_threshold=0.05, action=None):
-    """
-    Provide human interpretation of regression results.
-    
-    :param regression_table: Output from `analysis_toolkit._comparative_regression` (DataFrame)
-    :param p_threshold: Significance threshold for regression p-value (float)
-    :param action: Method to call on  interpretations, e.g. `print` or `logging.info`
-    :return: Nothing if action is unspecified otherwise a list of strings.
-    """
-    # Synonymous variant counts should NOT be positively correlated with conservation
+def interpret_regression_results(regression_table, p_threshold=0.05, action=None):
+    """Provide human interpretation of regression results."""
+    def create_result_string(control_name, pass_condition):
+        return f'{control_name}... {"PASS" if pass_condition else "FAIL"}'
+
     negative_control_p = regression_table.loc['filtered_synonymous', 'pvalue'] > p_threshold
-    negative_control_m = regression_table.loc['filtered_synonymous', 'slope'] < 0  # TODO: Why sometimes signif -ve?
+    negative_control_m = regression_table.loc['filtered_synonymous', 'slope'] < 0
     pass_negative = negative_control_p or negative_control_m
 
-    # Missense variant counts should be positively correlated with conservation
     positive_control_p = regression_table.loc['filtered_missense', 'pvalue'] < p_threshold
     positive_control_m = regression_table.loc['filtered_missense', 'slope'] > 0
     pass_positive = positive_control_p and positive_control_m
 
-    # Human readable interpretation
-    results = ['Filtered synonymous vs. Shenkin (negative control)... {}'.format('PASS' if pass_negative else 'FAIL'),
-               'Filtered missense vs Shenkin (positive control)... {}'.format('PASS' if pass_positive else 'FAIL')]
+    results = [
+        create_result_string('Filtered synonymous vs. Shenkin (negative control)', pass_negative),
+        create_result_string('Filtered missense vs Shenkin (positive control)', pass_positive)
+    ]
 
-    # Either return strings...
-    if not action:
+    if action:
+        for result in results:
+            action(result)
+    else:
         return results
 
-    # ...or call action
-    for r in results:
-        action(r)
 
-
-def _write_variants_as_features(alignment_variant_table, feature_file_name):
-    """
-    Write a Jalview feature file marking up the variants in the alignment.
-
-    :param alignment_variant_table:
-    :param feature_file_name:
-    :return:
-    """
+def write_variants_as_features(alignment_variant_table, feature_file_name):
+    """Write a Jalview feature file marking up the variants in the alignment."""
     jalview.create_jalview_feature_file({'missense_variant': 'red', 'synonymous_variant': 'blue'}, feature_file_name)
     for (seq_id, consequence), variant_table in alignment_variant_table['VEP'].groupby(['SOURCE_ID', 'Consequence']):
         if consequence in ('missense_variant', 'synonymous_variant'):
             residue_indexes = list(variant_table.index.get_level_values(1))
-            #     residue_indexes = [x - 1 + int(seq_id.split('/')[1].split('-')[0]) for x in residue_indexes]
             variant_ids = list(variant_table['Existing_variation'])
-            jalview.append_jalview_variant_features(seq_id.split('/')[0], residue_indexes, variant_ids, consequence,
-                                                    feature_file_name)
-    log.info('Wrote alignment variants to Jalview feature file %s', feature_file_name)
+            jalview.append_jalview_variant_features(seq_id.split('/')[0], residue_indexes, variant_ids, consequence, feature_file_name)
+    log.info(f'Wrote alignment variants to Jalview feature file {feature_file_name}')
 
 
 def get_genome_mappings(aln_info_table, species):
-    """
-
-    :param aln_info_table:
-    :param species:
-    :return:
-    """
-    # TODO: If get transcript ID can use to filter variant table (duplicate)
+    """Map sequences to the genome and return genomic mappings."""
     genomic_ranges = [
         (row.seq_id, map_uniprot_to_genome(row.uniprot_id, species=species))
         for row in tqdm.tqdm(aln_info_table.itertuples(), total=len(aln_info_table), desc='Mapping sequences...')
     ]
-    if len(genomic_ranges) == 0:
+    if not genomic_ranges:
         log.error('Failed to map any sequences to the genome... Are you sure there are human sequences?')
         raise ValueError
-    log.info("Mapped {} sequences to genome.".format(len(genomic_ranges)))
-    # Format to table
+
+    log.info(f'Mapped {len(genomic_ranges)} sequences to genome.')
     genomic_mapping_table = pd.DataFrame(genomic_ranges, columns=['seq_id', 'genomic_ranges'])
     return genomic_mapping_table
 
 
 def map_variants_to_alignment(variants_df, residue_column_map):
-    """
-    Add alignment column numbers to a variant table.
-
-    :param variants_df: Unaligned variant table (DataFrame)
-    :param residue_column_map:
-    :return:
-    """
-    # Coerce Protein_position to correct type
-    variants_df.loc[:, ('VEP', 'Protein_position')] = pd.to_numeric(variants_df.loc[:, ('VEP', 'Protein_position')],
-                                                                    errors='coerce')
-    # Set index for merge
+    """Add alignment column numbers to a variant table."""
+    variants_df.loc[:, ('VEP', 'Protein_position')] = pd.to_numeric(variants_df.loc[:, ('VEP', 'Protein_position')], errors='coerce')
     variants_df.reset_index(['SITE', 'ALLELE_NUM', 'Feature'], inplace=True)
     variants_df.set_index(('VEP', 'Protein_position'), append=True, inplace=True)
     variants_df.index.set_names(['SOURCE_ID', 'Protein_position'], inplace=True)
     variants_df.sort_index(inplace=True)
-    # Merge to map
-    aligned_variants = residue_column_map.join(variants_df)  # Drops variants that map outside alignment
+
+    aligned_variants = residue_column_map.join(variants_df)
     aligned_variants.sort_index(inplace=True)
     return aligned_variants
 
 
 def align_variants(aln_info_table, species='HUMAN', path_to_vcf=None, include_other_info=False):
-    """
+    """Align variants with the given alignment info table."""
+    path_to_vcf = path_to_vcf or defaults.gnomad
 
-    :param species:
-    :param path_to_vcf:
-    :param include_other_info:
-    :return:
-    """
-    # Reload module defaults (patch aware)
-    if path_to_vcf is None:
-        path_to_vcf = defaults.gnomad
-
-    # ----- Map sequences to genome -----
-    # TODO: If get transcript ID can use to filter variant table
     genomic_mapping_table = get_genome_mappings(aln_info_table, species)
     aln_info_table = aln_info_table.merge(genomic_mapping_table, on=['seq_id'], how='left')
 
-    # ----- Fetch variants for the mapped genomic ranges -----
-    # Load the VCF with extended vcf.Reader
-    vcf_is_compressed = True if path_to_vcf.endswith('bgz') else None  # pyvcf doesn't recognise .bgz
-    parser = gnomad.Reader(filename=path_to_vcf, compressed=vcf_is_compressed)
+    parser = gnomad.Reader(filename=path_to_vcf, compressed=path_to_vcf.endswith('bgz') or None)
     variants_table = parser.get_gnomad_variants(aln_info_table, include_other_info=include_other_info)
     if variants_table.empty:
-        log.warn('No variants found.')
+        log.warning('No variants found.')
         return variants_table
 
-    # ----- Add source UniProt identifiers to the table -----
-    # Create UniProt ID series that shares an index with the variant table
     source_uniprot_ids = aln_info_table.set_index('seq_id')['uniprot_id']
     source_uniprot_ids.name = ('External', 'SOURCE_ACCESSION')
     source_uniprot_ids.index.name = 'SOURCE_ID'
-    # Add IDs to variant tables
+
     variants_table = variants_table.join(source_uniprot_ids)
+    log.info(f'Variants before filtering:\t{len(variants_table)}')
 
-    # ----- Filter variant table -----
-    log.info('Variants before filtering:\t{}'.format(len(variants_table)))
     filtered_variants = default_variant_filter(variants_table)
-    log.info('Redundant rows:\t{}'.format(sum(filtered_variants.reset_index('Feature').index.duplicated())))
-    filtered_variants.reset_index(level=0, drop=True, inplace=True)  # Remove chunk ID
-    log.info('Total rows:\t{}'.format(len(filtered_variants)))
+    log.info(f'Redundant rows:\t{sum(filtered_variants.reset_index("Feature").index.duplicated())}')
+    filtered_variants.reset_index(level=0, drop=True, inplace=True)
+    log.info(f'Total rows:\t{len(filtered_variants)}')
 
-    # ----- Map variants to columns -----
-    # Generate alignment column / sequence residue mapping table
     indexed_map_table = construct_mapping_table(aln_info_table)
     aligned_variants = map_variants_to_alignment(filtered_variants, indexed_map_table)
 
@@ -361,7 +308,7 @@ def main(path_to_alignment, max_gaussians=5, n_groups=1, override=False, species
                         'Column synonymous variant ClinVar annotation frequencies')
     # Use mapping table to calculate human residue occupancy
     # TODO: Adjust for unmapped seqs
-    column_occupancy = _occupancy_from_mapping_table(indexed_mapping_table)
+    column_occupancy = calculate_column_occupancy(indexed_mapping_table)
     # Merge required data for further standard analyses; this is saved after missense scores are added
     column_summary = column_variant_counts.join([column_missense_clinvar, column_occupancy, alignment_conservation])
 
@@ -384,7 +331,7 @@ def main(path_to_alignment, max_gaussians=5, n_groups=1, override=False, species
                                                                    filter_mask=subset_mask_gmm)
     save_table_and_log(shenkin_regressions.to_csv, results_prefix + '.variant_shenkin_regression.csv',
                         'Variant vs. Shenkin regression parameters')
-    _interpret_regression_results(shenkin_regressions, action=log.info)
+    interpret_regression_results(shenkin_regressions, action=log.info)
 
     # Column variant scores, for block columns only
     missense_scores = analysis_toolkit._column_variant_scores(column_summary[subset_mask_gmm],
@@ -510,7 +457,7 @@ def main(path_to_alignment, max_gaussians=5, n_groups=1, override=False, species
 
     # Write variant jalview feature file
     # Label all variants with sequence features
-    _write_variants_as_features(alignment_variant_table, results_prefix + '_variant_features.feat')
+    write_variants_as_features(alignment_variant_table, results_prefix + '_variant_features.feat')
 
     # Log completion
     log.info('DONE.')
