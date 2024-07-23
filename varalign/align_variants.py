@@ -106,24 +106,18 @@ def map_uniprot_to_genome(uniprot, species='homo_sapiens', collapse=True):
     return ensembl_ranges
 
 
-def _mapping_table(alignment_info):
-    """
-    Construct a alignment column to sequence residue mapping table.
-
-    :param alignment_info:
-    :return:
-    """
-    mapping_table = pd.DataFrame(alignment_info['mapping'].tolist(),
-                                 index=[alignment_info.index, alignment_info['seq_id']])  # From top of notebook
+def construct_mapping_table(alignment_info):
+    """Construct a mapping table from alignment column to sequence residue."""
+    mapping_table = pd.DataFrame(alignment_info['mapping'].tolist(), index=[alignment_info.index, alignment_info['seq_id']])
     mapping_table.reset_index(inplace=True)
     mapping_table = pd.melt(mapping_table, id_vars=['level_0', 'seq_id'])
     mapping_table.dropna(subset=['value'], inplace=True)
-    indexed_map_table = pd.DataFrame(mapping_table['value'].tolist(),
-                                     columns=['Column', 'Protein_position'],
+    
+    indexed_map_table = pd.DataFrame(mapping_table['value'].tolist(), columns=['Column', 'Protein_position'], 
                                      index=[mapping_table['seq_id']]).reset_index()
-    indexed_map_table = indexed_map_table.set_index(['seq_id', 'Protein_position']).sort_index()
+    indexed_map_table.set_index(['seq_id', 'Protein_position'], inplace=True)
     indexed_map_table.index.rename(['SOURCE_ID', 'Protein_position'], inplace=True)
-    indexed_map_table.columns = pd.MultiIndex.from_tuples([('Alignment', x) for x in indexed_map_table.columns],
+    indexed_map_table.columns = pd.MultiIndex.from_tuples([('Alignment', col) for col in indexed_map_table.columns],
                                                           names=['Type', 'Field'])
     return indexed_map_table
 
@@ -277,7 +271,7 @@ def align_variants(aln_info_table, species='HUMAN', path_to_vcf=None, include_ot
 
     # ----- Map variants to columns -----
     # Generate alignment column / sequence residue mapping table
-    indexed_map_table = _mapping_table(aln_info_table)
+    indexed_map_table = construct_mapping_table(aln_info_table)
     aligned_variants = map_variants_to_alignment(filtered_variants, indexed_map_table)
 
     return aligned_variants
@@ -322,7 +316,7 @@ def main(path_to_alignment, max_gaussians=5, n_groups=1, override=False, species
             vartable_chunks.append(_alignment_variant_table)
         alignment_variant_table = pd.concat(vartable_chunks)
 
-        indexed_mapping_table = _mapping_table(alignment_info)  # TODO: Should be passed or returned by align_variants?
+        indexed_mapping_table = construct_mapping_table(alignment_info)  # TODO: Should be passed or returned by align_variants?
         # Write data
         save_table_and_log(alignment_info.to_pickle, data_prefix + '_info.p.gz', 'Alignment info table pickle')
         save_table_and_log(alignment_variant_table.to_pickle, data_prefix + '_variants.p.gz',
