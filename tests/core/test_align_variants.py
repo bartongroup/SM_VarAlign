@@ -3,9 +3,7 @@ import os
 import shutil
 
 from unittest import TestCase, expectedFailure
-
 import pandas as pd
-
 from Bio import AlignIO
 from pandas.api.types import is_bool_dtype, is_numeric_dtype
 
@@ -13,12 +11,10 @@ from varalign.core.six import add_move, MovedModule; add_move(MovedModule('mock'
 from varalign.core.six.moves import mock
 from varalign.core.align_variants import main
 from varalign.config import defaults as mock_defaults
+from varalign.core.path_utils import get_project_root, get_test_data_path
 
 root = os.path.abspath(os.path.dirname(__file__))
-mock_defaults.gnomad = "{}/data/sample_swissprot_PF00001.18_full.vcf.gz".format(root)
-
-# TODO: pandas.api.testing have some useful functions that could be applied here.
-
+mock_defaults.gnomad = os.path.join(get_test_data_path(), 'sample_swissprot_PF00001.18_full.vcf.gz')
 
 @mock.patch("varalign.config.defaults", mock_defaults)
 class TestAlign_Variants(TestCase):
@@ -28,23 +24,19 @@ class TestAlign_Variants(TestCase):
     def setUpClass(cls):
         """Execute pipeline"""
         # Set up test directory
-        start_dir = os.getcwd()
-        test_dir = os.path.join(os.path.dirname(__file__), 'tmp')
-        os.makedirs(test_dir)
-        os.chdir(test_dir)
+        cls.start_dir = os.getcwd()
+        cls.test_dir = os.path.join(get_project_root(), 'tests', 'core', 'tmp')
+        os.makedirs(cls.test_dir, exist_ok=True)
+        os.chdir(cls.test_dir)
 
         # Copy cache to test execution dir
-        test_cache = os.path.join(os.path.dirname(__file__), 'data', 'prointvar.sqlite')
-        os.makedirs('.varalign')
-        os.symlink(test_cache, os.path.join(test_dir, '.varalign', 'ensembl_cache.sqlite'))
+        test_cache = os.path.join(get_test_data_path(), 'prointvar.sqlite')
+        os.makedirs('.varalign', exist_ok=True)
+        os.symlink(test_cache, os.path.join(cls.test_dir, '.varalign', 'ensembl_cache.sqlite'))
 
         # Execute pipeline
-        test_alignment = os.path.join(os.path.dirname(__file__), 'data', 'sample_swissprot_PF00001.18_full.sto')
-        main(path_to_alignment=test_alignment, max_gaussians=5, n_groups=1, override=True, species='HUMAN')
-
-        cls.start_dir = start_dir
-        cls.test_dir = test_dir
-        cls.test_alignment = test_alignment
+        cls.test_alignment = os.path.join(get_test_data_path(), 'sample_swissprot_PF00001.18_full.sto')
+        main(path_to_alignment=cls.test_alignment, max_gaussians=5, n_groups=1, override=True, species='HUMAN')
 
     def setUp(self):
         """Set up test environment"""
@@ -71,7 +63,7 @@ class TestAlign_Variants(TestCase):
         output_files = [os.path.join('results', f) for f in output_files]
 
         # Compare output with expected
-        standard_path = os.path.join(os.path.dirname(__file__), 'data', 'aligned_variants_test_expected')
+        standard_path = os.path.join(get_test_data_path(), 'aligned_variants_test_expected')
         comparison = filecmp.cmpfiles(standard_path, TestAlign_Variants.test_dir, output_files)
 
         self.output_files = output_files
@@ -159,8 +151,3 @@ class TestAlign_Variants(TestCase):
             all_match.append(all(comparisons))
 
         self.assertTrue(all(all_match), "Variant record reference residues (from VEP) don't match sequence.")
-
-
-if __name__ == '__main__':
-    t = TestAlign_Variants()
-    t.updateReferenceData()

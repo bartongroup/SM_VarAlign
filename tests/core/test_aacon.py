@@ -1,15 +1,16 @@
 import os
-
 from unittest import TestCase
-
 from Bio import AlignIO
 from varalign.core import aacon
-
+from varalign.core.path_utils import get_issues_path
 
 class TestGet_aacon(TestCase):
+    def setUp(self):
+        self.issues_path = get_issues_path()
+
     def test_aacon(self):
         # Reformat the test alignment
-        alignment_path = os.path.join(os.path.dirname(__file__), 'issues', '006', 'peptide_fJ_with_ACCs.sto')
+        alignment_path = os.path.join(self.issues_path, '006', 'peptide_fJ_with_ACCs.sto')
         alignment = AlignIO.read(alignment_path, 'stockholm')
         reformatted, _ = aacon._reformat_alignment_for_aacon(alignment)
 
