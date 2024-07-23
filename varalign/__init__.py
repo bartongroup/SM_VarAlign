@@ -1,14 +1,8 @@
-#!/usr/bin/env python
-# -*- coding: utf-8 -*-
+# varalign/__init__.py
 
-import logging
-import sys
+from .core.logging_config import configure_logging
 
-logging.getLogger("varalign").addHandler(logging.NullHandler())
-logging.captureWarnings(True)
-logging.basicConfig(stream=sys.stderr, level=logging.INFO,
-                    format='%(asctime)s %(name)-12s %(levelname)-8s %(message)s')
-
+configure_logging()
 
 __title__ = 'varalign'
 __version__ = '0.0.0'
