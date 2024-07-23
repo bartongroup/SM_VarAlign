@@ -9,9 +9,9 @@ import re
 import requests
 from Bio.Align import MultipleSeqAlignment
 from Bio.Seq import Seq
-from varalign.six.moves import urllib
+from varalign.core.six.moves import urllib
 
-from varalign.retry import retry
+from varalign.core.retry import retry
 
 ALIGNMENT_CHARS = set('ACDEFGHIKLMNPQRSTVWY-')
 

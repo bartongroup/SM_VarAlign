@@ -6,7 +6,7 @@ from unittest import TestCase, expectedFailure
 
 import pandas as pd
 
-from varalign.prointvar_analysis import main
+from varalign.core.prointvar_analysis import main
 
 
 class TestProintvarAnalysis(TestCase):

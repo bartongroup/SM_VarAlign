@@ -2,7 +2,7 @@ import os
 
 from unittest import TestCase
 
-from varalign import gnomad
+from varalign.core import gnomad
 
 
 class TestVCFReader(TestCase):

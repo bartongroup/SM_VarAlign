@@ -8,9 +8,9 @@ import sys
 
 import pandas as pd
 from Bio import SeqIO
-from varalign.six.moves import urllib
+from varalign.core.six.moves import urllib
 
-from varalign.utils import urlopen_with_retry, query_uniprot, parse_seq_name
+from varalign.core.utils import urlopen_with_retry, query_uniprot, parse_seq_name
 
 sys.path.extend(['/Users/smacgowan/PycharmProjects/ProteoFAV'])
 from proteofav.variants import select_uniprot_variants

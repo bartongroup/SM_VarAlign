@@ -7,8 +7,8 @@ from subprocess import call
 import pandas as pd
 from Bio import AlignIO  # Needs PR #768 #769 patched
 
-from varalign import pfam
-from varalign.utils import filter_alignment, sanitise_alignment, ALIGNMENT_CHARS
+from varalign.core import pfam
+from varalign.core.utils import filter_alignment, sanitise_alignment, ALIGNMENT_CHARS
 
 log = logging.getLogger(__name__)
 logging.captureWarnings(True)

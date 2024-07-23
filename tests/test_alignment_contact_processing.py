@@ -4,7 +4,7 @@ from unittest import TestCase
 
 import pandas as pd
 
-from varalign import prointvar_analysis
+from varalign.core import prointvar_analysis
 
 root = os.path.abspath(os.path.dirname(__file__))
 data_path = os.path.join(root, 'data')

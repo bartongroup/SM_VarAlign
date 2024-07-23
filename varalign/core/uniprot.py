@@ -7,7 +7,7 @@ import requests
 from Bio import SeqIO
 
 from varalign.config import defaults
-from varalign.utils import urlopen_with_retry
+from varalign.core.utils import urlopen_with_retry
 
 log = logging.getLogger(__name__)
 

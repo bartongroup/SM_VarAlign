@@ -14,7 +14,7 @@ from Bio.Seq import Seq
 
 sys.path.extend(['/Users/smacgowan/PycharmProjects/ProteoFAV'])
 from proteofav.structures import sifts_best
-from varalign.utils import query_uniprot, parse_seq_name
+from varalign.core.utils import query_uniprot, parse_seq_name
 import os
 import re
 import logging

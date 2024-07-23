@@ -17,9 +17,9 @@ import tqdm
 from matplotlib.backends.backend_pdf import PdfPages
 from prointvar import merger  # TODO: Document that requires my patched version.
 
-from varalign import prointvar_stats
-from varalign import cli
-from varalign.utils import make_dir_if_needed
+from varalign.core import prointvar_stats
+from varalign.cli import cli
+from varalign.core.utils import make_dir_if_needed
 
 log = logging.getLogger(__name__)
 log.setLevel('INFO')

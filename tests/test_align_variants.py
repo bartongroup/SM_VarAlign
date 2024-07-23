@@ -9,9 +9,9 @@ import pandas as pd
 from Bio import AlignIO
 from pandas.api.types import is_bool_dtype, is_numeric_dtype
 
-from varalign.six import add_move, MovedModule; add_move(MovedModule('mock', 'mock', 'unittest.mock'))
-from varalign.six.moves import mock
-from varalign.align_variants import main
+from varalign.core.six import add_move, MovedModule; add_move(MovedModule('mock', 'mock', 'unittest.mock'))
+from varalign.core.six.moves import mock
+from varalign.core.align_variants import main
 from varalign.config import defaults as mock_defaults
 
 root = os.path.abspath(os.path.dirname(__file__))

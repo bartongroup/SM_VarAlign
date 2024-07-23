@@ -3,7 +3,7 @@ import os
 from unittest import TestCase
 
 from Bio import AlignIO
-from varalign import aacon
+from varalign.core import aacon
 
 
 class TestGet_aacon(TestCase):

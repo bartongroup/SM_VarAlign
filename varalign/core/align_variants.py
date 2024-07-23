@@ -10,16 +10,16 @@ from Bio import AlignIO
 from matplotlib.backends.backend_pdf import PdfPages
 from numpy import vectorize
 
-from varalign import aacon
-from varalign import alignments
-from varalign import analysis_toolkit
-from varalign import ensembl
-from varalign import gnomad
-from varalign import jalview
-from varalign import occ_gmm
-from varalign import cli
+from varalign.core import aacon
+from varalign.core import alignments
+from varalign.core import analysis_toolkit
+from varalign.core import ensembl
+from varalign.core import gnomad
+from varalign.core import jalview
+from varalign.core import occ_gmm
+from varalign.cli import cli
 from varalign.config import defaults
-from varalign.utils import make_dir_if_needed
+from varalign.core.utils import make_dir_if_needed
 
 # Constants
 LOG_FILENAME = 'align_variants.log'

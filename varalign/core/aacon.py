@@ -7,8 +7,8 @@ import pandas as pd
 from Bio import AlignIO  # Needs PR #768 #769 patched
 
 import varalign
-from varalign.jabaws import apply_column_mask
-from varalign.utils import sanitise_alignment, make_dir_if_needed, ALIGNMENT_CHARS
+from varalign.core.jabaws import apply_column_mask
+from varalign.core.utils import sanitise_alignment, make_dir_if_needed, ALIGNMENT_CHARS
 
 log = logging.getLogger(__name__)
 log.setLevel('INFO')
