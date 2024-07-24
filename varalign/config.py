@@ -24,7 +24,6 @@ Traceback (most recent call last):
 AttributeError: 'Defaults' object has no attribute 'email'"""
 
 
-
 import logging
 import os
 
@@ -53,9 +52,9 @@ class Defaults(object):
                     pass
                 # Format vep_filter for use in DataFrame queries
                 if var_name == "additional":
-                    var_par = var_par.replace('\n', ' ')
+                    var_par = var_par.replace("\n", " ")
                 if var_name == "consequences":
-                    var_par = var_par.split('\n')
+                    var_par = var_par.split("\n")
                 setattr(self, var_name, var_par)
 
 

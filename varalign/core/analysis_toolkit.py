@@ -2,10 +2,15 @@ import numpy as np
 import pandas as pd
 import seaborn as sns
 from scipy import stats
+from collections import namedtuple
 
 
-def _aggregate_annotation(aligned_variant_table, annotation_column, aggregate_by=[('Alignment', 'Column')],
-                          fill_value=0):
+def _aggregate_annotation(
+    aligned_variant_table,
+    annotation_column,
+    aggregate_by=[("Alignment", "Column")],
+    fill_value=0,
+):
     """Count category frequencies over a set of aggregation columns.
 
     Create frequency table for a categorical column over other columns and/or index levels. Index names can only be used
@@ -28,12 +33,19 @@ def linregress_resilient(x, y):
         return stats.linregress(x, y)
     except ValueError:
         # ValueError: Cannot calculate a linear regression if all x values are identical
-        # Try adding jitter to x
-        x += np.random.normal(0, 0.0001, len(x))
-        return stats.linregress(x, y)
+        RegressionResult = namedtuple(
+            "RegressionResult",
+            ["slope", "intercept", "rvalue", "pvalue", "stderr", "intercept_stderr"],
+        )
+        return RegressionResult(np.nan, np.nan, 0, 1, np.inf, np.inf)
 
-def _comparative_regression(column_variant_counts, regressor='Human_res_occupancy', filter_mask=None,
-                            confounder_variable=None):
+
+def _comparative_regression(
+    column_variant_counts,
+    regressor="Human_res_occupancy",
+    filter_mask=None,
+    confounder_variable=None,
+):
     """Return table of regression parameters for missense / synonymous counts vs. a regressor.
 
     :param column_variant_counts:
@@ -43,33 +55,61 @@ def _comparative_regression(column_variant_counts, regressor='Human_res_occupanc
     """
     regressions = []
     # Regressions for all columns
-    regressions.append(linregress_resilient(x=column_variant_counts[regressor],
-                                            y=column_variant_counts['missense_variant'])._asdict())
-    regressions.append(linregress_resilient(x=column_variant_counts[regressor],
-                                            y=column_variant_counts['synonymous_variant'])._asdict())
-    row_names = ['missense', 'synonymous']
+    regressions.append(
+        linregress_resilient(
+            x=column_variant_counts[regressor],
+            y=column_variant_counts["missense_variant"],
+        )._asdict()
+    )
+    regressions.append(
+        linregress_resilient(
+            x=column_variant_counts[regressor],
+            y=column_variant_counts["synonymous_variant"],
+        )._asdict()
+    )
+    row_names = ["missense", "synonymous"]
     if filter_mask is not None:
         # Regressions for filtered columns
-        regressions.append(linregress_resilient(x=column_variant_counts[filter_mask][regressor],
-                                                y=column_variant_counts[filter_mask]['missense_variant'])._asdict())
-        regressions.append(linregress_resilient(x=column_variant_counts[filter_mask][regressor],
-                                                y=column_variant_counts[filter_mask]['synonymous_variant'])._asdict())
-        row_names += ['filtered_missense', 'filtered_synonymous']
+        regressions.append(
+            linregress_resilient(
+                x=column_variant_counts[filter_mask][regressor],
+                y=column_variant_counts[filter_mask]["missense_variant"],
+            )._asdict()
+        )
+        regressions.append(
+            linregress_resilient(
+                x=column_variant_counts[filter_mask][regressor],
+                y=column_variant_counts[filter_mask]["synonymous_variant"],
+            )._asdict()
+        )
+        row_names += ["filtered_missense", "filtered_synonymous"]
 
     if confounder_variable is not None:
         # Regressions including confounder
-        regressions.append(linregress_resilient(x=column_variant_counts[[regressor, confounder_variable]],
-                                                y=column_variant_counts['missense_variant'])._asdict())
-        regressions.append(linregress_resilient(x=column_variant_counts[[regressor, confounder_variable]],
-                                                y=column_variant_counts['synonymous_variant'])._asdict())
-        row_names += ['_missense', 'filtered_synonymous']
+        regressions.append(
+            linregress_resilient(
+                x=column_variant_counts[[regressor, confounder_variable]],
+                y=column_variant_counts["missense_variant"],
+            )._asdict()
+        )
+        regressions.append(
+            linregress_resilient(
+                x=column_variant_counts[[regressor, confounder_variable]],
+                y=column_variant_counts["synonymous_variant"],
+            )._asdict()
+        )
+        row_names += ["_missense", "filtered_synonymous"]
 
     results = pd.DataFrame(regressions, index=row_names)
     results.columns.name = regressor
     return results
 
 
-def _column_variant_scores(column_variant_counts, variant_class='missense_variant', occupancy='Human_res_occupancy'):
+def _column_variant_scores(
+    column_variant_counts,
+    variant_class="missense_variant",
+    occupancy="Human_res_occupancy",
+):
     """Calculate variation scores from a DataFrame of column variant totals.
 
     :param column_variant_counts:
@@ -81,14 +121,22 @@ def _column_variant_scores(column_variant_counts, variant_class='missense_varian
 
     # Calculate missense scores
     missense_scores = []
-    for mis_col, occ_col in column_variant_counts[[variant_class, occupancy]].itertuples(index=False):
+    for mis_col, occ_col in column_variant_counts[
+        [variant_class, occupancy]
+    ].itertuples(index=False):
         mis_other = alignment_totals[variant_class] - mis_col
         occ_other = alignment_totals[occupancy] - occ_col
-        oddsratio, pvalue = stats.fisher_exact([[mis_col, mis_other], [occ_col, occ_other]])
+        oddsratio, pvalue = stats.fisher_exact(
+            [[mis_col, mis_other], [occ_col, occ_other]]
+        )
         missense_scores.append((oddsratio, pvalue))
 
     # Parse to dataframe
-    return pd.DataFrame(missense_scores, columns=['oddsratio', 'pvalue'], index=column_variant_counts.index)
+    return pd.DataFrame(
+        missense_scores,
+        columns=["oddsratio", "pvalue"],
+        index=column_variant_counts.index,
+    )
 
 
 def _missense_per_residue_plot(aligned_variants_table, mapping_table):
@@ -97,14 +145,22 @@ def _missense_per_residue_plot(aligned_variants_table, mapping_table):
     :param aligned_variants_table:
     :return:
     """
-    residue_counts = aligned_variants_table.pipe(_aggregate_annotation,
-                                                 ('VEP', 'Consequence'),
-                                                 aggregate_by=['SOURCE_ID', 'Protein_position'])
-    residue_counts = residue_counts.reindex(mapping_table.index).fillna(0)  # Fill in residues with no variants
-    ax = residue_counts['missense_variant'].astype(int).value_counts().plot.bar(width=0.9, facecolor='black',
-                                                                                edgecolor='black')
+    residue_counts = aligned_variants_table.pipe(
+        _aggregate_annotation,
+        ("VEP", "Consequence"),
+        aggregate_by=["SOURCE_ID", "Protein_position"],
+    )
+    residue_counts = residue_counts.reindex(mapping_table.index).fillna(
+        0
+    )  # Fill in residues with no variants
+    ax = (
+        residue_counts["missense_variant"]
+        .astype(int)
+        .value_counts()
+        .plot.bar(width=0.9, facecolor="black", edgecolor="black")
+    )
 
-    return residue_counts.rename_axis('', 1)
+    return residue_counts.rename_axis("", 1)
 
 
 def _variant_per_protein_plot(aligned_variants_table):
@@ -113,12 +169,14 @@ def _variant_per_protein_plot(aligned_variants_table):
     :param aligned_variants_table:
     :return:
     """
-    protein_consequences = _aggregate_annotation(aligned_variants_table, ('VEP', 'Consequence'),
-                                                 aggregate_by=['SOURCE_ID'])
-    ax = protein_consequences.loc[:, protein_consequences.sum() > 100].hist(facecolor='black', edgecolor='black',
-                                                                            figsize=(10, 10))
+    protein_consequences = _aggregate_annotation(
+        aligned_variants_table, ("VEP", "Consequence"), aggregate_by=["SOURCE_ID"]
+    )
+    ax = protein_consequences.loc[:, protein_consequences.sum() > 100].hist(
+        facecolor="black", edgecolor="black", figsize=(10, 10)
+    )
 
-    return protein_consequences.rename_axis('', 1)
+    return protein_consequences.rename_axis("", 1)
 
 
 def _variants_vs_length_plot(protein_variant_counts, alignment_info):
@@ -129,14 +187,25 @@ def _variants_vs_length_plot(protein_variant_counts, alignment_info):
     :return:
     """
     # Calculate sequence lengths
-    protein_variant_counts = protein_variant_counts.join(alignment_info['length'])
+    protein_variant_counts = protein_variant_counts.join(alignment_info["length"])
 
     # Plot
-    plot_data = pd.melt(protein_variant_counts.loc[:, protein_variant_counts.sum() > 100],
-                        id_vars=['length'],
-                        var_name='Variant_Effect', value_name='Count')
-    sns.lmplot(x='length', y='Count', col='Variant_Effect', hue='Variant_Effect',
-               data=plot_data, fit_reg=True, sharey=False, col_wrap=3)
+    plot_data = pd.melt(
+        protein_variant_counts.loc[:, protein_variant_counts.sum() > 100],
+        id_vars=["length"],
+        var_name="Variant_Effect",
+        value_name="Count",
+    )
+    sns.lmplot(
+        x="length",
+        y="Count",
+        col="Variant_Effect",
+        hue="Variant_Effect",
+        data=plot_data,
+        fit_reg=True,
+        sharey=False,
+        col_wrap=3,
+    )
 
     return None
 
@@ -148,7 +217,7 @@ def count_column_variant_consequences(table):
     :param table: Aligned variants table (DataFrame)
     :return: DataFrame of variant counts for all columns in `table`.
     """
-    return _aggregate_annotation(table, ('VEP', 'Consequence'))
+    return _aggregate_annotation(table, ("VEP", "Consequence"))
 
 
 def count_column_clinvar(table):
@@ -158,4 +227,4 @@ def count_column_clinvar(table):
     :param table: Aligned variants table (DataFrame)
     :return: DataFrame of ClinVar annotation frequencies for all columns in `table`.
     """
-    return _aggregate_annotation(table, ('VEP', 'CLIN_SIG'))
+    return _aggregate_annotation(table, ("VEP", "CLIN_SIG"))

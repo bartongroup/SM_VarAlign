@@ -1,12 +1,15 @@
 """
 This module contains functions that write Jalview annotation files.
 """
+
 import logging
 
 log = logging.getLogger(__name__)
 
 
-def write_jalview_annotation(ordered_values, file_name, title, description, append=False, tooltips=None):
+def write_jalview_annotation(
+    ordered_values, file_name, title, description, append=False, tooltips=None
+):
     """
     Create and/or append tracks to a Jalview alignment annotation file.
 
@@ -17,38 +20,53 @@ def write_jalview_annotation(ordered_values, file_name, title, description, appe
     :param append: Whether to append to an existing Jalview annotation file.
     :return:
     """
-    file_mode = 'w'
+    file_mode = "w"
     if append:
-        file_mode = 'a'
+        file_mode = "a"
 
     if not tooltips:
         tooltips = ordered_values
 
     with open(file_name, file_mode) as results_file:
         if not append:
-            results_file.write('JALVIEW_ANNOTATION\n')
-        if isinstance(ordered_values, tuple) and all([isinstance(x, str) for x in [title, description]]):
-            results_file.write('BAR_GRAPH\t{}\t{}\t'.format(title, description) +
-                               '|'.join('{},,{}'.format(str(x), str(y)) for x, y in zip(ordered_values, tooltips)))
-            results_file.write('\n')
+            results_file.write("JALVIEW_ANNOTATION\n")
+        if isinstance(ordered_values, tuple) and all(
+            [isinstance(x, str) for x in [title, description]]
+        ):
+            results_file.write(
+                "BAR_GRAPH\t{}\t{}\t".format(title, description)
+                + "|".join(
+                    "{},,{}".format(str(x), str(y))
+                    for x, y in zip(ordered_values, tooltips)
+                )
+            )
+            results_file.write("\n")
         elif all([isinstance(x, list) for x in [ordered_values, title, description]]):
             arg_lengths = list(map(len, [ordered_values, title, description]))
             if len(set(arg_lengths)) == 1:
                 for v, vv, t, d in zip(ordered_values, tooltips, title, description):
-                    results_file.write('BAR_GRAPH\t{}\t{}\t'.format(t, d) +
-                                       '|'.join('{},,{}'.format(str(x), str(y)) for x, y in zip(v, vv)))
-                    results_file.write('\n')
+                    results_file.write(
+                        "BAR_GRAPH\t{}\t{}\t".format(t, d)
+                        + "|".join(
+                            "{},,{}".format(str(x), str(y)) for x, y in zip(v, vv)
+                        )
+                    )
+                    results_file.write("\n")
             else:
-                log.error('List arguments must be of same length')
+                log.error("List arguments must be of same length")
                 raise TypeError
         else:
-            log.error('Must provide same number of titles/descriptions as lists of values.')
+            log.error(
+                "Must provide same number of titles/descriptions as lists of values."
+            )
             raise TypeError
 
     return 0
 
 
-def append_jalview_variant_features(seq_id, positions, descriptions, feature_type, file_name):
+def append_jalview_variant_features(
+    seq_id, positions, descriptions, feature_type, file_name
+):
     """
     Append features to a Jalview features file.
 
@@ -61,10 +79,10 @@ def append_jalview_variant_features(seq_id, positions, descriptions, feature_typ
 
     feature_list format: [description, sequenceId, sequenceIndex, start, end, featureType]
     """
-    with open(file_name, 'a') as output:
+    with open(file_name, "a") as output:
         for pos, desc in zip(positions, descriptions):
-            feature_list = [desc, seq_id, '-1', str(pos), str(pos), feature_type, '0.0']
-            output.write('\t'.join(feature_list) + '\n')
+            feature_list = [desc, seq_id, "-1", str(pos), str(pos), feature_type, "0.0"]
+            output.write("\t".join(feature_list) + "\n")
 
 
 def create_jalview_feature_file(feature_dict, file_name):
@@ -75,9 +93,9 @@ def create_jalview_feature_file(feature_dict, file_name):
     :param file_name: Filename for Jalview output.
     :return:
     """
-    with open(file_name, 'w') as output:
+    with open(file_name, "w") as output:
         for feature, colour in list(feature_dict.items()):
-            output.write('{}\t{}\n'.format(feature, colour))
+            output.write("{}\t{}\n".format(feature, colour))
 
 
 def marked_columns_track(mask, title, description, filename, append=False):
@@ -90,13 +108,15 @@ def marked_columns_track(mask, title, description, filename, append=False):
     :return:
     """
     values = mask.copy()
-    values.loc[mask] = '*'
-    values.loc[~mask] = ''
+    values.loc[mask] = "*"
+    values.loc[~mask] = ""
 
     if not append:
-        with open(filename, 'w') as f:
-            f.write('JALVIEW_ANNOTATION\n')
+        with open(filename, "w") as f:
+            f.write("JALVIEW_ANNOTATION\n")
 
-    with open(filename, 'a') as f:
-        f.write('NO_GRAPH\t{}\t{}\t'.format(title, description) + '|'.join(values.tolist()))
-        f.write('\n')
+    with open(filename, "a") as f:
+        f.write(
+            "NO_GRAPH\t{}\t{}\t".format(title, description) + "|".join(values.tolist())
+        )
+        f.write("\n")

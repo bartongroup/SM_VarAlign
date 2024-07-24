@@ -4,11 +4,18 @@ import unittest
 
 import varalign.core.align_variants
 
-from varalign.core.six import add_move, MovedModule; add_move(MovedModule('mock', 'mock', 'unittest.mock'))
+from varalign.core.six import add_move, MovedModule
+
+add_move(MovedModule("mock", "mock", "unittest.mock"))
 from varalign.core.six.moves import mock
 
 
-@mock.patch("varalign.core.align_variants.defaults.gnomad", os.path.join(os.path.dirname(__file__), 'ttc6_sub.sto_variants_sorted_normed_dedup.vcf.gz'))
+@mock.patch(
+    "varalign.core.align_variants.defaults.gnomad",
+    os.path.join(
+        os.path.dirname(__file__), "ttc6_sub.sto_variants_sorted_normed_dedup.vcf.gz"
+    ),
+)
 class MyTestCase(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
@@ -18,19 +25,27 @@ class MyTestCase(unittest.TestCase):
     @classmethod
     def tearDownClass(cls):
         """Clean test environment"""
-        shutil.rmtree('results', ignore_errors=True)
-        shutil.rmtree(os.path.join('.varalign', 'aacon'), ignore_errors=True)
-        shutil.rmtree(os.path.join('.varalign', 'aligned_variants_data'), ignore_errors=True)
+        shutil.rmtree("results", ignore_errors=True)
+        shutil.rmtree(os.path.join(".varalign", "aacon"), ignore_errors=True)
+        shutil.rmtree(
+            os.path.join(".varalign", "aligned_variants_data"), ignore_errors=True
+        )
         os.chdir(cls.original_dir)
 
     @unittest.expectedFailure
     def test_something(self):
-        test_alignment = os.path.join(os.path.dirname(__file__), 'ttc6_sub.sto')
+        test_alignment = os.path.join(os.path.dirname(__file__), "ttc6_sub.sto")
         try:
-            varalign.core.align_variants.main(path_to_alignment=test_alignment, max_gaussians=5, n_groups=1, override=True, species='HUMAN')
+            varalign.core.align_variants.main(
+                path_to_alignment=test_alignment,
+                max_gaussians=5,
+                n_groups=1,
+                override=True,
+                species="HUMAN",
+            )
         except ValueError:
-            self.fail('align_variants.main failed with value error.')
+            self.fail("align_variants.main failed with value error.")
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     unittest.main()

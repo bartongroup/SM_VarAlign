@@ -9,6 +9,7 @@ log = logging.getLogger(__name__)
 
 np.random.seed(98127342)
 
+
 def _fit_mixture_models(s, max_gaussians=5):
     """
     Fit mixture models to a numeric Series column.
@@ -20,9 +21,9 @@ def _fit_mixture_models(s, max_gaussians=5):
     x = s.values.reshape(-1, 1)
 
     # Fit GMM with a range of mixture components
-    models = [mixture.GaussianMixture(n, n_init=3) for n in range(1, max_gaussians+1)]
+    models = [mixture.GaussianMixture(n, n_init=3) for n in range(1, max_gaussians + 1)]
     models = [m.fit(x) for m in models]
-    return {'models': models, 'data': x}
+    return {"models": models, "data": x}
 
 
 def _score_models(models, x):
@@ -35,7 +36,7 @@ def _score_models(models, x):
     AIC = [m.aic(x) for m in models]
     BIC = [m.bic(x) for m in models]
 
-    return {'AIC': AIC, 'BIC': BIC}
+    return {"AIC": AIC, "BIC": BIC}
 
 
 def _pick_best(models, x):
@@ -45,9 +46,9 @@ def _pick_best(models, x):
     :return:
     """
     # Pick best
-    aic = _score_models(models, x)['AIC']
+    aic = _score_models(models, x)["AIC"]
     best = np.argmin(aic)
-    log.info('Best model has {} components'.format(best + 1))
+    log.info("Best model has {} components".format(best + 1))
     return models[best]
 
 
@@ -66,8 +67,7 @@ def _gmm_plot(best_model, all_models, x):
     #   3) probability that a point came from each component
 
     fig = plt.figure(figsize=(10, 5))
-    fig.subplots_adjust(left=0.12, right=0.97,
-                        bottom=0.21, top=0.9, wspace=0.5)
+    fig.subplots_adjust(left=0.12, right=0.97, bottom=0.21, top=0.9, wspace=0.5)
 
     # plot 1: data + best-fit mixture
     ax = fig.add_subplot(121)
@@ -80,26 +80,25 @@ def _gmm_plot(best_model, all_models, x):
     pdf = np.exp(logprob)
     pdf_individual = responsibilities * pdf[:, np.newaxis]
 
-    ax.hist(x, 30, histtype='stepfilled', alpha=0.4)
+    ax.hist(x, 30, histtype="stepfilled", alpha=0.4)
     # ax.plot(x, pdf, '-k')
     # ax.plot(x, pdf_individual, '--k')
-    ax.text(0.04, 0.96, "Best-fit Mixture",
-            ha='left', va='top', transform=ax.transAxes)
-    ax.set_xlabel('$x$')
-    ax.set_ylabel('$p(x)$')
-    ax.plot(grid, pdf_individual, '--k')
+    ax.text(0.04, 0.96, "Best-fit Mixture", ha="left", va="top", transform=ax.transAxes)
+    ax.set_xlabel("$x$")
+    ax.set_ylabel("$p(x)$")
+    ax.plot(grid, pdf_individual, "--k")
 
     # plot 2: AIC and BIC
     scores = _score_models(all_models, x)
 
     ax = fig.add_subplot(122)
-    ax.plot(list(range(1, len(scores['AIC']) + 1)), scores['AIC'], '-k', label='AIC')
-    ax.plot(list(range(1, len(scores['BIC']) + 1)), scores['BIC'], '--k', label='BIC')
-    ax.set_xlabel('n. components')
-    ax.set_ylabel('information criterion')
+    ax.plot(list(range(1, len(scores["AIC"]) + 1)), scores["AIC"], "-k", label="AIC")
+    ax.plot(list(range(1, len(scores["BIC"]) + 1)), scores["BIC"], "--k", label="BIC")
+    ax.set_xlabel("n. components")
+    ax.set_ylabel("information criterion")
     ax.legend(loc=2)
 
-    fig.suptitle('Residue Occupancy GMM Diagnostics')
+    fig.suptitle("Residue Occupancy GMM Diagnostics")
 
     return None
 
@@ -111,4 +110,8 @@ def _core_column_mask(model, x, n_groups=1):
     :param x:
     :return:
     """
-    return pd.Series(model.predict(x)).isin(np.argsort(model.means_.reshape(-1))[-n_groups:]).values
+    return (
+        pd.Series(model.predict(x))
+        .isin(np.argsort(model.means_.reshape(-1))[-n_groups:])
+        .values
+    )

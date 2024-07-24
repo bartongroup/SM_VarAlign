@@ -12,7 +12,7 @@ from Bio.PDB import *
 from Bio.PDB.Dice import ChainSelector
 from Bio.Seq import Seq
 
-sys.path.extend(['/Users/smacgowan/PycharmProjects/ProteoFAV'])
+sys.path.extend(["/Users/smacgowan/PycharmProjects/ProteoFAV"])
 from proteofav.structures import sifts_best
 from varalign.core.utils import query_uniprot, parse_seq_name
 import os
@@ -26,7 +26,7 @@ log = logging.getLogger(__name__)
 class alpha_select(ChainSelector):
     def accept_atom(self, atom):
         name = atom.get_id()
-        if name == 'CA':
+        if name == "CA":
             return 1
         else:
             return 0
@@ -34,22 +34,24 @@ class alpha_select(ChainSelector):
 
 class in_range_or_zinc(ChainSelector):
     def __init__(self, residue_range, *args):
-        super(ChainSelector,self).__init__(*args)
+        super(ChainSelector, self).__init__(*args)
         self.residue_range = residue_range
+
     def accept_atom(self, atom, residue_range):
         name = atom.get_id()
         resid = atom.get_parent().get_id()[1]
         atom_chain_id = atom.get_parent().get_parent().get_id()
-        if name.lower() == 'zn' or \
-                (resid in residue_range and atom_chain_id in chain_id):
+        if name.lower() == "zn" or (
+            resid in residue_range and atom_chain_id in chain_id
+        ):
             return 1
         else:
             return 0
 
 
 def main(args):
-    downloads = '.SequencePdbs'
-    output_dir = 'sequence_pdbs'
+    downloads = ".SequencePdbs"
+    output_dir = "sequence_pdbs"
 
     alignment = AlignIO.read(args.fasta_file, "fasta")
 
@@ -57,20 +59,26 @@ def main(args):
     for seq in alignment:
         # Get PDBs through SIFTS
         seq_name = parse_seq_name(seq.id)
-        if args.seq_name_ids == 'UniProt':
+        if args.seq_name_ids == "UniProt":
             pass
-        elif args.seq_name_ids == 'UniProt_gene':
-            query = re.search('[^_\W]+', seq_name).group().strip()
-            seq_name = query_uniprot(('gene:' + query, 'reviewed:yes', 'organism:human'), first=True)
-        elif args.seq_name_ids == 'mnemonic':
+        elif args.seq_name_ids == "UniProt_gene":
+            query = re.search("[^_\W]+", seq_name).group().strip()
+            seq_name = query_uniprot(
+                ("gene:" + query, "reviewed:yes", "organism:human"), first=True
+            )
+        elif args.seq_name_ids == "mnemonic":
             query = seq_name
-            seq_name = query_uniprot(('mnemonic:' + query, 'reviewed:yes', 'organism:human'), first=True)
+            seq_name = query_uniprot(
+                ("mnemonic:" + query, "reviewed:yes", "organism:human"), first=True
+            )
         else:
-            log.error('Sequence names must correspond to either UniProt IDs or gene names')
+            log.error(
+                "Sequence names must correspond to either UniProt IDs or gene names"
+            )
             raise NotImplemented
         sifts_pdb = sifts_best(seq_name)
         if sifts_pdb is None:
-            log.info('No SIFTs mapping for {}.'.format(seq_name))
+            log.info("No SIFTs mapping for {}.".format(seq_name))
             continue
 
         # Pick out first X-ray structure
@@ -78,19 +86,19 @@ def main(args):
         pdb_id = None
         for prot, record in sifts_pdb.items():
             for r_dict in record:
-                if r_dict.get('experimental_method') == 'X-ray diffraction':
-                    pdb_id = r_dict.get('pdb_id')
+                if r_dict.get("experimental_method") == "X-ray diffraction":
+                    pdb_id = r_dict.get("pdb_id")
                     break
         if pdb_id is None:
-            log.info('No X-ray structure for {}.'.format(seq_name))
+            log.info("No X-ray structure for {}.".format(seq_name))
             continue
 
         # Download and parse that PDB
         pdbl = PDBList()
-        pdb_dir = os.path.join(downloads, 'PDBs')
+        pdb_dir = os.path.join(downloads, "PDBs")
         pdbl.retrieve_pdb_file(pdb_id, pdir=pdb_dir)
         parser = PDBParser()
-        pdb_file_path = os.path.join(pdb_dir, 'pdb' + pdb_id + '.ent')
+        pdb_file_path = os.path.join(pdb_dir, "pdb" + pdb_id + ".ent")
         structure = parser.get_structure(pdb_id, pdb_file_path)
 
         # Now need to identify PDB residue numbers to keep, can do this either through Biopython PPBuilder or
@@ -102,13 +110,17 @@ def main(args):
         pdb_chain_sequences = []
         for chain in model.get_list():
             chain_id = chain.get_id()
-            chain_pp = Seq('', generic_protein)
+            chain_pp = Seq("", generic_protein)
             for pp in ppb.build_peptides(chain):
-                chain_pp = chain_pp + pp.get_sequence()  # Concatenate all PPs from a single chain
-            pdb_chain_sequences.append((structure.get_id(), chain_id, chain_pp, ppb.build_peptides(chain)))
+                chain_pp = (
+                    chain_pp + pp.get_sequence()
+                )  # Concatenate all PPs from a single chain
+            pdb_chain_sequences.append(
+                (structure.get_id(), chain_id, chain_pp, ppb.build_peptides(chain))
+            )
 
         # Now compare to sequence and identify PDB selection
-        seq_str = str(seq.seq).replace('-', '').upper()
+        seq_str = str(seq.seq).replace("-", "").upper()
         seq_matched = False
         for pdb, c, pdb_seq, pp_list in pdb_chain_sequences:
             # TODO: Pick best rather than first match?
@@ -135,58 +147,80 @@ def main(args):
                 select_residues = (pdb, c, start, end)
                 seq_matched = True
         if not seq_matched:
-            log.info('Could not match {} to {}.'.format(seq_name, pdb_id))
+            log.info("Could not match {} to {}.".format(seq_name, pdb_id))
             continue
 
         pdb_id = select_residues[0]
-        #if phd_resnums[1] > 0:  # Having some problems just now...
+        # if phd_resnums[1] > 0:  # Having some problems just now...
         #    continue
-        chain_id = select_residues[1]  # Assuming this is the chain we got the sequence for earlier
+        chain_id = select_residues[
+            1
+        ]  # Assuming this is the chain we got the sequence for earlier
         start = select_residues[2]
         end = select_residues[3]
         if not os.path.exists(output_dir):
             os.makedirs(output_dir)
-        filename = os.path.join(output_dir, '_'.join([seq_name, structure.get_id(), chain_id, str(start) + '-' + str(end)]) + '.pdb')
-        #extract(structure, chain_id, start, end, filename)
-        #sel = alpha_select(chain_id, start, end)
-        sel = in_range_or_zinc(chain_id=chain_id, residue_range=list(range(start, end + 1)))
+        filename = os.path.join(
+            output_dir,
+            "_".join(
+                [seq_name, structure.get_id(), chain_id, str(start) + "-" + str(end)]
+            )
+            + ".pdb",
+        )
+        # extract(structure, chain_id, start, end, filename)
+        # sel = alpha_select(chain_id, start, end)
+        sel = in_range_or_zinc(
+            chain_id=chain_id, residue_range=list(range(start, end + 1))
+        )
         # io = PDBIO()
         # io.set_structure(structure)
         # io.save(filename, sel)
 
         output_pdb_files.append(filename)
-        log.info('Successfully matched {} to {}.'.format(seq_name, pdb_id))
+        log.info("Successfully matched {} to {}.".format(seq_name, pdb_id))
 
     # Lastly create MAMMOTH input file
-    with open('MAMMOTH_input.pdb', 'w') as mammoth_file:
-        mammoth_header = ('<pre>\n'
-                          'REMARK MAMMOTH-mult format rules:\n'
-                          'REMARK   (1) read only "CA" entries\n'
-                          'REMARK   (2) duplicate residues are ignored (same residue number\n'
-                          'REMARK       consecutevely)\n'
-                          'REMARK   (3) each structure must be separated by "TER"\n'
-                          'REMARK   (4) 20 residues or more.\n'
-                          'REMARK\n')
+    with open("MAMMOTH_input.pdb", "w") as mammoth_file:
+        mammoth_header = (
+            "<pre>\n"
+            "REMARK MAMMOTH-mult format rules:\n"
+            'REMARK   (1) read only "CA" entries\n'
+            "REMARK   (2) duplicate residues are ignored (same residue number\n"
+            "REMARK       consecutevely)\n"
+            'REMARK   (3) each structure must be separated by "TER"\n'
+            "REMARK   (4) 20 residues or more.\n"
+            "REMARK\n"
+        )
         mammoth_file.write(mammoth_header)
-    with open('MAMMOTH_input.pdb', 'a') as mammoth_file:
+    with open("MAMMOTH_input.pdb", "a") as mammoth_file:
         for pdb_file_path in output_pdb_files:
-            with open(pdb_file_path, 'r') as pdb_file:
+            with open(pdb_file_path, "r") as pdb_file:
                 for line in pdb_file.readlines():
-                    if 'END' not in line:
+                    if "END" not in line:
                         mammoth_file.write(line)
-    with open('MAMMOTH_input.pdb', 'a') as mammoth_file:
-        mammoth_file.write('</pre>\n')
+    with open("MAMMOTH_input.pdb", "a") as mammoth_file:
+        mammoth_file.write("</pre>\n")
 
 
-
-if __name__ == '__main__':
+if __name__ == "__main__":
     # CLI Arguments
-    parser = argparse.ArgumentParser(description='Fetch and subset PDB files that correspond to sequences in an alignment.')
-    parser.add_argument('fasta_file', type=str, help='Path to fasta file containing MSA.')
-    parser.add_argument('--seq_name_ids', type=str, default='mnemonic',
-                        help='Definitions the alignment sequences names come from ["UniProt", "mnemonic", "UniProt_gene"]')
-    parser.add_argument('--interpreter', action='store_true',
-                        help='Drop into interactive python session once analysis is complete.')
+    parser = argparse.ArgumentParser(
+        description="Fetch and subset PDB files that correspond to sequences in an alignment."
+    )
+    parser.add_argument(
+        "fasta_file", type=str, help="Path to fasta file containing MSA."
+    )
+    parser.add_argument(
+        "--seq_name_ids",
+        type=str,
+        default="mnemonic",
+        help='Definitions the alignment sequences names come from ["UniProt", "mnemonic", "UniProt_gene"]',
+    )
+    parser.add_argument(
+        "--interpreter",
+        action="store_true",
+        help="Drop into interactive python session once analysis is complete.",
+    )
     args = parser.parse_args()
 
     main(args)

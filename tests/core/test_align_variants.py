@@ -7,14 +7,19 @@ import pandas as pd
 from Bio import AlignIO
 from pandas.api.types import is_bool_dtype, is_numeric_dtype
 
-from varalign.core.six import add_move, MovedModule; add_move(MovedModule('mock', 'mock', 'unittest.mock'))
+from varalign.core.six import add_move, MovedModule
+
+add_move(MovedModule("mock", "mock", "unittest.mock"))
 from varalign.core.six.moves import mock
 from varalign.core.align_variants import main
 from varalign.config import defaults as mock_defaults
 from varalign.core.path_utils import get_project_root, get_test_data_path
 
 root = os.path.abspath(os.path.dirname(__file__))
-mock_defaults.gnomad = os.path.join(get_test_data_path(), 'sample_swissprot_PF00001.18_full.vcf.gz')
+mock_defaults.gnomad = os.path.join(
+    get_test_data_path(), "sample_swissprot_PF00001.18_full.vcf.gz"
+)
+
 
 @mock.patch("varalign.config.defaults", mock_defaults)
 class TestAlign_Variants(TestCase):
@@ -25,46 +30,62 @@ class TestAlign_Variants(TestCase):
         """Execute pipeline"""
         # Set up test directory
         cls.start_dir = os.getcwd()
-        cls.test_dir = os.path.join(get_project_root(), 'tests', 'core', 'tmp')
+        cls.test_dir = os.path.join(get_project_root(), "tests", "core", "tmp")
         os.makedirs(cls.test_dir, exist_ok=True)
         os.chdir(cls.test_dir)
 
         # Copy cache to test execution dir
-        test_cache = os.path.join(get_test_data_path(), 'prointvar.sqlite')
-        os.makedirs('.varalign', exist_ok=True)
-        os.symlink(test_cache, os.path.join(cls.test_dir, '.varalign', 'ensembl_cache.sqlite'))
+        test_cache = os.path.join(get_test_data_path(), "prointvar.sqlite")
+        os.makedirs(".varalign", exist_ok=True)
+        os.symlink(
+            test_cache, os.path.join(cls.test_dir, ".varalign", "ensembl_cache.sqlite")
+        )
 
         # Execute pipeline
-        cls.test_alignment = os.path.join(get_test_data_path(), 'sample_swissprot_PF00001.18_full.sto')
-        main(path_to_alignment=cls.test_alignment, max_gaussians=5, n_groups=1, override=True, species='HUMAN')
+        cls.test_alignment = os.path.join(
+            get_test_data_path(), "sample_swissprot_PF00001.18_full.sto"
+        )
+        main(
+            path_to_alignment=cls.test_alignment,
+            max_gaussians=5,
+            n_groups=1,
+            override=True,
+            species="HUMAN",
+        )
 
     def setUp(self):
         """Set up test environment"""
 
         # Expected output
-        output_files = ['_full.sto.umeres.csv',
-                        '_full.sto.cmdres.csv',
-                        '_full.sto.col_mis_clinvar.csv',
-                        '_full.sto.umdres.csv',
-                        '_full.sto.variant_occ_regression.csv',
-                        '_full.sto.cmeres.csv',
-                        '_full.sto.col_rare_counts.csv',
-                        '_full.sto.col_var_counts.csv',
-                        '_full.sto.variant_shenkin_regression.csv',
-                        '_full.sto_aacon_scores.csv',
-                        '_full.sto.col_syn_clinvar.csv',
-                        '_full.sto.corners.ann',
-                        '_full.sto.col_missense_scores.csv',
-                        '_full.sto.col_summary.csv',
-                        '_full.sto.figures.pdf',
-                        '_full.sto_variant_features.feat']
-        output_files = ['sample_swissprot_PF00001.18' + s for s in output_files]
-        output_files.append('alignment_variants.vcf')
-        output_files = [os.path.join('results', f) for f in output_files]
+        output_files = [
+            "_full.sto.umeres.csv",
+            "_full.sto.cmdres.csv",
+            "_full.sto.col_mis_clinvar.csv",
+            "_full.sto.umdres.csv",
+            "_full.sto.variant_occ_regression.csv",
+            "_full.sto.cmeres.csv",
+            "_full.sto.col_rare_counts.csv",
+            "_full.sto.col_var_counts.csv",
+            "_full.sto.variant_shenkin_regression.csv",
+            "_full.sto_aacon_scores.csv",
+            "_full.sto.col_syn_clinvar.csv",
+            "_full.sto.corners.ann",
+            "_full.sto.col_missense_scores.csv",
+            "_full.sto.col_summary.csv",
+            "_full.sto.figures.pdf",
+            "_full.sto_variant_features.feat",
+        ]
+        output_files = ["sample_swissprot_PF00001.18" + s for s in output_files]
+        output_files.append("alignment_variants.vcf")
+        output_files = [os.path.join("results", f) for f in output_files]
 
         # Compare output with expected
-        standard_path = os.path.join(get_test_data_path(), 'aligned_variants_test_expected')
-        comparison = filecmp.cmpfiles(standard_path, TestAlign_Variants.test_dir, output_files)
+        standard_path = os.path.join(
+            get_test_data_path(), "aligned_variants_test_expected"
+        )
+        comparison = filecmp.cmpfiles(
+            standard_path, TestAlign_Variants.test_dir, output_files
+        )
 
         self.output_files = output_files
         self.standard_path = standard_path
@@ -92,47 +113,70 @@ class TestAlign_Variants(TestCase):
 
     def test_expected_output_exists(self):
         cmpfiles_errors = self.comparison[2]
-        message = 'The following file(s) appear to be missing: {}.'.format(cmpfiles_errors)
+        message = "The following file(s) appear to be missing: {}.".format(
+            cmpfiles_errors
+        )
         self.assertFalse(cmpfiles_errors, message)
 
     def test_output_is_consistent(self):
-        cmpfiles_mismatch = [f for f in self.comparison[1] if not f.endswith('.pdf')]  # Exclude pdf
-        message = 'The following file(s) do not match their standards: {}'.format(cmpfiles_mismatch)
+        cmpfiles_mismatch = [
+            f for f in self.comparison[1] if not f.endswith(".pdf")
+        ]  # Exclude pdf
+        message = "The following file(s) do not match their standards: {}".format(
+            cmpfiles_mismatch
+        )
         self.assertFalse(cmpfiles_mismatch, message)
 
     def test_numeric_output_is_consistent(self):
         # Read standard and test CSV files
-        csv_files = [f for f in self.output_files if f.endswith('.csv')]
-        test_tables = [pd.read_csv(os.path.join(TestAlign_Variants.test_dir, f)) for f in csv_files]
-        standard_tables = [pd.read_csv(os.path.join(self.standard_path, f)) for f in csv_files]
+        csv_files = [f for f in self.output_files if f.endswith(".csv")]
+        test_tables = [
+            pd.read_csv(os.path.join(TestAlign_Variants.test_dir, f)) for f in csv_files
+        ]
+        standard_tables = [
+            pd.read_csv(os.path.join(self.standard_path, f)) for f in csv_files
+        ]
         # Check each numeric data column is consistent
         mismatches = []
         for test, standard in zip(test_tables, standard_tables):
             for column in standard:
                 # bool dtypes are numeric according to Pandas, bug?
-                if is_numeric_dtype(standard[column]) and not is_bool_dtype(standard[column]):
+                if is_numeric_dtype(standard[column]) and not is_bool_dtype(
+                    standard[column]
+                ):
                     error = test[column] - standard[column]
                     # TODO: In some cases, relative error could be useful
                     if any(error**2 > 1e-6):
-                        rmse = ((error**2).mean())**.5
-                        mismatches.append('{} ({})'.format(column, rmse))
+                        rmse = ((error**2).mean()) ** 0.5
+                        mismatches.append("{} ({})".format(column, rmse))
 
-        message = 'The following column(s) do not match their standards. Format: column (rmse).: {}'.format(mismatches)
+        message = "The following column(s) do not match their standards. Format: column (rmse).: {}".format(
+            mismatches
+        )
         self.assertFalse(mismatches, message)
 
     @expectedFailure
     def test_pdf_output_is_consistent(self):
-        cmpfiles_mismatch = [f for f in self.comparison[1] if f.endswith('.pdf')]  # PDF only
-        message = 'The following file(s) do not match their standards: {}'.format(cmpfiles_mismatch)
+        cmpfiles_mismatch = [
+            f for f in self.comparison[1] if f.endswith(".pdf")
+        ]  # PDF only
+        message = "The following file(s) do not match their standards: {}".format(
+            cmpfiles_mismatch
+        )
         self.assertFalse(cmpfiles_mismatch, message)
 
     def test_mapped_variant_ref_matches_residue(self):
         """Check the ref residues in VEP/Amino_acids match the residues in the mapped sequence."""
         # Need the variant table and the alignment
-        aligned_variants = pd.read_pickle(os.path.join(TestAlign_Variants.test_dir, '.varalign',
-                                          'aligned_variants_data', 'sample_swissprot_PF00001.18_full.sto_variants.p.gz')
-                                          )
-        alignment = AlignIO.read(TestAlign_Variants.test_alignment, 'stockholm')
+        aligned_variants = pd.read_pickle(
+            os.path.join(
+                TestAlign_Variants.test_dir,
+                ".varalign",
+                "aligned_variants_data",
+                "sample_swissprot_PF00001.18_full.sto_variants.p.gz",
+            )
+        )
+        alignment = AlignIO.read(TestAlign_Variants.test_alignment, "stockholm")
 
         # Compare ref residues in VEP/Amino_acids to the alignment
         sequence_lookup = [s.id for s in alignment]
@@ -140,14 +184,24 @@ class TestAlign_Variants(TestCase):
         for sn, sid in enumerate(sequence_lookup):
             try:
                 # Parse reference residues
-                variant_refs = aligned_variants.loc[sid, ('VEP', 'Amino_acids')].str.split('/').str[0].dropna()
+                variant_refs = (
+                    aligned_variants.loc[sid, ("VEP", "Amino_acids")]
+                    .str.split("/")
+                    .str[0]
+                    .dropna()
+                )
             except KeyError:
                 continue
             # Parse alignment sequence
-            sequence = str(alignment[sn].seq).replace('-', '')
-            offset = alignment[sn].annotations['start']
-            comparisons = [sequence[position - offset].upper() == residue
-                           for position, residue in variant_refs.items()]  # iterate over residue number, aa pairs
+            sequence = str(alignment[sn].seq).replace("-", "")
+            offset = alignment[sn].annotations["start"]
+            comparisons = [
+                sequence[position - offset].upper() == residue
+                for position, residue in variant_refs.items()
+            ]  # iterate over residue number, aa pairs
             all_match.append(all(comparisons))
 
-        self.assertTrue(all(all_match), "Variant record reference residues (from VEP) don't match sequence.")
+        self.assertTrue(
+            all(all_match),
+            "Variant record reference residues (from VEP) don't match sequence.",
+        )

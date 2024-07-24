@@ -2,7 +2,9 @@
 This module contains functions for retrieving external data required for the analysis. In particular,
 the full-length UniProt sequences for the aligned sequences and the variant tables.
 """
+
 import os.path
+
 # Use my developement branch of ProteoFAV
 import sys
 
@@ -12,7 +14,7 @@ from varalign.core.six.moves import urllib
 
 from varalign.core.utils import urlopen_with_retry, query_uniprot, parse_seq_name
 
-sys.path.extend(['/Users/smacgowan/PycharmProjects/ProteoFAV'])
+sys.path.extend(["/Users/smacgowan/PycharmProjects/ProteoFAV"])
 from proteofav.variants import select_uniprot_variants
 
 import logging
@@ -28,10 +30,10 @@ def fetch_uniprot_sequences(seq_name, downloads=None):
     :param downloads: Path to local cache
     :return: Protein sequence
     """
-    url = 'http://www.uniprot.org/uniprot/'
+    url = "http://www.uniprot.org/uniprot/"
     p = seq_name.strip()
-    fasta_file_name = os.path.join(downloads, p + '.fasta')
-    remote_fasta = url + p + '.fasta'
+    fasta_file_name = os.path.join(downloads, p + ".fasta")
+    remote_fasta = url + p + ".fasta"
     if not os.path.isfile(fasta_file_name):
         print(remote_fasta)
         try:
@@ -40,20 +42,22 @@ def fetch_uniprot_sequences(seq_name, downloads=None):
             # Will need to query instead
             p = parse_seq_name(p)  # First word only
             # TODO: This should be configurable
-            p = query_uniprot(('gene:' + p, 'reviewed:yes', 'organism:human'), first=True)
-            remote_fasta = url + p + '.fasta'
+            p = query_uniprot(
+                ("gene:" + p, "reviewed:yes", "organism:human"), first=True
+            )
+            remote_fasta = url + p + ".fasta"
             handle = urlopen_with_retry(remote_fasta)
         try:
             seq_record = SeqIO.read(handle, "fasta")
         except ValueError:
-            log.error('Could not retrieve sequence for {}'.format(seq_name))
+            log.error("Could not retrieve sequence for {}".format(seq_name))
             return None
         if downloads is not None:
             if not os.path.exists(downloads):
                 os.makedirs(downloads)
             SeqIO.write(seq_record, fasta_file_name, "fasta")
     else:
-        handle = open(fasta_file_name, 'r')
+        handle = open(fasta_file_name, "r")
         seq_record = SeqIO.read(handle, "fasta")
 
     return seq_record
@@ -84,44 +88,50 @@ def _fetch_variants(prots, downloads=None, save_name=None):
         tables = []
         for p in list(set(prots)):
             try:
-                variant_table = select_uniprot_variants(p, reduced_annotations=False)  # TODO: Use new variant fetcher?
-                variant_table['UniProt_dbAccessionId'] = p
+                variant_table = select_uniprot_variants(
+                    p, reduced_annotations=False
+                )  # TODO: Use new variant fetcher?
+                variant_table["UniProt_dbAccessionId"] = p
                 tables.append(variant_table)
             except (ValueError, KeyError):
-                log.error('Could not retrieve variants for {}'.format(p))
+                log.error("Could not retrieve variants for {}".format(p))
 
         # Concatenate and process all those variant tables
-        log.debug('---Concatenating variant tables---')
+        log.debug("---Concatenating variant tables---")
         concat_table = pd.concat(tables, ignore_index=True)
         # Need to expand on 'to_aa' before dedupping
-        log.debug('---Expanding `to_aa` column---')
-        to_aa_columns = pd.DataFrame(concat_table.to_aa.tolist(), )
+        log.debug("---Expanding `to_aa` column---")
+        to_aa_columns = pd.DataFrame(
+            concat_table.to_aa.tolist(),
+        )
         split = pd.concat([concat_table, to_aa_columns], axis=1)
-        concat_table = pd.melt(split, id_vars=list(concat_table.columns), value_name='to_aa_expanded')
+        concat_table = pd.melt(
+            split, id_vars=list(concat_table.columns), value_name="to_aa_expanded"
+        )
         concat_table = concat_table[concat_table.to_aa_expanded.notnull()]
-        concat_table = concat_table.drop('variable', 1)  # Remove melt variable
+        concat_table = concat_table.drop("variable", 1)  # Remove melt variable
         # Fix or remove list columns
-        concat_table = concat_table.drop('to_aa', 1)
+        concat_table = concat_table.drop("to_aa", 1)
 
-        log.debug('---Parsing `clinical_significance`---')
-        concat_table['clinical_significance'] = concat_table['clinical_significance'].apply(lambda x: ';'.join(x))
-        concat_table['clinical_significance'].fillna('')
+        log.debug("---Parsing `clinical_significance`---")
+        concat_table["clinical_significance"] = concat_table[
+            "clinical_significance"
+        ].apply(lambda x: ";".join(x))
+        concat_table["clinical_significance"].fillna("")
         # And dedup, bearing in mind the same variant can pop up in different transcripts
         # (so dedupping is only done on certain columns)
-        concat_table = concat_table.drop_duplicates(['UniProt_dbAccessionId',
-                                                     'start',
-                                                     'end',
-                                                     'variant_id',
-                                                     'to_aa_expanded']).reset_index(drop=True)
+        concat_table = concat_table.drop_duplicates(
+            ["UniProt_dbAccessionId", "start", "end", "variant_id", "to_aa_expanded"]
+        ).reset_index(drop=True)
 
         # Write table to file
         concat_table.to_csv(table_file_name)
     else:
-        log.info('Re-loaded processed variant table from {}'.format(table_file_name))
+        log.info("Re-loaded processed variant table from {}".format(table_file_name))
         concat_table = pd.read_csv(table_file_name)
 
     # is_somatic = concat_table['variant_id'].apply(lambda x: x.startswith('COS'))  #TODO: include this?
-    is_germline = concat_table['variant_id'].apply(lambda x: x.startswith('rs'))
+    is_germline = concat_table["variant_id"].apply(lambda x: x.startswith("rs"))
     # somatic_table = concat_table[is_somatic]
     germline_table = concat_table[is_germline]
 
@@ -133,10 +143,12 @@ def select_uniprot_sequence(UniProt_sequences_downloads, local_uniprot_index, se
     seq_name = parse_seq_name(seq.id)
     if not local_uniprot_index:
         uniprot_seq = fetch_uniprot_sequences(seq_name, UniProt_sequences_downloads)
-        uniprot_id = uniprot_seq.id.split('|')[1]
+        uniprot_id = uniprot_seq.id.split("|")[1]
     else:
         # TODO: Currently local lookup only working with Stockholm format that has AC annotations
-        accession_code = seq.annotations['accession'].split('.')[0]  # Dropping sequence version
+        accession_code = seq.annotations["accession"].split(".")[
+            0
+        ]  # Dropping sequence version
         if accession_code in local_uniprot_index:
             uniprot_seq = local_uniprot_index[accession_code]
             uniprot_id = accession_code

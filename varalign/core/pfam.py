@@ -19,12 +19,12 @@ def _mask_alignment(aln, column_indexes):
     # Inspired by:
     # https://stackoverflow.com/questions/3429510/pythonic-way-to-convert-a-list-of-integers-into-a-string-of-comma-separated-range/3430231#3430231
     G = (list(x) for _, x in groupby(column_indexes, lambda x, c=count(): next(c) - x))
-    mask_ranges = [(g[0], g[-1])[:len(g)] for g in G]
+    mask_ranges = [(g[0], g[-1])[: len(g)] for g in G]
     mask_ranges = [x if len(x) == 2 else x * 2 for x in mask_ranges]
     # Build list of continuous occupied sub-alignments
     MSA_columns = []
     for start, end in mask_ranges:
-        MSA_columns.append(aln[:, start:end + 1])
+        MSA_columns.append(aln[:, start : end + 1])
 
     # Concatenate sub-alignments
     masked_alignment = aln[:, 0:0]
@@ -46,10 +46,10 @@ def index_pfam(pfam_path):
     :return: None
     """
     # Open file
-    if pfam_path.endswith('.gz'):
-        pfam_file = gzip.open(pfam_path, 'r')
+    if pfam_path.endswith(".gz"):
+        pfam_file = gzip.open(pfam_path, "r")
     else:
-        pfam_file = open(pfam_path, 'r')
+        pfam_file = open(pfam_path, "r")
 
     # Create the index
     position = 0
@@ -59,18 +59,18 @@ def index_pfam(pfam_path):
         line = pfam_file.readline()
         if not line:
             break
-        if line == '# STOCKHOLM 1.0\n':
+        if line == "# STOCKHOLM 1.0\n":
             alignment_starts.append(position)
-        if line.startswith('#=GF AC'):
+        if line.startswith("#=GF AC"):
             family_names.append(line.split()[-1].strip())
         position = pfam_file.tell()
 
     pfam_file.close()
 
     # Write the index
-    with open(pfam_path + '.idx', 'w') as index_file:
+    with open(pfam_path + ".idx", "w") as index_file:
         for e in zip(alignment_starts, family_names):
-            index_file.write(','.join(map(str, e)) + '\n')
+            index_file.write(",".join(map(str, e)) + "\n")
 
 
 def lookup_index(index_path, family=None):
@@ -81,15 +81,15 @@ def lookup_index(index_path, family=None):
     :param family: Family accession code.
     :return: byte offset
     """
-    with open(index_path, 'r') as index_file:
+    with open(index_path, "r") as index_file:
         if not (isinstance(family, str) and len(family) >= 7):
-            msg = 'Invalid family: {}. (Should resemble PF12345[.12])'.format(family)
+            msg = "Invalid family: {}. (Should resemble PF12345[.12])".format(family)
             raise ValueError(msg)
         for line in index_file:
-            offset, ac = line.strip().split(',')
+            offset, ac = line.strip().split(",")
             if ac.startswith(family):
                 return int(offset)
-        print('{} not found.'.format(family))
+        print("{} not found.".format(family))
     return None
 
 
@@ -102,21 +102,21 @@ def read_family(pfam_path, start):
     :return: Biopython multiple alignment.
     """
     # Open file
-    if pfam_path.endswith('.gz'):
-        pfam = gzip.open(pfam_path, 'r')
+    if pfam_path.endswith(".gz"):
+        pfam = gzip.open(pfam_path, "r")
     else:
-        pfam = open(pfam_path, 'r')
+        pfam = open(pfam_path, "r")
 
     pfam.seek(start)
     alignment_handle = io.StringIO()
     for line in pfam:
         alignment_handle.write(line)
-        if line == '//\n':
+        if line == "//\n":
             break
     pfam.close()
 
     alignment_handle.seek(0)
-    alignment = AlignIO.read(alignment_handle, 'stockholm')
+    alignment = AlignIO.read(alignment_handle, "stockholm")
     alignment_handle.close()
     return alignment
 
@@ -129,8 +129,8 @@ def filter_non_swissprot(aln, swissprot_id_file):
     :return:
     """
     # Read list of Swissprot IDS
-    swissprot_ids = pd.read_csv(swissprot_id_file, sep='\t', header=0, comment='#')
-    swissprot_seq_names = set(swissprot_ids['Entry name'].tolist())
+    swissprot_ids = pd.read_csv(swissprot_id_file, sep="\t", header=0, comment="#")
+    swissprot_seq_names = set(swissprot_ids["Entry name"].tolist())
 
     # Filter alignment
     # Test each sequence for SwissProt membership
@@ -143,7 +143,7 @@ def filter_non_swissprot(aln, swissprot_id_file):
     # Identify occupied columns
     occupied_cols = []
     for i in range(aln.get_alignment_length()):
-        if not all([x == '-' for x in filtered_alignment[:, i]]):
+        if not all([x == "-" for x in filtered_alignment[:, i]]):
             occupied_cols.append(i)
 
     degapped_alignment = _mask_alignment(filtered_alignment, occupied_cols)
@@ -151,10 +151,10 @@ def filter_non_swissprot(aln, swissprot_id_file):
     return degapped_alignment
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     # CLI
-    parser = argparse.ArgumentParser(description='Index Pfam alignments.')
-    parser.add_argument('pfam_file', type=str, help='Path to the Pfam file.')
+    parser = argparse.ArgumentParser(description="Index Pfam alignments.")
+    parser.add_argument("pfam_file", type=str, help="Path to the Pfam file.")
     args = parser.parse_args()
 
     # Index Pfam file

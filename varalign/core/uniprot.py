@@ -11,6 +11,7 @@ from varalign.core.utils import urlopen_with_retry
 
 log = logging.getLogger(__name__)
 
+
 def _has_version(uniprot_id):
     """
     Tell is a UniProt ID has a version or not.
@@ -18,7 +19,7 @@ def _has_version(uniprot_id):
     :param uniprot_id:
     :return:
     """
-    return '.' in uniprot_id
+    return "." in uniprot_id
 
 
 def _get_version(uniprot_id):
@@ -28,7 +29,7 @@ def _get_version(uniprot_id):
     :param uniprot_id:
     :return:
     """
-    return uniprot_id.split('.')[1]
+    return uniprot_id.split(".")[1]
 
 
 def _strip_version(uniprot_id):
@@ -38,7 +39,7 @@ def _strip_version(uniprot_id):
     :param uniprot_id:
     :return:
     """
-    return uniprot_id.split('.')[0]
+    return uniprot_id.split(".")[0]
 
 
 def _get_entry_history(uniprot_id):
@@ -50,9 +51,9 @@ def _get_entry_history(uniprot_id):
     :param uniprot_id:
     :return:
     """
-    url = defaults.api_uniprot + _strip_version(uniprot_id) + '.tab?version=*'
+    url = defaults.api_uniprot + _strip_version(uniprot_id) + ".tab?version=*"
     s = requests.get(url).content
-    return pd.read_table(io.StringIO(s.decode('utf-8')))
+    return pd.read_table(io.StringIO(s.decode("utf-8")))
 
 
 def _get_latest_revision_number(uniprot_id):
@@ -63,7 +64,7 @@ def _get_latest_revision_number(uniprot_id):
     :return:
     """
     history = _get_entry_history(_strip_version(uniprot_id))
-    return history['Sequence version'].max()
+    return history["Sequence version"].max()
 
 
 def get_uniprot_fasta(uniprot_id):
@@ -73,11 +74,13 @@ def get_uniprot_fasta(uniprot_id):
     :param uniprot_id:
     :return:
     """
-    local_path = os.path.join(defaults.uniprot_cache, 'sequences', uniprot_id + '.fasta')
+    local_path = os.path.join(
+        defaults.uniprot_cache, "sequences", uniprot_id + ".fasta"
+    )
     if os.path.isfile(local_path):
         # Reload from cache
-        log.info('Loading {}...'.format(local_path))
-        handle = open(local_path, 'r')
+        log.info("Loading {}...".format(local_path))
+        handle = open(local_path, "r")
         return SeqIO.read(handle, "fasta")
     else:
         # Format URL for sequence version retrieval
@@ -86,11 +89,17 @@ def get_uniprot_fasta(uniprot_id):
             uniprot_id = _strip_version(uniprot_id)
             # Match required sequence version to latest entry version that is equivalent
             history = _get_entry_history(uniprot_id)
-            matches = history['Sequence version'] == int(sequence_version)
-            matched_entry_version = history[matches]['Entry version'].max()
-            url = defaults.api_uniprot + uniprot_id + '.fasta' + '?version=' + str(matched_entry_version)
+            matches = history["Sequence version"] == int(sequence_version)
+            matched_entry_version = history[matches]["Entry version"].max()
+            url = (
+                defaults.api_uniprot
+                + uniprot_id
+                + ".fasta"
+                + "?version="
+                + str(matched_entry_version)
+            )
         else:
-            url = defaults.api_uniprot + uniprot_id + '.fasta'
+            url = defaults.api_uniprot + uniprot_id + ".fasta"
         handle = urlopen_with_retry(url)
         sequence = SeqIO.read(handle, "fasta")
         # Write to cache
