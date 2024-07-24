@@ -12,7 +12,7 @@ class TestGet_aacon(TestCase):
     def test_aacon(self):
         # Reformat the test alignment
         alignment_path = os.path.join(
-            self.issues_path, "006", "peptide_fJ_with_ACCs.sto"
+            self.issues_path, "issue_006", "peptide_fJ_with_ACCs.sto"
         )
         alignment = AlignIO.read(alignment_path, "stockholm")
         reformatted, _ = aacon._reformat_alignment_for_aacon(alignment)

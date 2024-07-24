@@ -17,7 +17,7 @@ dependencies:
   - seaborn
   - scikit-learn
   - tqdm
-  - pyvcf
+  # - pyvcf3
   - java-jdk
   # Development tools
   - flake8
@@ -35,3 +35,4 @@ dependencies:
       - -e /Users/smacgowan/OneDrive-Projects/230908a-varalign-1.0/public/SM_VarAlign
       # - git+ssh://git@github.com/bartongroup/ProIntVar.git@f5ae6dae6e505d45be2c13ab7b44e6ed44c414a8#egg=ProIntVar-Core
       - -e /Users/smacgowan/OneDrive-Projects/230908a-varalign-1.0/public/ProIntVar
+      - git+https://github.com/dridk/PyVCF3.git@2d841f7
