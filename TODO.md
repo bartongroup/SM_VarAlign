@@ -8,3 +8,17 @@
 - Remove non-essential stuff, e.g. interpret regression
 - Review and streamline logging
 - Review all output files
+- Consider using mypy pre-commit hooks
+
+
+## Notes
+
+### mypy pre-commit conf
+
+```python
+-   repo: https://github.com/pre-commit/mirrors-mypy
+    rev: v1.11.0
+    hooks:
+    - id: mypy
+      args: ["--install-types", "--non-interactive"]
+```
