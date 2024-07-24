@@ -4,10 +4,7 @@ import unittest
 
 import varalign.core.align_variants
 
-from varalign.core.six import add_move, MovedModule
-
-add_move(MovedModule("mock", "mock", "unittest.mock"))
-from varalign.core.six.moves import mock
+from unittest import mock
 
 
 @mock.patch(

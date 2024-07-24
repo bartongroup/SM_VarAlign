@@ -10,7 +10,7 @@ import re
 import requests
 from Bio.Align import MultipleSeqAlignment
 from Bio.Seq import Seq
-from varalign.core.six.moves import urllib
+import urllib
 
 from varalign.core.retry import retry
 

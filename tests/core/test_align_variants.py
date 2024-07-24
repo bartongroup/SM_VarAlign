@@ -7,10 +7,7 @@ import pandas as pd
 from Bio import AlignIO
 from pandas.api.types import is_bool_dtype, is_numeric_dtype
 
-from varalign.core.six import add_move, MovedModule
-
-add_move(MovedModule("mock", "mock", "unittest.mock"))
-from varalign.core.six.moves import mock
+from unittest import mock
 from varalign.core.align_variants import main
 from varalign.config import defaults as mock_defaults
 from varalign.core.path_utils import get_project_root, get_test_data_path

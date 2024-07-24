@@ -10,7 +10,7 @@ import sys
 
 import pandas as pd
 from Bio import SeqIO
-from varalign.core.six.moves import urllib
+import urllib
 
 from varalign.core.utils import (
     urlopen_with_retry,
