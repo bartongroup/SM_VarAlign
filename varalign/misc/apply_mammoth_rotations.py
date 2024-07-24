@@ -7,9 +7,13 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(
         description="Apply a mammoth rotation to a PDB file."
     )
-    parser.add_argument("mammoth", type=str, help="Path to mammoth rotation file.")
     parser.add_argument(
-        "number", type=int, help="The rotation to use from the mammoth rotation file."
+        "mammoth", type=str, help="Path to mammoth rotation file."
+    )
+    parser.add_argument(
+        "number",
+        type=int,
+        help="The rotation to use from the mammoth rotation file.",
     )
     parser.add_argument("pdb", type=str, help="Path to pdb file")
     args = parser.parse_args()
@@ -28,7 +32,9 @@ if __name__ == "__main__":
     # parse desired transformation
     # NB: first line is header
     rot = transform_strings[args.number].strip().split()[1:10]
-    cn = transform_strings[args.number].strip().split()[10:13]  # centre of mass
+    cn = (
+        transform_strings[args.number].strip().split()[10:13]
+    )  # centre of mass
     tr = transform_strings[args.number].strip().split()[13:]
 
     # Convert to arrays
@@ -49,7 +55,9 @@ if __name__ == "__main__":
 
     # Apply to all atoms in PDB file
     pdb_parser = PDBParser()
-    structure = pdb_parser.get_structure(args.pdb.replace(".pdb", ""), args.pdb)
+    structure = pdb_parser.get_structure(
+        args.pdb.replace(".pdb", ""), args.pdb
+    )
     for model in structure.get_iterator():
         for chain in model.get_iterator():
             for residue in chain.get_iterator():

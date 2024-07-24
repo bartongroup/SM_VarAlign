@@ -38,7 +38,8 @@ class TestAlign_Variants(TestCase):
         test_cache = os.path.join(get_test_data_path(), "prointvar.sqlite")
         os.makedirs(".varalign", exist_ok=True)
         os.symlink(
-            test_cache, os.path.join(cls.test_dir, ".varalign", "ensembl_cache.sqlite")
+            test_cache,
+            os.path.join(cls.test_dir, ".varalign", "ensembl_cache.sqlite"),
         )
 
         # Execute pipeline
@@ -75,7 +76,9 @@ class TestAlign_Variants(TestCase):
             "_full.sto.figures.pdf",
             "_full.sto_variant_features.feat",
         ]
-        output_files = ["sample_swissprot_PF00001.18" + s for s in output_files]
+        output_files = [
+            "sample_swissprot_PF00001.18" + s for s in output_files
+        ]
         output_files.append("alignment_variants.vcf")
         output_files = [os.path.join("results", f) for f in output_files]
 
@@ -122,8 +125,10 @@ class TestAlign_Variants(TestCase):
         cmpfiles_mismatch = [
             f for f in self.comparison[1] if not f.endswith(".pdf")
         ]  # Exclude pdf
-        message = "The following file(s) do not match their standards: {}".format(
-            cmpfiles_mismatch
+        message = (
+            "The following file(s) do not match their standards: {}".format(
+                cmpfiles_mismatch
+            )
         )
         self.assertFalse(cmpfiles_mismatch, message)
 
@@ -131,7 +136,8 @@ class TestAlign_Variants(TestCase):
         # Read standard and test CSV files
         csv_files = [f for f in self.output_files if f.endswith(".csv")]
         test_tables = [
-            pd.read_csv(os.path.join(TestAlign_Variants.test_dir, f)) for f in csv_files
+            pd.read_csv(os.path.join(TestAlign_Variants.test_dir, f))
+            for f in csv_files
         ]
         standard_tables = [
             pd.read_csv(os.path.join(self.standard_path, f)) for f in csv_files
@@ -160,8 +166,10 @@ class TestAlign_Variants(TestCase):
         cmpfiles_mismatch = [
             f for f in self.comparison[1] if f.endswith(".pdf")
         ]  # PDF only
-        message = "The following file(s) do not match their standards: {}".format(
-            cmpfiles_mismatch
+        message = (
+            "The following file(s) do not match their standards: {}".format(
+                cmpfiles_mismatch
+            )
         )
         self.assertFalse(cmpfiles_mismatch, message)
 
@@ -176,7 +184,9 @@ class TestAlign_Variants(TestCase):
                 "sample_swissprot_PF00001.18_full.sto_variants.p.gz",
             )
         )
-        alignment = AlignIO.read(TestAlign_Variants.test_alignment, "stockholm")
+        alignment = AlignIO.read(
+            TestAlign_Variants.test_alignment, "stockholm"
+        )
 
         # Compare ref residues in VEP/Amino_acids to the alignment
         sequence_lookup = [s.id for s in alignment]

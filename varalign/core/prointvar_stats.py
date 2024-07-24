@@ -4,7 +4,10 @@ from scipy import stats
 
 
 def _structure_column_counts(
-    aligned_prointvar_table, query, unique_sequences_name, total_interactions_name
+    aligned_prointvar_table,
+    query,
+    unique_sequences_name,
+    total_interactions_name,
 ):
     """
 
@@ -27,7 +30,9 @@ def _structure_column_counts(
         .size()
         .groupby("Alignment_column_A")
     )
-    n_unique_sequences = gr_a.size()  # How many unique sequences have interactions?
+    n_unique_sequences = (
+        gr_a.size()
+    )  # How many unique sequences have interactions?
     n_interactions = gr_a.sum()  # How many interactions are there in total?
 
     # Repeat for ATOM_B
@@ -123,7 +128,10 @@ def _count_nan(table):
 
 
 def _column_set_feature_enrichment(
-    column_annotation_table, selection_query, feature_column, feature_background
+    column_annotation_table,
+    selection_query,
+    feature_column,
+    feature_background,
 ):
     """
     Test a subset of a columns for enrichment of a feature compared to the remaining columns.
@@ -140,16 +148,23 @@ def _column_set_feature_enrichment(
         [feature_column, feature_background]
     ]
     test_df.eval(
-        "background = {} - {}".format(feature_background, feature_column), inplace=True
+        "background = {} - {}".format(feature_background, feature_column),
+        inplace=True,
     )  # TODO: make option?
-    test_df = test_df.reindex([0, 1]).fillna(0)  # Deal with zero counts if present
-    test_df = test_df.loc[[1, 0], [feature_column, "background"]]  # Enforce layout
+    test_df = test_df.reindex([0, 1]).fillna(
+        0
+    )  # Deal with zero counts if present
+    test_df = test_df.loc[
+        [1, 0], [feature_column, "background"]
+    ]  # Enforce layout
     test_df.index = ["selection", "other"]
 
     # Fishers test and 95% CI e^(ln OR +/- 1.96 * sqrt(1/a+1/b+1/c+1/d))
     oddsratio, pvalue = stats.fisher_exact(test_df)
     ci = 1.96 * np.sqrt((1 / test_df).values.sum())
-    lower_ci, upper_ci = np.exp(np.log(oddsratio) - ci), np.exp(np.log(oddsratio) + ci)
+    lower_ci, upper_ci = np.exp(np.log(oddsratio) - ci), np.exp(
+        np.log(oddsratio) + ci
+    )
 
     return test_df, (oddsratio, pvalue, lower_ci, upper_ci)
 

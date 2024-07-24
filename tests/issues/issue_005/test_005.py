@@ -13,7 +13,8 @@ from varalign.core.six.moves import mock
 @mock.patch(
     "varalign.core.align_variants.defaults.gnomad",
     os.path.join(
-        os.path.dirname(__file__), "ttc6_sub.sto_variants_sorted_normed_dedup.vcf.gz"
+        os.path.dirname(__file__),
+        "ttc6_sub.sto_variants_sorted_normed_dedup.vcf.gz",
     ),
 )
 class MyTestCase(unittest.TestCase):
@@ -28,13 +29,16 @@ class MyTestCase(unittest.TestCase):
         shutil.rmtree("results", ignore_errors=True)
         shutil.rmtree(os.path.join(".varalign", "aacon"), ignore_errors=True)
         shutil.rmtree(
-            os.path.join(".varalign", "aligned_variants_data"), ignore_errors=True
+            os.path.join(".varalign", "aligned_variants_data"),
+            ignore_errors=True,
         )
         os.chdir(cls.original_dir)
 
     @unittest.expectedFailure
     def test_something(self):
-        test_alignment = os.path.join(os.path.dirname(__file__), "ttc6_sub.sto")
+        test_alignment = os.path.join(
+            os.path.dirname(__file__), "ttc6_sub.sto"
+        )
         try:
             varalign.core.align_variants.main(
                 path_to_alignment=test_alignment,

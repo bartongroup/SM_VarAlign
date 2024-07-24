@@ -8,13 +8,20 @@ from Bio import AlignIO  # Needs PR #768 #769 patched
 
 import varalign
 from varalign.core.jabaws import apply_column_mask
-from varalign.core.utils import sanitise_alignment, make_dir_if_needed, ALIGNMENT_CHARS
+from varalign.core.utils import (
+    sanitise_alignment,
+    make_dir_if_needed,
+    ALIGNMENT_CHARS,
+)
 
 log = logging.getLogger(__name__)
 log.setLevel("INFO")
 
 aacon_path = os.path.join(
-    os.path.dirname(varalign.__file__), "lib", "aacon", "compbio-conservation-1.1.jar"
+    os.path.dirname(varalign.__file__),
+    "lib",
+    "aacon",
+    "compbio-conservation-1.1.jar",
 )
 
 aacon_methods = [
@@ -53,7 +60,9 @@ def _reformat_alignment_for_aacon(aln):
     is_empty_column = []
     contains_unk_chars = []
     for column in range(aacon_alignment.get_alignment_length()):
-        is_empty_column.append(all([x == "-" for x in aacon_alignment[:, column]]))
+        is_empty_column.append(
+            all([x == "-" for x in aacon_alignment[:, column]])
+        )
         contains_unk_chars.append(
             any([x not in ALIGNMENT_CHARS for x in aacon_alignment[:, column]])
         )
@@ -69,13 +78,17 @@ def _reformat_alignment_for_aacon(aln):
     if any(is_empty_column):
         log.info(
             "Removed empty columns: {}".format(
-                ",".join([str(i + 1) for i, x in enumerate(is_empty_column) if x])
+                ",".join(
+                    [str(i + 1) for i, x in enumerate(is_empty_column) if x]
+                )
             )
         )
     if any(contains_unk_chars):
         log.info(
             "Removed malformed columns: {}".format(
-                ",".join([str(i + 1) for i, x in enumerate(contains_unk_chars) if x])
+                ",".join(
+                    [str(i + 1) for i, x in enumerate(contains_unk_chars) if x]
+                )
             )
         )
 
@@ -167,9 +180,13 @@ def get_aacon(aln, methods=aacon_methods):
     :param methods: Conservation score(s) to calculate.
     :return: AACon conservation scores (DataFrame)
     """
-    aacon_compatible_aln, source_column_numbers = _reformat_alignment_for_aacon(aln)
+    aacon_compatible_aln, source_column_numbers = (
+        _reformat_alignment_for_aacon(aln)
+    )
     aacon_output_path = _run_aacon(aacon_compatible_aln, methods=methods)
-    conservation = _parse_aacon_results(aacon_output_path, source_column_numbers)
+    conservation = _parse_aacon_results(
+        aacon_output_path, source_column_numbers
+    )
     return conservation
 
 

@@ -18,7 +18,9 @@ import numpy as np
 import pandas as pd
 import tqdm
 from matplotlib.backends.backend_pdf import PdfPages
-from prointvar import merger  # TODO: Document that requires my patched version.
+from prointvar import (
+    merger,
+)  # TODO: Document that requires my patched version.
 
 from varalign.core import prointvar_stats
 from varalign.cli import cli
@@ -60,12 +62,17 @@ def _format_structure_data(pdb):
     # Merge tables
     log.info("Merging ProIntVar sub-tables...")
     table = merger.TableMerger(
-        pdbx_table=pdbx, sifts_table=sifts, contacts_table=contacts, dssp_table=dssp
+        pdbx_table=pdbx,
+        sifts_table=sifts,
+        contacts_table=contacts,
+        dssp_table=dssp,
     ).merge()
     return table
 
 
-def _download_structure_data(alignment_info_table, logfile="prointvar_download"):
+def _download_structure_data(
+    alignment_info_table, logfile="prointvar_download"
+):
     download_status = []
     for uniprot_id in tqdm.tqdm(alignment_info_table["uniprot_id"].unique()):
         with open(logfile + ".out." + uniprot_id, "w") as process_out:
@@ -106,7 +113,9 @@ def _download_structure_data(alignment_info_table, logfile="prointvar_download")
 
 def _format_mapping_table(alignment_info_table, alignment_mapping_table):
     # Format mapping table for join
-    aln_uniprot_ids = alignment_info_table.set_index("seq_id").loc[:, "uniprot_id"]
+    aln_uniprot_ids = alignment_info_table.set_index("seq_id").loc[
+        :, "uniprot_id"
+    ]
     aln_uniprot_ids.index.name = "SOURCE_ID"
     mapping_table = alignment_mapping_table.join(aln_uniprot_ids)
     # TODO: Are these inplace mods ok?
@@ -115,7 +124,10 @@ def _format_mapping_table(alignment_info_table, alignment_mapping_table):
         :, "Protein_position"
     ].astype(str)
     mapping_table.set_index(["uniprot_id", "Protein_position"], inplace=True)
-    mapping_table.index.names = ["UniProt_dbAccessionId_A", "UniProt_dbResNum_A"]
+    mapping_table.index.names = [
+        "UniProt_dbAccessionId_A",
+        "UniProt_dbResNum_A",
+    ]
     mapping_table.columns = ["SOURCE_ID", "Alignment_column"]
     return mapping_table
 
@@ -184,7 +196,9 @@ def _sort_ab_contacts(aligned_contacts_table):
     # This latter condition prevents duplicating the rows that are included by the former (i.e. 3rd) query.
     aligned_contacts_table = pd.concat(
         [
-            aligned_contacts_table.query("Alignment_column_A <= Alignment_column_B"),
+            aligned_contacts_table.query(
+                "Alignment_column_A <= Alignment_column_B"
+            ),
             aligned_contacts_table.query(
                 "Alignment_column_A > Alignment_column_B"
             ).rename(columns=rename_dict),
@@ -215,10 +229,14 @@ def _dedupe_ab_contacts(contacts_table):
         "PDB_entityId",
     ]
     atom_id_fields = [
-        "{}_{}".format(field, ab) for ab in ["A", "B"] for field in atom_id_fields
+        "{}_{}".format(field, ab)
+        for ab in ["A", "B"]
+        for field in atom_id_fields
     ]
     is_duplicated = (
-        contacts_table[atom_id_fields].apply(frozenset, axis=1, raw=True).duplicated()
+        contacts_table[atom_id_fields]
+        .apply(frozenset, axis=1, raw=True)
+        .duplicated()
     )
     log.info("Removing {} duplicates...".format(sum(is_duplicated)))
     contacts_table = contacts_table.loc[~is_duplicated]
@@ -242,7 +260,8 @@ def _filter_extra_domain_contacts(prointvar_table, alignment_info):
     def _filter_by_sequence_range(g, alignment_info, ResNum_fields):
         uniprot_id = g.name
         start_ends = [
-            alignment_info.query("uniprot_id == @x")["start_end"] for x in uniprot_id
+            alignment_info.query("uniprot_id == @x")["start_end"]
+            for x in uniprot_id
         ]  # Could be > 1 range per id
         if start_ends[0].empty and start_ends[1].empty:
             return None
@@ -270,7 +289,8 @@ def _filter_extra_domain_contacts(prointvar_table, alignment_info):
     # TODO: Determine how NaN will be handled throughout the library per data column.
     # for now set these back to NaN until I resolve what to do generally
     prointvar_table = prointvar_table.replace(
-        {"UniProt_dbAccessionId_A": "nan", "UniProt_dbAccessionId_B": "nan"}, np.nan
+        {"UniProt_dbAccessionId_A": "nan", "UniProt_dbAccessionId_B": "nan"},
+        np.nan,
     )
     log.info(
         "{} atom-atom records remain with >=1 residue in alignment sequence.".format(
@@ -301,7 +321,9 @@ def _classify_contacts(
 
     def _new_series(name):
         return pd.Series(
-            [np.nan] * len(prointvar_table), name=name, index=prointvar_table.index
+            [np.nan] * len(prointvar_table),
+            name=name,
+            index=prointvar_table.index,
         )
 
     def _query_mask(query):
@@ -315,24 +337,31 @@ def _classify_contacts(
         residue = _new_series("interaction_type")
         # TODO: Is label_comp_id_B the best field?
         # I could also use auth_comp_id_B. I think I should be able to use PDB_dbResName_B but this is nan for waters...
-        residue[_query_mask('group_PDB_B == "HETATM" & label_comp_id_B != "HOH"')] = (
-            "Protein-Ligand"  # TODO: Picks up modified residues, e.g. MSE
-        )
-        residue[_query_mask('group_PDB_B == "HETATM" & label_comp_id_B == "HOH"')] = (
-            "Protein-Water"
-        )
-        residue[_query_mask('group_PDB_A == "ATOM" & group_PDB_B == "ATOM"')] = (
-            "Protein-Protein"  # TODO: Would Residue-Residue be better?
-        )
+        residue[
+            _query_mask('group_PDB_B == "HETATM" & label_comp_id_B != "HOH"')
+        ] = "Protein-Ligand"  # TODO: Picks up modified residues, e.g. MSE
+        residue[
+            _query_mask('group_PDB_B == "HETATM" & label_comp_id_B == "HOH"')
+        ] = "Protein-Water"
+        residue[
+            _query_mask('group_PDB_A == "ATOM" & group_PDB_B == "ATOM"')
+        ] = "Protein-Protein"  # TODO: Would Residue-Residue be better?
     else:
         residue = None
 
     # Protein topology
     if protein:
         protein = _new_series("protein_topology")
-        protein_id_fields = ["UniProt_dbAccessionId_A", "UniProt_dbAccessionId_B"]
-        protein[_query_mask("{0} != {1}".format(*protein_id_fields))] = "Heteroprotein"
-        protein[_query_mask("{0} == {1}".format(*protein_id_fields))] = "Homoprotein"
+        protein_id_fields = [
+            "UniProt_dbAccessionId_A",
+            "UniProt_dbAccessionId_B",
+        ]
+        protein[_query_mask("{0} != {1}".format(*protein_id_fields))] = (
+            "Heteroprotein"
+        )
+        protein[_query_mask("{0} == {1}".format(*protein_id_fields))] = (
+            "Homoprotein"
+        )
         protein[_query_mask("{1} != {1}".format(*protein_id_fields))] = np.nan
     else:
         protein = None
@@ -355,7 +384,9 @@ def _classify_contacts(
         # originally tested 'Pfam_dbAccessionId_A == Pfam_dbAccessionId_B' but we know ATOM_A is always in the domain of
         # interest, so if ATOM_B is mapped to a column, its a homodomain interaction. This identified ~60K more in PF00104
         # example (swissprot only).
-        pfam[_query_mask("Alignment_column_B == Alignment_column_B")] = "Homodomain"
+        pfam[_query_mask("Alignment_column_B == Alignment_column_B")] = (
+            "Homodomain"
+        )
         # For PFAM, we can also differentiate self interactions
         pfam[_query_mask("SOURCE_ID_A == SOURCE_ID_B")] = "Homodomain (Self)"
         # adding 'Alignment_column_B != Alignment_column_B' prevents homodomain contacts being overwritten as nan
@@ -372,15 +403,25 @@ def _classify_contacts(
     if "cath" in domain:
         cath = _new_series("cath_domain_topology")
         cath_id_fields = ["CATH_dbAccessionId_A", "CATH_dbAccessionId_B"]
-        cath[_query_mask("{0}!={1} & {0}=={0} & {1}=={1}".format(*cath_id_fields))] = (
-            "Heterodomain"
+        cath[
+            _query_mask(
+                "{0}!={1} & {0}=={0} & {1}=={1}".format(*cath_id_fields)
+            )
+        ] = "Heterodomain"
+        cath[
+            _query_mask(
+                "{0}=={1} & {0}=={0} & {1}=={1}".format(*cath_id_fields)
+            )
+        ] = "Homodomain"
+        cath[_query_mask("{0}=={0} & {1}!={1}".format(*cath_id_fields))] = (
+            "Domain-NaN"
         )
-        cath[_query_mask("{0}=={1} & {0}=={0} & {1}=={1}".format(*cath_id_fields))] = (
-            "Homodomain"
+        cath[_query_mask("{0}!={0} & {1}=={1}".format(*cath_id_fields))] = (
+            "NaN-Domain"
         )
-        cath[_query_mask("{0}=={0} & {1}!={1}".format(*cath_id_fields))] = "Domain-NaN"
-        cath[_query_mask("{0}!={0} & {1}=={1}".format(*cath_id_fields))] = "NaN-Domain"
-        cath[_query_mask("{0}!={0} & {1}!={1}".format(*cath_id_fields))] = np.nan
+        cath[_query_mask("{0}!={0} & {1}!={1}".format(*cath_id_fields))] = (
+            np.nan
+        )
     else:
         cath = None
 
@@ -408,15 +449,25 @@ def _classify_contacts(
     if "scop" in domain:
         scop = _new_series("scop_domain_topology")
         scop_id_fields = ["SCOP_dbAccessionId_A", "SCOP_dbAccessionId_B"]
-        scop[_query_mask("{0}!={1} & {0}=={0} & {1}=={1}".format(*scop_id_fields))] = (
-            "Heterodomain"
+        scop[
+            _query_mask(
+                "{0}!={1} & {0}=={0} & {1}=={1}".format(*scop_id_fields)
+            )
+        ] = "Heterodomain"
+        scop[
+            _query_mask(
+                "{0}=={1} & {0}=={0} & {1}=={1}".format(*scop_id_fields)
+            )
+        ] = "Homodomain"
+        scop[_query_mask("{0}=={0} & {1}!={1}".format(*scop_id_fields))] = (
+            "Domain-NaN"
         )
-        scop[_query_mask("{0}=={1} & {0}=={0} & {1}=={1}".format(*scop_id_fields))] = (
-            "Homodomain"
+        scop[_query_mask("{0}!={0} & {1}=={1}".format(*scop_id_fields))] = (
+            "NaN-Domain"
         )
-        scop[_query_mask("{0}=={0} & {1}!={1}".format(*scop_id_fields))] = "Domain-NaN"
-        scop[_query_mask("{0}!={0} & {1}=={1}".format(*scop_id_fields))] = "NaN-Domain"
-        scop[_query_mask("{0}!={0} & {1}!={1}".format(*scop_id_fields))] = np.nan
+        scop[_query_mask("{0}!={0} & {1}!={1}".format(*scop_id_fields))] = (
+            np.nan
+        )
     else:
         scop = None
 
@@ -429,16 +480,18 @@ def _classify_contacts(
             "label_entity_id_A",
             "label_entity_id_B",
         ]
-        polymer[_query_mask("{0} != {1} | {2} != {3}".format(*polymer_id_fields))] = (
-            "Interpolymer"
-        )
-        polymer[_query_mask("{0} == {1} & {2} == {3}".format(*polymer_id_fields))] = (
-            "Intrapolymer"
-        )
+        polymer[
+            _query_mask("{0} != {1} | {2} != {3}".format(*polymer_id_fields))
+        ] = "Interpolymer"
+        polymer[
+            _query_mask("{0} == {1} & {2} == {3}".format(*polymer_id_fields))
+        ] = "Intrapolymer"
     else:
         polymer = None
 
-    return pd.concat([residue, protein, pfam, cath, hierarchy, scop, polymer], axis=1)
+    return pd.concat(
+        [residue, protein, pfam, cath, hierarchy, scop, polymer], axis=1
+    )
 
 
 def _stem_and_line_plot(data, line, stems, axis=None):
@@ -506,16 +559,22 @@ def main(path_to_alignment, override, only_sifts_best, max_pdbs, n_proc):
     )
     try:
         aln_info = pd.read_pickle(av_data_prefix + "_info.p.gz")
-        indexed_mapping_table = pd.read_pickle(av_data_prefix + "_mappings.p.gz")
+        indexed_mapping_table = pd.read_pickle(
+            av_data_prefix + "_mappings.p.gz"
+        )
         column_stats = pd.read_csv(
             os.path.join(
-                os.path.dirname(path_to_alignment), "results", input_alignment_filename
+                os.path.dirname(path_to_alignment),
+                "results",
+                input_alignment_filename,
             )
             + ".col_summary.csv"
         )
     except FileNotFoundError:
         log.error(
-            "Failed to load `align_variants` input for {}".format(path_to_alignment)
+            "Failed to load `align_variants` input for {}".format(
+                path_to_alignment
+            )
         )
         message = (
             "Could not find required output from `align_variants.py`. Did you forget to run this first?\n"
@@ -526,7 +585,8 @@ def main(path_to_alignment, override, only_sifts_best, max_pdbs, n_proc):
             message.format(
                 av_data_prefix + "_info.p.gz",
                 av_data_prefix + "_mappings.p.gz",
-                os.path.join("results", path_to_alignment) + ".col_summary.csv",
+                os.path.join("results", path_to_alignment)
+                + ".col_summary.csv",
             )
         )
         sys.exit(1)
@@ -537,24 +597,34 @@ def main(path_to_alignment, override, only_sifts_best, max_pdbs, n_proc):
     data_path = os.path.join(".varalign", "prointvar_analysis_data")
     make_dir_if_needed(data_path)
     data_prefix = os.path.join(data_path, input_alignment_filename)
-    if override or not os.path.isfile(data_prefix + "_prointvar_structure_table.p.gz"):
+    if override or not os.path.isfile(
+        data_prefix + "_prointvar_structure_table.p.gz"
+    ):
         # Get SIFTS best and download for all proteins in alignment
         log_dir = os.path.join(".varalign", "prointvar", "download_logs")
         make_dir_if_needed(log_dir)
         download_logfile = os.path.join(
             log_dir, input_alignment_filename + "_prointvar_download"
         )
-        status, downloaded = _download_structure_data(aln_info, download_logfile)
+        status, downloaded = _download_structure_data(
+            aln_info, download_logfile
+        )
         # TODO: log some download statuses
 
         # Process all downloaded structural data with ProIntVar
         # FIXME: Not applied if data is reloaded!
         if only_sifts_best:
-            to_load = downloaded.query("sifts_index == 1")["pdb_id"].dropna().unique()
+            to_load = (
+                downloaded.query("sifts_index == 1")["pdb_id"]
+                .dropna()
+                .unique()
+            )
         elif max_pdbs:
             allowed_sifts_indexes = list(range(1, 1 + max_pdbs))
             to_load = (
-                downloaded.query("sifts_index in @allowed_sifts_indexes")["pdb_id"]
+                downloaded.query("sifts_index in @allowed_sifts_indexes")[
+                    "pdb_id"
+                ]
                 .dropna()
                 .unique()
             )
@@ -562,7 +632,9 @@ def main(path_to_alignment, override, only_sifts_best, max_pdbs, n_proc):
             to_load = downloaded["pdb_id"].dropna().unique()
         p = multiprocessing.Pool(n_proc)
         tabs = list(
-            tqdm.tqdm(p.imap(_format_structure_data, to_load), total=len(to_load))
+            tqdm.tqdm(
+                p.imap(_format_structure_data, to_load), total=len(to_load)
+            )
         )
         try:
             structure_table = pd.concat(tabs)
@@ -578,7 +650,9 @@ def main(path_to_alignment, override, only_sifts_best, max_pdbs, n_proc):
         log.info(
             "Filtering extra-domain contacts (i.e. neither atom maps to the alignment)..."
         )
-        structure_table = _filter_extra_domain_contacts(structure_table, aln_info)
+        structure_table = _filter_extra_domain_contacts(
+            structure_table, aln_info
+        )
 
         # Remove each contact's duplicate row
         log.info("Removing contact duplicates...")
@@ -616,16 +690,28 @@ def main(path_to_alignment, override, only_sifts_best, max_pdbs, n_proc):
         )
 
         # Write structure table
-        log.info("Writing {} atom-atom records to file...".format(len(structure_table)))
-        structure_table.to_pickle(data_prefix + "_prointvar_structure_table.p.gz")
+        log.info(
+            "Writing {} atom-atom records to file...".format(
+                len(structure_table)
+            )
+        )
+        structure_table.to_pickle(
+            data_prefix + "_prointvar_structure_table.p.gz"
+        )
     else:
         log.info(
-            "Reading {}...".format(data_prefix + "_prointvar_structure_table.p.gz")
+            "Reading {}...".format(
+                data_prefix + "_prointvar_structure_table.p.gz"
+            )
         )
         structure_table = pd.read_pickle(
             data_prefix + "_prointvar_structure_table.p.gz"
         )
-        log.info("Loaded {} atom-atom records from file.".format(len(structure_table)))
+        log.info(
+            "Loaded {} atom-atom records from file.".format(
+                len(structure_table)
+            )
+        )
     # TODO: Find a way to neatly log tables
     # # Log head of table
     # table_head = structure_table.head().to_string()
@@ -646,7 +732,9 @@ def main(path_to_alignment, override, only_sifts_best, max_pdbs, n_proc):
         structure_table.groupby(["SOURCE_ID_A", "Alignment_column_A"]).size()
     )  # N mapped residues
     log.info("Mappings retrieved...\t{}".format(n_seq_pdb_mappings))
-    log.info("Sequences with at least one mapping...\t{}".format(n_seqs_mapped))
+    log.info(
+        "Sequences with at least one mapping...\t{}".format(n_seqs_mapped)
+    )
     log.info("Residues mapped...\t{}".format(n_res_mapped))
     # Plot output  # TODO: move plotting routines closer to the data they use...
     pdf = PdfPages(results_prefix + ".structural.figures.pdf")
@@ -670,7 +758,9 @@ def main(path_to_alignment, override, only_sifts_best, max_pdbs, n_proc):
     # pdf.savefig()
     # plt.close()
     # Structure analyses
-    structure_stats = prointvar_stats.collect_column_structure_stats(structure_table)
+    structure_stats = prointvar_stats.collect_column_structure_stats(
+        structure_table
+    )
     # Add variant column stats
     column_stats.rename(
         columns={"('Alignment', 'Column')": "Alignment_column"}, inplace=True

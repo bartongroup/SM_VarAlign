@@ -12,7 +12,11 @@ import pandas as pd
 from Bio import SeqIO
 from varalign.core.six.moves import urllib
 
-from varalign.core.utils import urlopen_with_retry, query_uniprot, parse_seq_name
+from varalign.core.utils import (
+    urlopen_with_retry,
+    query_uniprot,
+    parse_seq_name,
+)
 
 sys.path.extend(["/Users/smacgowan/PycharmProjects/ProteoFAV"])
 from proteofav.variants import select_uniprot_variants
@@ -106,7 +110,9 @@ def _fetch_variants(prots, downloads=None, save_name=None):
         )
         split = pd.concat([concat_table, to_aa_columns], axis=1)
         concat_table = pd.melt(
-            split, id_vars=list(concat_table.columns), value_name="to_aa_expanded"
+            split,
+            id_vars=list(concat_table.columns),
+            value_name="to_aa_expanded",
         )
         concat_table = concat_table[concat_table.to_aa_expanded.notnull()]
         concat_table = concat_table.drop("variable", 1)  # Remove melt variable
@@ -121,28 +127,42 @@ def _fetch_variants(prots, downloads=None, save_name=None):
         # And dedup, bearing in mind the same variant can pop up in different transcripts
         # (so dedupping is only done on certain columns)
         concat_table = concat_table.drop_duplicates(
-            ["UniProt_dbAccessionId", "start", "end", "variant_id", "to_aa_expanded"]
+            [
+                "UniProt_dbAccessionId",
+                "start",
+                "end",
+                "variant_id",
+                "to_aa_expanded",
+            ]
         ).reset_index(drop=True)
 
         # Write table to file
         concat_table.to_csv(table_file_name)
     else:
-        log.info("Re-loaded processed variant table from {}".format(table_file_name))
+        log.info(
+            "Re-loaded processed variant table from {}".format(table_file_name)
+        )
         concat_table = pd.read_csv(table_file_name)
 
     # is_somatic = concat_table['variant_id'].apply(lambda x: x.startswith('COS'))  #TODO: include this?
-    is_germline = concat_table["variant_id"].apply(lambda x: x.startswith("rs"))
+    is_germline = concat_table["variant_id"].apply(
+        lambda x: x.startswith("rs")
+    )
     # somatic_table = concat_table[is_somatic]
     germline_table = concat_table[is_germline]
 
     return germline_table
 
 
-def select_uniprot_sequence(UniProt_sequences_downloads, local_uniprot_index, seq):
+def select_uniprot_sequence(
+    UniProt_sequences_downloads, local_uniprot_index, seq
+):
     # Identify sequence and retrieve full UniProt
     seq_name = parse_seq_name(seq.id)
     if not local_uniprot_index:
-        uniprot_seq = fetch_uniprot_sequences(seq_name, UniProt_sequences_downloads)
+        uniprot_seq = fetch_uniprot_sequences(
+            seq_name, UniProt_sequences_downloads
+        )
         uniprot_id = uniprot_seq.id.split("|")[1]
     else:
         # TODO: Currently local lookup only working with Stockholm format that has AC annotations

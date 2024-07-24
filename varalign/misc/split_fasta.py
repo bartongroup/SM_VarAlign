@@ -32,7 +32,9 @@ def batch_iterator(iterator, batch_size):
 
 if __name__ == "__main__":
     # CLI
-    parser = argparse.ArgumentParser(description="Script to split a fasta file.")
+    parser = argparse.ArgumentParser(
+        description="Script to split a fasta file."
+    )
     parser.add_argument("path_to_fasta", type=str, help="Path to fasta file.")
     args = parser.parse_args()
 

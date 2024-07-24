@@ -53,13 +53,19 @@ class Reader(vcf.Reader):
         info_flag_num = "0.0"
         info_value_num = "1.0"
         info_allele_num = "-1.0"
-        info_flag_fields = info_header.query("num == @info_flag_num").id.tolist()
+        info_flag_fields = info_header.query(
+            "num == @info_flag_num"
+        ).id.tolist()
         log.info(
             "gnomAD info value header:\n%s",
             info_header.query("num == @info_value_num").to_string(),
         )
-        info_value_fields = info_header.query("num == @info_value_num").id.tolist()
-        info_allele_fields = info_header.query("num == @info_allele_num").id.tolist()
+        info_value_fields = info_header.query(
+            "num == @info_value_num"
+        ).id.tolist()
+        info_allele_fields = info_header.query(
+            "num == @info_allele_num"
+        ).id.tolist()
         info_other_fields = set(info_header[info_header["num"].isnull()].id)
         info_other_fields.discard("CSQ")
         log.info("INFO flags: {}".format(str(info_flag_fields)))
@@ -75,7 +81,9 @@ class Reader(vcf.Reader):
         # Annotations that need special handling during variant allele expansion
         standard_num_values = [info_flag_num, info_value_num, info_allele_num]
         special_handling = {
-            "INFO": list(info_header.query("num not in @standard_num_values").id)
+            "INFO": list(
+                info_header.query("num not in @standard_num_values").id
+            )
         }
         msg = "The following INFO fields cannot be resolved to a variant and will be stripped when melting variants: {}"
         log.info(msg.format(str(special_handling["INFO"])))
@@ -164,11 +172,15 @@ class Reader(vcf.Reader):
         available = info_table.columns
         allele_fields = [x for x in self.info_allele_fields if x in available]
         site_fields = [
-            x for x in self.info_value_fields + self.info_flag_fields if x in available
+            x
+            for x in self.info_value_fields + self.info_flag_fields
+            if x in available
         ]
         return info_table[site_fields], info_table[allele_fields]
 
-    def split_variant(self, variant, alleles=[], exclude=None, value_only=False):
+    def split_variant(
+        self, variant, alleles=[], exclude=None, value_only=False
+    ):
         """
         Split a multiallelic variant.
 
@@ -213,14 +225,17 @@ class Reader(vcf.Reader):
         else:
             if isinstance(alleles, int):
                 pass
-            if isinstance(alleles[0], str):  # Will work with single string or list
+            if isinstance(
+                alleles[0], str
+            ):  # Will work with single string or list
                 try:
                     alleles = [variant.ALT.index(x) for x in alleles]
                 except ValueError:
                     # Happens when VEP allele doesn't match variant
                     # Could occur because a multiallelic site contains an indel, MNP, and/or a SNP
                     trimmed_alts = [
-                        trim_common_suffix(str(x), variant.REF)[0] for x in variant.ALT
+                        trim_common_suffix(str(x), variant.REF)[0]
+                        for x in variant.ALT
                     ]
                     alleles = [trimmed_alts.index(x) for x in alleles]
 
@@ -232,7 +247,9 @@ class Reader(vcf.Reader):
 
         return allelic_records
 
-    def vcf_row_to_table(self, variants, source_ids=None, include_other_info=False):
+    def vcf_row_to_table(
+        self, variants, source_ids=None, include_other_info=False
+    ):
         """
         Parse PyVCF Variant to a DataFrame.
 
@@ -295,7 +312,9 @@ class Reader(vcf.Reader):
 
         # INFO tables
         log.info("Processing INFO fields...")
-        site_info, allele_info = self.tabulate_variant_info(variants, split=True)
+        site_info, allele_info = self.tabulate_variant_info(
+            variants, split=True
+        )
         site_info.index.name = "SITE"
         # Split allele INFO fields
         tables = []
@@ -304,7 +323,9 @@ class Reader(vcf.Reader):
                 info_dict = variant.INFO
                 # FIXME: Need to handle absence of these types of fields
                 allele_info_records = {
-                    k: info_dict[k] for k in self.info_allele_fields if k in info_dict
+                    k: info_dict[k]
+                    for k in self.info_allele_fields
+                    if k in info_dict
                 }
                 fields, both_allele_values = list(
                     zip(*list(allele_info_records.items()))
@@ -312,11 +333,15 @@ class Reader(vcf.Reader):
                 for allele_num, single_allele_values in enumerate(
                     zip(*both_allele_values)
                 ):
-                    allele_entry = dict(list(zip(fields, single_allele_values)))
+                    allele_entry = dict(
+                        list(zip(fields, single_allele_values))
+                    )
                     allele_entry["ALLELE_NUM"] = allele_num
                     allele_entry["SITE"] = site_num
                     tables.append(allele_entry)
-            split_allele_info = pd.DataFrame(tables).set_index(["SITE", "ALLELE_NUM"])
+            split_allele_info = pd.DataFrame(tables).set_index(
+                ["SITE", "ALLELE_NUM"]
+            )
             split_allele_info.columns = pd.MultiIndex.from_tuples(
                 [("Allele_INFO", x) for x in split_allele_info.columns],
                 names=["Type", "Field"],
@@ -333,7 +358,8 @@ class Reader(vcf.Reader):
             other_info = other_info[available_info_other_fields]
             other_info.index.name = "SITE"
             other_info.columns = pd.MultiIndex.from_tuples(
-                [("Other_INFO", x) for x in other_info.columns], names=["Type", "Field"]
+                [("Other_INFO", x) for x in other_info.columns],
+                names=["Type", "Field"],
             )
         else:
             other_info = pd.DataFrame()
@@ -346,7 +372,8 @@ class Reader(vcf.Reader):
             [("VEP", x) for x in vep_table.columns], names=["Type", "Field"]
         )
         site_info.columns = pd.MultiIndex.from_tuples(
-            [("Site_INFO", x) for x in site_info.columns], names=["Type", "Field"]
+            [("Site_INFO", x) for x in site_info.columns],
+            names=["Type", "Field"],
         )
 
         # Merge all the sub-tables
@@ -363,7 +390,9 @@ class Reader(vcf.Reader):
         merged_variant_table = merged_variant_table.join(vep_table)
         # 3. Add Feature [and source_ids] to index
         log.info("Formatting result...")
-        merged_variant_table.set_index(("VEP", "Feature"), append=True, inplace=True)
+        merged_variant_table.set_index(
+            ("VEP", "Feature"), append=True, inplace=True
+        )
         if not source_ids:
             merged_variant_table.index.set_names(
                 ["SITE", "ALLELE_NUM", "Feature"], inplace=True
@@ -394,8 +423,13 @@ class Reader(vcf.Reader):
         """
         # NB. gnomad fetcher is packed into a generator, which is extracted in the following list comp.
         sequence_variant_lists = [
-            (row.seq_id, (x for r in row.genomic_ranges for x in self.fetch(*r)))
-            for row in aln_info_table.dropna(subset=["genomic_ranges"]).itertuples()
+            (
+                row.seq_id,
+                (x for r in row.genomic_ranges for x in self.fetch(*r)),
+            )
+            for row in aln_info_table.dropna(
+                subset=["genomic_ranges"]
+            ).itertuples()
         ]
         all_variants = [
             (variant, seq_id)
@@ -415,7 +449,8 @@ class Reader(vcf.Reader):
                         include_other_info=include_other_info
                     )
                     for i in tqdm.tqdm(
-                        range(0, len(all_variants), n), desc="Parsing variants..."
+                        range(0, len(all_variants), n),
+                        desc="Parsing variants...",
                     )
                 ],
                 keys=list(range(0, len(all_variants), n)),
@@ -426,7 +461,9 @@ class Reader(vcf.Reader):
 
         # Write alignment variants to a VCF
         # TODO: add alignment to file name? (needs refactoring...)
-        with open(os.path.join("results", "alignment_variants.vcf"), "w") as vcf_out:
+        with open(
+            os.path.join("results", "alignment_variants.vcf"), "w"
+        ) as vcf_out:
             vcf_writer = vcf.Writer(vcf_out, self)
             for v, _ in all_variants:
                 vcf_writer.write_record(v)

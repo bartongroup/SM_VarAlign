@@ -23,7 +23,8 @@ def get_row_residue_numbers(subseq, uniprot_seq, use_local_alignment):
     """
     # Prepare sequences for alignment to UniProt by removing gaps
     subseq = SeqRecord(
-        Seq(str(subseq.seq).replace("-", "").upper(), subseq.seq.alphabet), id=subseq.id
+        Seq(str(subseq.seq).replace("-", "").upper(), subseq.seq.alphabet),
+        id=subseq.id,
     )
     sequence_name = parse_seq_name(subseq.id)  # TODO: No longer needed
 
@@ -38,7 +39,9 @@ def get_row_residue_numbers(subseq, uniprot_seq, use_local_alignment):
             subseq.seq, uniprot_seq.seq, -0.5, -0.1
         )
         for pairwise_alignment in local_alignment:
-            log.debug("{}".format("\n" + format_alignment(*pairwise_alignment)))
+            log.debug(
+                "{}".format("\n" + format_alignment(*pairwise_alignment))
+            )
         alignment = subseq.id, uniprot_seq.id, local_alignment
 
         # Build list of UniProt residue numbers for each non-gap for each sequence
@@ -124,7 +127,9 @@ def map_columns_to_res_nums(col_nums, aligned_res_nums):
     return pd.DataFrame(record)
 
 
-def map_seq_resnums_or_try_isoforms(seq, uniprot_seq, use_local_alignment, downloads):
+def map_seq_resnums_or_try_isoforms(
+    seq, uniprot_seq, use_local_alignment, downloads
+):
     """
     Map sub-sequence to full UniProt sequence or try different isoforms.
 
@@ -136,7 +141,9 @@ def map_seq_resnums_or_try_isoforms(seq, uniprot_seq, use_local_alignment, downl
     """
     # TODO: Fix messy control flow
     try:
-        residues = get_row_residue_numbers(seq, uniprot_seq, use_local_alignment)
+        residues = get_row_residue_numbers(
+            seq, uniprot_seq, use_local_alignment
+        )
     except TypeError:
         # Maybe it's a different isoform
         canonical_uniprot = uniprot_seq[1].id.split("|")[1]

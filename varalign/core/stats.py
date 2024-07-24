@@ -101,13 +101,13 @@ def run_fisher_tests(alignment, table_mask, merged_table):
 
         # Calculate positions in other non_variant columns and sequences
         if col_num not in non_variant_columns:
-            n_positions_in_non_variant_columns = len(non_variant_columns) * len(
-                alignment
-            )
+            n_positions_in_non_variant_columns = len(
+                non_variant_columns
+            ) * len(alignment)
         else:
-            n_positions_in_non_variant_columns = (len(non_variant_columns) - 1) * len(
-                alignment
-            )
+            n_positions_in_non_variant_columns = (
+                len(non_variant_columns) - 1
+            ) * len(alignment)
         n_positions_in_non_variant_seqs = n_non_variant_sequences * (
             alignment_length - (1 + len(non_variant_columns))
         )
@@ -119,11 +119,15 @@ def run_fisher_tests(alignment, table_mask, merged_table):
         # Count variants
         if col_num in cross_table.columns:
             log.debug(
-                "Counting variants for column {} using cross-table...".format(col_num)
+                "Counting variants for column {} using cross-table...".format(
+                    col_num
+                )
             )
             variants_in_column = sum(cross_table.loc[:, col_num])
             non_variant_in_column = (
-                sum(cross_table.loc[:, col_num] == 0) + n_non_variant_sequences - n_gaps
+                sum(cross_table.loc[:, col_num] == 0)
+                + n_non_variant_sequences
+                - n_gaps
             )
             # TODO: This the adjustment above for non-var seqs and gaps will be wrong if a non-var seq has a gap!
             variants_in_other = sum(cross_table.drop(col_num, axis=1).sum())
@@ -135,7 +139,9 @@ def run_fisher_tests(alignment, table_mask, merged_table):
             )
         else:
             log.debug(
-                "Column {} not in cross-table, assuming 0 variants...".format(col_num)
+                "Column {} not in cross-table, assuming 0 variants...".format(
+                    col_num
+                )
             )
             variants_in_column = 0
             non_variant_in_column = len(alignment) - n_gaps
@@ -159,7 +165,9 @@ def run_fisher_tests(alignment, table_mask, merged_table):
         )
         fisher_test_results.append((odds_ratio, pvalue))
         log.info(
-            "Alignment column: {}, OR = {}, p = {}".format(col_num, odds_ratio, pvalue)
+            "Alignment column: {}, OR = {}, p = {}".format(
+                col_num, odds_ratio, pvalue
+            )
         )
 
     return fisher_test_results

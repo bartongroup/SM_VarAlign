@@ -18,7 +18,10 @@ def _mask_alignment(aln, column_indexes):
     # Convert to ranges
     # Inspired by:
     # https://stackoverflow.com/questions/3429510/pythonic-way-to-convert-a-list-of-integers-into-a-string-of-comma-separated-range/3430231#3430231
-    G = (list(x) for _, x in groupby(column_indexes, lambda x, c=count(): next(c) - x))
+    G = (
+        list(x)
+        for _, x in groupby(column_indexes, lambda x, c=count(): next(c) - x)
+    )
     mask_ranges = [(g[0], g[-1])[: len(g)] for g in G]
     mask_ranges = [x if len(x) == 2 else x * 2 for x in mask_ranges]
     # Build list of continuous occupied sub-alignments
@@ -83,7 +86,9 @@ def lookup_index(index_path, family=None):
     """
     with open(index_path, "r") as index_file:
         if not (isinstance(family, str) and len(family) >= 7):
-            msg = "Invalid family: {}. (Should resemble PF12345[.12])".format(family)
+            msg = "Invalid family: {}. (Should resemble PF12345[.12])".format(
+                family
+            )
             raise ValueError(msg)
         for line in index_file:
             offset, ac = line.strip().split(",")
@@ -129,7 +134,9 @@ def filter_non_swissprot(aln, swissprot_id_file):
     :return:
     """
     # Read list of Swissprot IDS
-    swissprot_ids = pd.read_csv(swissprot_id_file, sep="\t", header=0, comment="#")
+    swissprot_ids = pd.read_csv(
+        swissprot_id_file, sep="\t", header=0, comment="#"
+    )
     swissprot_seq_names = set(swissprot_ids["Entry name"].tolist())
 
     # Filter alignment

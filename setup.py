@@ -9,7 +9,9 @@ from varalign import __version__, __license__
 
 def gather_dependencies():
     with open("requirements.txt", "r") as f_in:
-        return [line.strip() for line in f_in if line and not line.startswith("#")]
+        return [
+            line.strip() for line in f_in if line and not line.startswith("#")
+        ]
 
 
 DEPENDENCIES = gather_dependencies()

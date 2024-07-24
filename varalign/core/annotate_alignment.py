@@ -21,7 +21,11 @@ from varalign.core.mapping import (
     map_columns_to_res_nums,
     map_seq_resnums_or_try_isoforms,
 )
-from varalign.core.stats import run_fisher_tests, calculate_rvis, fill_variant_count
+from varalign.core.stats import (
+    run_fisher_tests,
+    calculate_rvis,
+    fill_variant_count,
+)
 from varalign.core.utils import (
     filter_alignment,
     is_missense_variant,
@@ -35,7 +39,11 @@ log = logging.getLogger(__name__)
 
 
 def main(
-    alignment, alignment_name, use_local_alignment, local_uniprot_index, downloads
+    alignment,
+    alignment_name,
+    use_local_alignment,
+    local_uniprot_index,
+    downloads,
 ):
     """
     Fetch variants for identified protein sequences in an MSA, map to residues and columns and write Jalview feature
@@ -95,7 +103,9 @@ def main(
         # Map columns to residues
         if columns and residues:
             col_num_index, sequence_col_nums = columns
-            mapped_records.append(map_columns_to_res_nums(sequence_col_nums, residues))
+            mapped_records.append(
+                map_columns_to_res_nums(sequence_col_nums, residues)
+            )
             uniprot_ids.append(uniprot_id)
 
     # If we skipped all sequences, log and exit
@@ -135,7 +145,9 @@ def main(
     is_DE = is_from_to_variant("D", "E", mapped_variants)
 
     # Column variant counts
-    total_variant_counts = mapped_variants["alignment_col_num"].value_counts(sort=False)
+    total_variant_counts = mapped_variants["alignment_col_num"].value_counts(
+        sort=False
+    )
     missense_variant_counts = mapped_variants.loc[
         is_missense, "alignment_col_num"
     ].value_counts(sort=False)
@@ -160,7 +172,11 @@ def main(
         zip(*missense_variants_per_column)[1],
         zip(*missense_exc_DE_per_column)[1],
     ]
-    titles = ["Total_Variants", "Missense_Variants", "Missense_Variants (exc. DE)"]
+    titles = [
+        "Total_Variants",
+        "Missense_Variants",
+        "Missense_Variants (exc. DE)",
+    ]
     descriptions = [
         "Total number of variants in summed over all proteins.",
         "Total number of missense variants in summed over all proteins.",
@@ -190,7 +206,11 @@ def main(
     pred_error, rvis = calculate_rvis(x, y)
 
     write_jalview_annotation(
-        tuple(pred_error), jalview_out_file, "Unstandardised RVIS", "", append=True
+        tuple(pred_error),
+        jalview_out_file,
+        "Unstandardised RVIS",
+        "",
+        append=True,
     )
     write_jalview_annotation(rvis, jalview_out_file, "RVIS", "", append=True)
 
@@ -201,14 +221,18 @@ def main(
                 mapped_variants.loc[is_missense, "alignment_col_num"],
                 mapped_variants.loc[is_missense, "clinical_significance"],
             )
-            pathogenic_variant_counts = clinical_significance_counts["pathogenic"]
+            pathogenic_variant_counts = clinical_significance_counts[
+                "pathogenic"
+            ]
             pathogenic_column_counts = fill_variant_count(
                 pathogenic_variant_counts, alignment_length
             )
             tooltips = mapped_variants[
                 mapped_variants["clinical_significance"] == "pathogenic"
             ].groupby("alignment_col_num")
-            tooltips = tooltips["seq_id"].aggregate(lambda x: ";".join(x.unique()))
+            tooltips = tooltips["seq_id"].aggregate(
+                lambda x: ";".join(x.unique())
+            )
             tooltips = zip(*fill_variant_count(tooltips, alignment_length))[1]
             write_jalview_annotation(
                 zip(*pathogenic_column_counts)[1],
@@ -227,9 +251,12 @@ def main(
             # TODO: These big try except blocks are a bad idea, especially when actively developing
             # Label pathogenic variants with sequence features
             pathogenic_tables = mapped_variants[
-                (mapped_variants.clinical_significance == "pathogenic") & is_missense
+                (mapped_variants.clinical_significance == "pathogenic")
+                & is_missense
             ].groupby("seq_id")
-            pathogenic_features_file = alignment_name + "_pathogenic_features.txt"
+            pathogenic_features_file = (
+                alignment_name + "_pathogenic_features.txt"
+            )
             create_jalview_feature_file(
                 {"pathogenic_variant": "red"}, pathogenic_features_file
             )
@@ -255,11 +282,14 @@ def main(
     # Label all variants with sequence features
     missense_tables = mapped_variants[is_missense].groupby("seq_id")
     missense_features_file = alignment_name + "_missense_features.txt"
-    create_jalview_feature_file({"missense_variant": "blue"}, missense_features_file)
+    create_jalview_feature_file(
+        {"missense_variant": "blue"}, missense_features_file
+    )
     for seq_id, sub_table in missense_tables:
         residue_indexes = list(sub_table["sequence_index"])
         residue_indexes = [
-            x - 1 + int(seq_id.split("/")[1].split("-")[0]) for x in residue_indexes
+            x - 1 + int(seq_id.split("/")[1].split("-")[0])
+            for x in residue_indexes
         ]
         variant_ids = list(sub_table["variant_id"])
         append_jalview_variant_features(
@@ -273,7 +303,9 @@ def main(
     # TODO: %gap threshold? Where ignored columns given the worst value for jalview visualisation...
 
     # Calculate and write fisher test results to Jalview annotation file.
-    fisher_test_results = run_fisher_tests(alignment, is_missense, mapped_variants)
+    fisher_test_results = run_fisher_tests(
+        alignment, is_missense, mapped_variants
+    )
     missense_significance = tuple(1 - x for x in zip(*fisher_test_results)[1])
     phred_significance = tuple(
         -10 * math.log10(x) for x in zip(*fisher_test_results)[1]
@@ -319,7 +351,9 @@ if __name__ == "__main__":
         action="store_true",
         help="Align sub-sequences to UniProt rather than enforcing exact match.",
     )
-    parser.add_argument("--format", type=str, default="fasta", help="Alignment format.")
+    parser.add_argument(
+        "--format", type=str, default="fasta", help="Alignment format."
+    )
     parser.add_argument(
         "--seq_id_filter",
         type=str,

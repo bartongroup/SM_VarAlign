@@ -37,11 +37,15 @@ class Test_alignment_contact_processing(TestCase):
         # ResName/ResNum format e.g. ASN144
         self.assertIn(
             "PHE286",
-            filtered["label_comp_id_B"].str.cat(filtered["PDB_dbResNum_B"]).tolist(),
+            filtered["label_comp_id_B"]
+            .str.cat(filtered["PDB_dbResNum_B"])
+            .tolist(),
         )
         self.assertIn(
             "ALA278",
-            filtered["label_comp_id_A"].str.cat(filtered["PDB_dbResNum_A"]).tolist(),
+            filtered["label_comp_id_A"]
+            .str.cat(filtered["PDB_dbResNum_A"])
+            .tolist(),
         )
 
     def test_alignment_column_merge_inclusion(self):
@@ -55,11 +59,15 @@ class Test_alignment_contact_processing(TestCase):
         # ResName/ResNum format e.g. ASN144
         self.assertIn(
             "PHE286",
-            mapped["label_comp_id_B"].str.cat(mapped["PDB_dbResNum_B"]).tolist(),
+            mapped["label_comp_id_B"]
+            .str.cat(mapped["PDB_dbResNum_B"])
+            .tolist(),
         )
         self.assertIn(
             "ALA278",
-            mapped["label_comp_id_A"].str.cat(mapped["PDB_dbResNum_A"]).tolist(),
+            mapped["label_comp_id_A"]
+            .str.cat(mapped["PDB_dbResNum_A"])
+            .tolist(),
         )
 
     def test_ab_sort_inclusion(self):
@@ -77,11 +85,15 @@ class Test_alignment_contact_processing(TestCase):
         # NB. PHE286 is converted from ATOM_A to ATOM_B
         self.assertIn(
             "PHE286",
-            sorted_["label_comp_id_A"].str.cat(sorted_["PDB_dbResNum_A"]).tolist(),
+            sorted_["label_comp_id_A"]
+            .str.cat(sorted_["PDB_dbResNum_A"])
+            .tolist(),
         )
         self.assertIn(
             "ALA278",
-            sorted_["label_comp_id_A"].str.cat(sorted_["PDB_dbResNum_A"]).tolist(),
+            sorted_["label_comp_id_A"]
+            .str.cat(sorted_["PDB_dbResNum_A"])
+            .tolist(),
         )
 
     def test_ab_sort_preserves_index(self):
@@ -89,7 +101,9 @@ class Test_alignment_contact_processing(TestCase):
         mapped = prointvar_analysis._merge_alignment_columns_to_contacts(
             self.mappings, self.table
         )
-        sorted_ = prointvar_analysis._sort_ab_contacts(mapped)  # sort (under test)
+        sorted_ = prointvar_analysis._sort_ab_contacts(
+            mapped
+        )  # sort (under test)
         self.assertListEqual(sorted_.index.tolist(), mapped.index.tolist())
 
     def test_alignment_column_merge_preserves_index(self):

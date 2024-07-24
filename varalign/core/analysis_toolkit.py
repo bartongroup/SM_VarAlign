@@ -35,7 +35,14 @@ def linregress_resilient(x, y):
         # ValueError: Cannot calculate a linear regression if all x values are identical
         RegressionResult = namedtuple(
             "RegressionResult",
-            ["slope", "intercept", "rvalue", "pvalue", "stderr", "intercept_stderr"],
+            [
+                "slope",
+                "intercept",
+                "rvalue",
+                "pvalue",
+                "stderr",
+                "intercept_stderr",
+            ],
         )
         return RegressionResult(np.nan, np.nan, 0, 1, np.inf, np.inf)
 
@@ -117,7 +124,9 @@ def _column_variant_scores(
     :return:
     """
     # column_data.query('Human_res_occupancy >= 5', inplace=True)
-    alignment_totals = column_variant_counts.loc[:, [variant_class, occupancy]].sum()
+    alignment_totals = column_variant_counts.loc[
+        :, [variant_class, occupancy]
+    ].sum()
 
     # Calculate missense scores
     missense_scores = []
@@ -170,7 +179,9 @@ def _variant_per_protein_plot(aligned_variants_table):
     :return:
     """
     protein_consequences = _aggregate_annotation(
-        aligned_variants_table, ("VEP", "Consequence"), aggregate_by=["SOURCE_ID"]
+        aligned_variants_table,
+        ("VEP", "Consequence"),
+        aggregate_by=["SOURCE_ID"],
     )
     ax = protein_consequences.loc[:, protein_consequences.sum() > 100].hist(
         facecolor="black", edgecolor="black", figsize=(10, 10)
@@ -187,7 +198,9 @@ def _variants_vs_length_plot(protein_variant_counts, alignment_info):
     :return:
     """
     # Calculate sequence lengths
-    protein_variant_counts = protein_variant_counts.join(alignment_info["length"])
+    protein_variant_counts = protein_variant_counts.join(
+        alignment_info["length"]
+    )
 
     # Plot
     plot_data = pd.melt(

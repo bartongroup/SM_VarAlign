@@ -11,7 +11,9 @@ _parent_parser.add_argument(
     "path_to_alignment", type=str, help="Path to the alignment."
 )
 _parent_parser.add_argument(
-    "--override", help="Override any previously generated files.", action="store_true"
+    "--override",
+    help="Override any previously generated files.",
+    action="store_true",
 )
 
 # align_variants parser
@@ -40,9 +42,13 @@ _prointvar_analysis_parser = argparse.ArgumentParser(add_help=False)
 _prointvar_analysis_parser.add_argument(
     "--n_proc", type=int, help="Number of processors.", default=1
 )
-_parser_n_sifts_group = _prointvar_analysis_parser.add_mutually_exclusive_group()
+_parser_n_sifts_group = (
+    _prointvar_analysis_parser.add_mutually_exclusive_group()
+)
 _parser_n_sifts_group.add_argument(
-    "--only_sifts_best", help="Process only sifts best structure.", action="store_true"
+    "--only_sifts_best",
+    help="Process only sifts best structure.",
+    action="store_true",
 )
 _parser_n_sifts_group.add_argument(
     "--max_pdbs",
@@ -91,6 +97,10 @@ def varalign_parser(argv=None, logger=log):
             "Analyse variants, conservation and structural features of a Pfam "
             "alignment."
         ),
-        parents=[_parent_parser, _align_variants_parser, _prointvar_analysis_parser],
+        parents=[
+            _parent_parser,
+            _align_variants_parser,
+            _prointvar_analysis_parser,
+        ],
     )
     return _parse_args_and_log(parser, argv, logger)

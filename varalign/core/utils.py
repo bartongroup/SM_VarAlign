@@ -23,7 +23,9 @@ log.setLevel("INFO")
 # http://stackoverflow.com/questions/9446387/how-to-retry-urllib2-request-when-fails
 @retry(urllib.error.URLError, tries=4, delay=3, backoff=2)
 def urlopen_with_retry(url):
-    return urllib.request.urlopen(url)  # TODO: 404 should be handled differently
+    return urllib.request.urlopen(
+        url
+    )  # TODO: 404 should be handled differently
 
 
 def query_uniprot(search_terms, first=False):
@@ -131,16 +133,28 @@ def sanitise_alignment(aln):
         modified["lowercase"] = [
             str(i) for i, c in enumerate(str(seqrec.seq)) if c.islower()
         ]
-        modified["X"] = [str(i) for i, c in enumerate(str(seqrec.seq)) if c == "X"]
-        modified["."] = [str(i) for i, c in enumerate(str(seqrec.seq)) if c == "."]
-        modified["Z"] = [str(i) for i, c in enumerate(str(seqrec.seq)) if c == "Z"]
-        modified["B"] = [str(i) for i, c in enumerate(str(seqrec.seq)) if c == "B"]
+        modified["X"] = [
+            str(i) for i, c in enumerate(str(seqrec.seq)) if c == "X"
+        ]
+        modified["."] = [
+            str(i) for i, c in enumerate(str(seqrec.seq)) if c == "."
+        ]
+        modified["Z"] = [
+            str(i) for i, c in enumerate(str(seqrec.seq)) if c == "Z"
+        ]
+        modified["B"] = [
+            str(i) for i, c in enumerate(str(seqrec.seq)) if c == "B"
+        ]
 
         # Sanitise seq string
         new_seq_str = str(seqrec.seq).upper()
         new_seq_str = new_seq_str.replace("X", "G")  # Any AA
-        new_seq_str = new_seq_str.replace("Z", "E")  # Glutamine or Glutamic acid
-        new_seq_str = new_seq_str.replace("B", "D")  # Aspartic acid or Asparagine
+        new_seq_str = new_seq_str.replace(
+            "Z", "E"
+        )  # Glutamine or Glutamic acid
+        new_seq_str = new_seq_str.replace(
+            "B", "D"
+        )  # Aspartic acid or Asparagine
         new_seq_str = new_seq_str.replace(".", "-")
 
         # Check if there's anything left weird
@@ -167,19 +181,27 @@ def sanitise_alignment(aln):
         )
     if modified["X"]:
         log.info(
-            "Replaced X with G in columns: {}".format(",".join(set(modified["X"])))
+            "Replaced X with G in columns: {}".format(
+                ",".join(set(modified["X"]))
+            )
         )
     if modified["."]:
         log.info(
-            "Replaced . with - in columns: {}".format(",".join(set(modified["."])))
+            "Replaced . with - in columns: {}".format(
+                ",".join(set(modified["."]))
+            )
         )
     if modified["Z"]:
         log.info(
-            "Replaced Z with E in columns: {}".format(",".join(set(modified["Z"])))
+            "Replaced Z with E in columns: {}".format(
+                ",".join(set(modified["Z"]))
+            )
         )
     if modified["B"]:
         log.info(
-            "Replaced B with D in columns: {}".format(",".join(set(modified["B"])))
+            "Replaced B with D in columns: {}".format(
+                ",".join(set(modified["B"]))
+            )
         )
 
     return alignment_copy
@@ -210,7 +232,9 @@ def is_from_to_variant(native, mutant, variants):
     :param variants: Variant table
     :return: Boolean mask
     """
-    mask = (variants["from_aa"] == native) & (variants["to_aa_expanded"] == mutant)
+    mask = (variants["from_aa"] == native) & (
+        variants["to_aa_expanded"] == mutant
+    )
     return mask
 
 

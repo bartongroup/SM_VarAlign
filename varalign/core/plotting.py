@@ -40,7 +40,9 @@ def _variant_per_protein_plot(aligned_variants_table):
     :return:
     """
     protein_consequences = _aggregate_annotation(
-        aligned_variants_table, ("VEP", "Consequence"), aggregate_by=["SOURCE_ID"]
+        aligned_variants_table,
+        ("VEP", "Consequence"),
+        aggregate_by=["SOURCE_ID"],
     )
     ax = protein_consequences.loc[:, protein_consequences.sum() > 100].hist(
         facecolor="black", edgecolor="black", figsize=(10, 10)
@@ -57,7 +59,9 @@ def _variants_vs_length_plot(protein_variant_counts, alignment_info):
     :return:
     """
     # Calculate sequence lengths
-    protein_variant_counts = protein_variant_counts.join(alignment_info["length"])
+    protein_variant_counts = protein_variant_counts.join(
+        alignment_info["length"]
+    )
 
     # Plot
     plot_data = pd.melt(
@@ -81,10 +85,14 @@ def _variants_vs_length_plot(protein_variant_counts, alignment_info):
 
 
 def align_variants_plot_function_1():
-    pdf = PdfPages(results_prefix + ".figures.pdf", metadata={"creationDate": None})
+    pdf = PdfPages(
+        results_prefix + ".figures.pdf", metadata={"creationDate": None}
+    )
     # PDF metadata
     d = pdf.infodict()
-    d["Title"] = "Aligned Variant Diagnostics Plots for {}".format(path_to_alignment)
+    d["Title"] = "Aligned Variant Diagnostics Plots for {}".format(
+        path_to_alignment
+    )
     d["Author"] = "align_variants.py"
 
     # Plot GMM diagnostics
@@ -131,7 +139,9 @@ def align_variants_plot_function_3():
     )
     pd.plotting.table(
         axs[1],
-        shenkin_regressions.loc[["synonymous", "filtered_synonymous"]].round(2),
+        shenkin_regressions.loc[["synonymous", "filtered_synonymous"]].round(
+            2
+        ),
         loc="upper right",
         colWidths=[0.12] * 5,
         zorder=100,
@@ -160,7 +170,9 @@ def align_variants_plot_function_4():
 def align_variants_plot_function_5():
     # Variants per sequence histogram
     protein_consequences = analysis_toolkit._aggregate_annotation(
-        alignment_variant_table, ("VEP", "Consequence"), aggregate_by=["SOURCE_ID"]
+        alignment_variant_table,
+        ("VEP", "Consequence"),
+        aggregate_by=["SOURCE_ID"],
     )
     protein_consequences.hist(facecolor="black", edgecolor="black")
     plt.title("Variants per Sequence")
@@ -174,7 +186,9 @@ def align_variants_plot_function_5():
         ("VEP", "Consequence"),
         aggregate_by=["SOURCE_ID", "Protein_position"],
     )
-    residue_counts = residue_counts.reindex(indexed_mapping_table.index).fillna(
+    residue_counts = residue_counts.reindex(
+        indexed_mapping_table.index
+    ).fillna(
         0
     )  # Fill in residues with no variants
     residue_counts["missense_variant"].astype(int).value_counts().plot.bar(
@@ -186,7 +200,9 @@ def align_variants_plot_function_5():
         ax=axes[1], facecolor="black", edgecolor="black"
     )
     axes[1].set_title("Missense Variants per Column")
-    pdf.attach_note("Distribution of variants over residues and alignment columns")
+    pdf.attach_note(
+        "Distribution of variants over residues and alignment columns"
+    )
     pdf.savefig(metadata={"creationDate": None})
     plt.close()
     pdf.close()
@@ -210,7 +226,9 @@ def prointvar_analysis_plot_function_2():
     # pdf.savefig()
     # plt.close()
     # Structure analyses
-    structure_stats = prointvar_stats.collect_column_structure_stats(structure_table)
+    structure_stats = prointvar_stats.collect_column_structure_stats(
+        structure_table
+    )
     # Add variant column stats
     column_stats.rename(
         columns={"('Alignment', 'Column')": "Alignment_column"}, inplace=True
@@ -243,4 +261,6 @@ def prointvar_analysis_plot_function_2():
 
 def occ_gmm_plot_function_1():
     plt.figure(figsize=(10, 5))
-    fig.subplots_adjust(left=0.12, right=0.97, bottom=0.21, top=0.9, wspace=0.5)
+    fig.subplots_adjust(
+        left=0.12, right=0.97, bottom=0.21, top=0.9, wspace=0.5
+    )

@@ -63,7 +63,9 @@ class TestProintvarAnalysis(TestCase):
 
         # Compare output with expected
         standard_path = os.path.join(
-            os.path.dirname(__file__), "data", "prointvar_analysis_test_expected"
+            os.path.dirname(__file__),
+            "data",
+            "prointvar_analysis_test_expected",
         )
         comparison = filecmp.cmpfiles(
             standard_path, TestProintvarAnalysis.test_dir, output_files
@@ -105,8 +107,10 @@ class TestProintvarAnalysis(TestCase):
         cmpfiles_mismatch = [
             f for f in self.comparison[1] if not f.endswith(".pdf")
         ]  # Exclude PDF
-        message = "The following file(s) do not match their standards: {}".format(
-            cmpfiles_mismatch
+        message = (
+            "The following file(s) do not match their standards: {}".format(
+                cmpfiles_mismatch
+            )
         )
         self.assertFalse(cmpfiles_mismatch, message)
 
@@ -115,8 +119,10 @@ class TestProintvarAnalysis(TestCase):
         cmpfiles_mismatch = [
             f for f in self.comparison[1] if f.endswith(".pdf")
         ]  # PDF only
-        message = "The following file(s) do not match their standards: {}".format(
-            cmpfiles_mismatch
+        message = (
+            "The following file(s) do not match their standards: {}".format(
+                cmpfiles_mismatch
+            )
         )
         self.assertFalse(cmpfiles_mismatch, message)
 
@@ -124,7 +130,8 @@ class TestProintvarAnalysis(TestCase):
         # Load numeric data from CSV files
         csv_output = [f for f in self.output_files if f.endswith(".csv")]
         csv_tables_standard = [
-            pd.read_csv(os.path.join(self.standard_path, f)) for f in csv_output
+            pd.read_csv(os.path.join(self.standard_path, f))
+            for f in csv_output
         ]
         csv_tables_test = [
             pd.read_csv(os.path.join(TestProintvarAnalysis.test_dir, f))
@@ -139,7 +146,9 @@ class TestProintvarAnalysis(TestCase):
             mismatched_columns = [
                 col
                 for col in standard_df
-                if not (standard_df[col].dropna() == test_df[col].dropna()).all()
+                if not (
+                    standard_df[col].dropna() == test_df[col].dropna()
+                ).all()
             ]
             if mismatched_columns:
                 mismatched_tables.append({f: mismatched_columns})

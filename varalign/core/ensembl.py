@@ -87,7 +87,9 @@ def get_xrefs(
     endpoint = "/xrefs/symbol"
     ext = "/".join([endpoint, species, query_id]) + "?"
 
-    with requests_cache.CachedSession(os.path.join(".varalign", "ensembl_cache")) as s:
+    with requests_cache.CachedSession(
+        os.path.join(".varalign", "ensembl_cache")
+    ) as s:
         r = s.get(server + ext, headers={"Content-Type": "application/json"})
 
     if not r.ok:
@@ -108,7 +110,9 @@ def get_genomic_range(query_id, server=default_server):
     endpoint = "/lookup/id"
     ext = "/".join([endpoint, query_id]) + "?"
 
-    with requests_cache.CachedSession(os.path.join(".varalign", "ensembl_cache")) as s:
+    with requests_cache.CachedSession(
+        os.path.join(".varalign", "ensembl_cache")
+    ) as s:
         r = s.get(server + ext, headers={"Content-Type": "application/json"})
 
     if not r.ok:
@@ -141,8 +145,12 @@ def merge_ranges(ranges, min_gap=150):
             if start <= new_ranges[-1][2] + min_gap:
                 new_ranges[-1][2] = end  # Merge range
             else:
-                new_ranges.append([region, start, end])  # New range on same region
+                new_ranges.append(
+                    [region, start, end]
+                )  # New range on same region
         else:
-            new_ranges.append([region, start, end])  # New range on different region
+            new_ranges.append(
+                [region, start, end]
+            )  # New range on different region
 
     return [tuple(x) for x in new_ranges]

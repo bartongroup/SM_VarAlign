@@ -28,7 +28,10 @@ def get_start_end(sequence):
 
 
 def index_seq_to_alignment(
-    sequence, gap_chars=set(["-", "."]), zero_index=False, reverse_mapping=False
+    sequence,
+    gap_chars=set(["-", "."]),
+    zero_index=False,
+    reverse_mapping=False,
 ):
     """
     Index the residue numbers of a sequence to its alignment.
@@ -44,7 +47,9 @@ def index_seq_to_alignment(
         index_start = 0
     seq_characters = str(sequence.seq)
     alignment_index = [
-        i for i, x in enumerate(seq_characters, start=index_start) if x not in gap_chars
+        i
+        for i, x in enumerate(seq_characters, start=index_start)
+        if x not in gap_chars
     ]
     start, end = get_start_end(sequence)
     sequence_index = list(range(start, end + 1))
@@ -79,7 +84,8 @@ def alignment_info_table(alignment, id_filter=""):
                 )
             )
     alignment_info = pd.DataFrame(
-        alignment_info, columns=["seq_id", "name", "uniprot", "start_end", "mapping"]
+        alignment_info,
+        columns=["seq_id", "name", "uniprot", "start_end", "mapping"],
     )
     alignment_info = alignment_info.assign(
         species=alignment_info["name"].str.split("_").str[1].values
@@ -89,7 +95,9 @@ def alignment_info_table(alignment, id_filter=""):
     )
 
     # Add sequence lengths
-    seq_lengths = alignment_info["start_end"].apply(lambda x: len(list(range(*x))) + 1)
+    seq_lengths = alignment_info["start_end"].apply(
+        lambda x: len(list(range(*x))) + 1
+    )
     seq_lengths.name = "length"
     alignment_info = alignment_info.join(seq_lengths)
 

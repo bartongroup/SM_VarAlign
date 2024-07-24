@@ -69,7 +69,8 @@ def main(args):
         elif args.seq_name_ids == "mnemonic":
             query = seq_name
             seq_name = query_uniprot(
-                ("mnemonic:" + query, "reviewed:yes", "organism:human"), first=True
+                ("mnemonic:" + query, "reviewed:yes", "organism:human"),
+                first=True,
             )
         else:
             log.error(
@@ -116,7 +117,12 @@ def main(args):
                     chain_pp + pp.get_sequence()
                 )  # Concatenate all PPs from a single chain
             pdb_chain_sequences.append(
-                (structure.get_id(), chain_id, chain_pp, ppb.build_peptides(chain))
+                (
+                    structure.get_id(),
+                    chain_id,
+                    chain_pp,
+                    ppb.build_peptides(chain),
+                )
             )
 
         # Now compare to sequence and identify PDB selection
@@ -134,7 +140,9 @@ def main(args):
                 for pp in pp_list:
                     pp_coverage += len(pp)
                     if seq_start < pp_coverage:
-                        start = pp[seq_start + pp_coverage - len(pp)].get_id()[1]
+                        start = pp[seq_start + pp_coverage - len(pp)].get_id()[
+                            1
+                        ]
                         break
                 # Identify the pp with the last residue
                 pp_coverage = 0
@@ -163,7 +171,12 @@ def main(args):
         filename = os.path.join(
             output_dir,
             "_".join(
-                [seq_name, structure.get_id(), chain_id, str(start) + "-" + str(end)]
+                [
+                    seq_name,
+                    structure.get_id(),
+                    chain_id,
+                    str(start) + "-" + str(end),
+                ]
             )
             + ".pdb",
         )

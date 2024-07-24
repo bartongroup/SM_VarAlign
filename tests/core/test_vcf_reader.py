@@ -14,10 +14,14 @@ class TestVCFReader(TestCase):
         """Catch AttributeError during header parsing of ClinVar VCF (see issue #2)"""
         try:
             gnomad.Reader(
-                filename=os.path.join(self.data_dir, "sample_clinvar_vep.vcf.gz")
+                filename=os.path.join(
+                    self.data_dir, "sample_clinvar_vep.vcf.gz"
+                )
             )
         except AttributeError:
-            self.fail("gnomad.Reader.__init__ raised AttributeError for ClinVar VCF.")
+            self.fail(
+                "gnomad.Reader.__init__ raised AttributeError for ClinVar VCF."
+            )
 
     def test_clinvar_fetch(self):
         """Catch UnicodeDecodeError during fetching of ClinVar VCF"""

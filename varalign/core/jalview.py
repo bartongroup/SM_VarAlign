@@ -41,14 +41,19 @@ def write_jalview_annotation(
                 )
             )
             results_file.write("\n")
-        elif all([isinstance(x, list) for x in [ordered_values, title, description]]):
+        elif all(
+            [isinstance(x, list) for x in [ordered_values, title, description]]
+        ):
             arg_lengths = list(map(len, [ordered_values, title, description]))
             if len(set(arg_lengths)) == 1:
-                for v, vv, t, d in zip(ordered_values, tooltips, title, description):
+                for v, vv, t, d in zip(
+                    ordered_values, tooltips, title, description
+                ):
                     results_file.write(
                         "BAR_GRAPH\t{}\t{}\t".format(t, d)
                         + "|".join(
-                            "{},,{}".format(str(x), str(y)) for x, y in zip(v, vv)
+                            "{},,{}".format(str(x), str(y))
+                            for x, y in zip(v, vv)
                         )
                     )
                     results_file.write("\n")
@@ -81,7 +86,15 @@ def append_jalview_variant_features(
     """
     with open(file_name, "a") as output:
         for pos, desc in zip(positions, descriptions):
-            feature_list = [desc, seq_id, "-1", str(pos), str(pos), feature_type, "0.0"]
+            feature_list = [
+                desc,
+                seq_id,
+                "-1",
+                str(pos),
+                str(pos),
+                feature_type,
+                "0.0",
+            ]
             output.write("\t".join(feature_list) + "\n")
 
 
@@ -117,6 +130,7 @@ def marked_columns_track(mask, title, description, filename, append=False):
 
     with open(filename, "a") as f:
         f.write(
-            "NO_GRAPH\t{}\t{}\t".format(title, description) + "|".join(values.tolist())
+            "NO_GRAPH\t{}\t{}\t".format(title, description)
+            + "|".join(values.tolist())
         )
         f.write("\n")

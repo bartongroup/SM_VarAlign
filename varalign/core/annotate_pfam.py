@@ -33,7 +33,9 @@ if __name__ == "__main__":
         default=defaults.db_root,
         help="A directory to store downloaded files.",
     )
-    parser.add_argument("--families", type=str, help="Path to list of families.")
+    parser.add_argument(
+        "--families", type=str, help="Path to list of families."
+    )
     args = parser.parse_args()
 
     # Arguments and parameters
@@ -52,7 +54,9 @@ if __name__ == "__main__":
                 "Can only use local UniProt with Stockholm alignments that have AC annotations."
             )
             raise TypeError
-        log.info("Indexing local UniProt database: {}".format(local_uniprot_path))
+        log.info(
+            "Indexing local UniProt database: {}".format(local_uniprot_path)
+        )
         local_uniprot_index = SeqIO.index(local_uniprot_path, "swiss")
     else:
         local_uniprot_index = None
@@ -73,7 +77,9 @@ if __name__ == "__main__":
 
     start = pfam.lookup_index(index_path, desired_family)
     if start is None:
-        log.error("Pfam {} could not be found in the index".format(desired_family))
+        log.error(
+            "Pfam {} could not be found in the index".format(desired_family)
+        )
         raise SystemExit
     alignment = pfam.read_family(local_pfam, start)
     alignment_name = alignment.annotations["GF"]["AC"][
@@ -86,7 +92,9 @@ if __name__ == "__main__":
     alignment_name += "_" + os.path.basename(local_pfam)
 
     # Filter unwanted sequences
-    log.info('Filtering alignment for sequences without "{}"'.format(seq_id_filter))
+    log.info(
+        'Filtering alignment for sequences without "{}"'.format(seq_id_filter)
+    )
     if seq_id_filter:
         alignment = filter_alignment(alignment, seq_id_filter)
         if len(alignment) == 0:
@@ -96,7 +104,11 @@ if __name__ == "__main__":
     # Run analysis
     log.info("Processing alignment...")
     merged_table, fisher_results, rvis_scores = annotate_alignment.main(
-        alignment, alignment_name, use_local_alignment, local_uniprot_index, downloads
+        alignment,
+        alignment_name,
+        use_local_alignment,
+        local_uniprot_index,
+        downloads,
     )
 
     # Write results

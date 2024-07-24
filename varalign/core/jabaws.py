@@ -8,11 +8,17 @@ import pandas as pd
 from Bio import AlignIO  # Needs PR #768 #769 patched
 
 from varalign.core import pfam
-from varalign.core.utils import filter_alignment, sanitise_alignment, ALIGNMENT_CHARS
+from varalign.core.utils import (
+    filter_alignment,
+    sanitise_alignment,
+    ALIGNMENT_CHARS,
+)
 
 log = logging.getLogger(__name__)
 logging.captureWarnings(True)
-logging.basicConfig(level="INFO", format="%(asctime)s - %(levelname)s - %(message)s ")
+logging.basicConfig(
+    level="INFO", format="%(asctime)s - %(levelname)s - %(message)s "
+)
 
 
 def apply_column_mask(alignment, column_mask):
@@ -66,7 +72,9 @@ if __name__ == "__main__":
         type=str,
         help="An inclusive filter to process only a subset of sequences.",
     )
-    parser.add_argument("--families", type=str, help="Path to list of families.")
+    parser.add_argument(
+        "--families", type=str, help="Path to list of families."
+    )
     parser.add_argument(
         "--jabaws_jar",
         type=str,
@@ -80,7 +88,10 @@ if __name__ == "__main__":
         help="URL of JABAWS server.",
     )
     parser.add_argument(
-        "--aacons_preset", type=str, default="Quick conservation", help="AACons preset."
+        "--aacons_preset",
+        type=str,
+        default="Quick conservation",
+        help="AACons preset.",
     )
     args = parser.parse_args()
 
@@ -105,7 +116,9 @@ if __name__ == "__main__":
 
     start = pfam.lookup_index(index_path, desired_family)
     if start is None:
-        log.error("Pfam {} could not be found in the index".format(desired_family))
+        log.error(
+            "Pfam {} could not be found in the index".format(desired_family)
+        )
         raise SystemExit
     family = pfam.read_family(local_pfam, start)
     family_name = family.annotations["GF"]["AC"][
@@ -119,7 +132,9 @@ if __name__ == "__main__":
 
     # Filter unwanted sequences
     if seq_id_filter is not None:
-        log.info('Filtering family for sequences without "{}"'.format(seq_id_filter))
+        log.info(
+            'Filtering family for sequences without "{}"'.format(seq_id_filter)
+        )
         family = filter_alignment(family, seq_id_filter)
         if len(family) == 0:
             log.warning("No sequences passed filter. Exiting.")
@@ -146,7 +161,9 @@ if __name__ == "__main__":
     )
     log.info(
         "Removed malformed columns: {}".format(
-            ",".join([str(i + 1) for i, x in enumerate(contains_unk_chars) if x])
+            ",".join(
+                [str(i + 1) for i, x in enumerate(contains_unk_chars) if x]
+            )
         )
     )
     column_mask = [x | y for x, y in zip(is_empty_column, contains_unk_chars)]

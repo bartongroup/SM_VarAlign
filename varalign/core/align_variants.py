@@ -76,10 +76,14 @@ def default_variant_filter(variants_table):
     filters = {
         "is_canonical": variants_table[("VEP", "CANONICAL")] == "YES",
         "is_ccds": variants_table[("VEP", "CCDS")] != "",
-        "is_protein_coding": variants_table[("VEP", "BIOTYPE")] == "protein_coding",
-        "at_protein_position": variants_table[("VEP", "Protein_position")] != "",
+        "is_protein_coding": variants_table[("VEP", "BIOTYPE")]
+        == "protein_coding",
+        "at_protein_position": variants_table[("VEP", "Protein_position")]
+        != "",
         "is_not_modifier": variants_table[("VEP", "IMPACT")] != "MODIFIER",
-        "swissprot_matches_source": variants_table["External", "SOURCE_ACCESSION"]
+        "swissprot_matches_source": variants_table[
+            "External", "SOURCE_ACCESSION"
+        ]
         == variants_table["VEP", "SWISSPROT"],
         "trembl_matches_source": vectorize(lambda x, y: x in y)(
             variants_table[("External", "SOURCE_ACCESSION")],
@@ -98,7 +102,10 @@ def default_variant_filter(variants_table):
         & filters["is_protein_coding"]
         & filters["is_not_modifier"]
         & filters["is_ccds"]
-        & (filters["swissprot_matches_source"] | filters["trembl_matches_source"])
+        & (
+            filters["swissprot_matches_source"]
+            | filters["trembl_matches_source"]
+        )
         & filters["at_protein_position"]
     )
 
@@ -107,7 +114,9 @@ def default_variant_filter(variants_table):
 
 def map_uniprot_to_genome(uniprot, species="homo_sapiens", collapse=True):
     """Map a UniProt entry to the genome."""
-    ensembl_genes = ensembl.get_xrefs(uniprot, species=species, features="gene")
+    ensembl_genes = ensembl.get_xrefs(
+        uniprot, species=species, features="gene"
+    )
     if not ensembl_genes:
         return None
 
@@ -150,7 +159,9 @@ def construct_mapping_table(alignment_info):
         index=[mapping_table["seq_id"]],
     ).reset_index()
     indexed_map_table.set_index(["seq_id", "Protein_position"], inplace=True)
-    indexed_map_table.index.rename(["SOURCE_ID", "Protein_position"], inplace=True)
+    indexed_map_table.index.rename(
+        ["SOURCE_ID", "Protein_position"], inplace=True
+    )
     indexed_map_table.columns = pd.MultiIndex.from_tuples(
         [("Alignment", col) for col in indexed_map_table.columns],
         names=["Type", "Field"],
@@ -161,13 +172,17 @@ def construct_mapping_table(alignment_info):
 def calculate_column_occupancy(indexed_mapping_table):
     """Calculate column occupancy from a mapping table."""
     column_occupancy = (
-        indexed_mapping_table[("Alignment", "Column")].value_counts().sort_index()
+        indexed_mapping_table[("Alignment", "Column")]
+        .value_counts()
+        .sort_index()
     )
     column_occupancy.name = "occupancy"
     return column_occupancy
 
 
-def interpret_regression_results(regression_table, p_threshold=0.05, action=None):
+def interpret_regression_results(
+    regression_table, p_threshold=0.05, action=None
+):
     """Provide human interpretation of regression results."""
 
     def create_result_string(control_name, pass_condition):
@@ -176,7 +191,9 @@ def interpret_regression_results(regression_table, p_threshold=0.05, action=None
     negative_control_p = (
         regression_table.loc["filtered_synonymous", "pvalue"] > p_threshold
     )
-    negative_control_m = regression_table.loc["filtered_synonymous", "slope"] < 0
+    negative_control_m = (
+        regression_table.loc["filtered_synonymous", "slope"] < 0
+    )
     pass_negative = negative_control_p or negative_control_m
 
     positive_control_p = (
@@ -204,11 +221,12 @@ def interpret_regression_results(regression_table, p_threshold=0.05, action=None
 def write_variants_as_features(alignment_variant_table, feature_file_name):
     """Write a Jalview feature file marking up the variants in the alignment."""
     jalview.create_jalview_feature_file(
-        {"missense_variant": "red", "synonymous_variant": "blue"}, feature_file_name
+        {"missense_variant": "red", "synonymous_variant": "blue"},
+        feature_file_name,
     )
-    for (seq_id, consequence), variant_table in alignment_variant_table["VEP"].groupby(
-        ["SOURCE_ID", "Consequence"]
-    ):
+    for (seq_id, consequence), variant_table in alignment_variant_table[
+        "VEP"
+    ].groupby(["SOURCE_ID", "Consequence"]):
         if consequence in ("missense_variant", "synonymous_variant"):
             residue_indexes = list(variant_table.index.get_level_values(1))
             variant_ids = list(variant_table["Existing_variation"])
@@ -219,7 +237,9 @@ def write_variants_as_features(alignment_variant_table, feature_file_name):
                 consequence,
                 feature_file_name,
             )
-    log.info(f"Wrote alignment variants to Jalview feature file {feature_file_name}")
+    log.info(
+        f"Wrote alignment variants to Jalview feature file {feature_file_name}"
+    )
 
 
 def get_genome_mappings(aln_info_table, species):
@@ -251,8 +271,12 @@ def map_variants_to_alignment(variants_df, residue_column_map):
         variants_df.loc[:, ("VEP", "Protein_position")], errors="coerce"
     )
     variants_df.reset_index(["SITE", "ALLELE_NUM", "Feature"], inplace=True)
-    variants_df.set_index(("VEP", "Protein_position"), append=True, inplace=True)
-    variants_df.index.set_names(["SOURCE_ID", "Protein_position"], inplace=True)
+    variants_df.set_index(
+        ("VEP", "Protein_position"), append=True, inplace=True
+    )
+    variants_df.index.set_names(
+        ["SOURCE_ID", "Protein_position"], inplace=True
+    )
     variants_df.sort_index(inplace=True)
 
     aligned_variants = residue_column_map.join(variants_df)
@@ -296,7 +320,9 @@ def align_variants(
     log.info(f"Total rows:\t{len(filtered_variants)}")
 
     indexed_map_table = construct_mapping_table(aln_info_table)
-    aligned_variants = map_variants_to_alignment(filtered_variants, indexed_map_table)
+    aligned_variants = map_variants_to_alignment(
+        filtered_variants, indexed_map_table
+    )
 
     return aligned_variants
 
@@ -304,7 +330,9 @@ def align_variants(
 def run_aacon(alignment, results_prefix):
     """Run AACon and save the results."""
     conservation_methods = [x for x in aacon.aacon_methods if x != "LANDGRAF"]
-    alignment_conservation = aacon.get_aacon(alignment, methods=conservation_methods)
+    alignment_conservation = aacon.get_aacon(
+        alignment, methods=conservation_methods
+    )
     save_table_and_log(
         alignment_conservation.to_csv,
         f"{results_prefix}_aacon_scores.csv",
@@ -314,7 +342,11 @@ def run_aacon(alignment, results_prefix):
 
 
 def main(
-    path_to_alignment, max_gaussians=5, n_groups=1, override=False, species="HUMAN"
+    path_to_alignment,
+    max_gaussians=5,
+    n_groups=1,
+    override=False,
+    species="HUMAN",
 ):
     """Main function to align variants."""
     make_dir_if_needed(RESULTS_PATH)
@@ -336,7 +368,9 @@ def main(
     alignment_info = alignments.alignment_info_table(
         alignment, species
     )  # TODO: downstream this filters structural analysis too
-    log.info(f"Alignment info table head:\n{alignment_info.head().to_string()}")
+    log.info(
+        f"Alignment info table head:\n{alignment_info.head().to_string()}"
+    )
 
     if override or not is_data_available:
         chunk_size = int(
@@ -374,7 +408,9 @@ def main(
     else:
         log.info(f"Loading data for {path_to_alignment}...")
         alignment_info = pd.read_pickle(data_prefix + "_info.p.gz")
-        alignment_variant_table = pd.read_pickle(data_prefix + "_variants.p.gz")
+        alignment_variant_table = pd.read_pickle(
+            data_prefix + "_variants.p.gz"
+        )
         indexed_mapping_table = pd.read_pickle(data_prefix + "_mappings.p.gz")
 
     alignment_conservation = run_aacon(alignment, results_prefix)
@@ -389,7 +425,10 @@ def main(
     )
 
     rare_maf_threshold = 0.001
-    is_rare = alignment_variant_table[("Allele_INFO", "AF_POPMAX")] < rare_maf_threshold
+    is_rare = (
+        alignment_variant_table[("Allele_INFO", "AF_POPMAX")]
+        < rare_maf_threshold
+    )
     column_rare_counts = analysis_toolkit.count_column_variant_consequences(
         alignment_variant_table[is_rare]
     )
@@ -399,7 +438,9 @@ def main(
         "Column rare variant counts",
     )
 
-    is_missense = alignment_variant_table[("VEP", "Consequence")] == "missense_variant"
+    is_missense = (
+        alignment_variant_table[("VEP", "Consequence")] == "missense_variant"
+    )
     column_missense_clinvar = analysis_toolkit.count_column_clinvar(
         alignment_variant_table[is_missense]
     )
@@ -428,7 +469,9 @@ def main(
         [column_missense_clinvar, column_occupancy, alignment_conservation]
     )
 
-    gmms = occ_gmm._fit_mixture_models(column_summary["occupancy"], max_gaussians)
+    gmms = occ_gmm._fit_mixture_models(
+        column_summary["occupancy"], max_gaussians
+    )
     M_best = occ_gmm._pick_best(gmms["models"], gmms["data"])
     subset_mask_gmm = occ_gmm._core_column_mask(M_best, gmms["data"], n_groups)
     column_summary = column_summary.assign(column_gmm_pass=subset_mask_gmm)
@@ -473,7 +516,9 @@ def main(
         "Column summary data",
     )
 
-    pdf = PdfPages(results_prefix + ".figures.pdf", metadata={"creationDate": None})
+    pdf = PdfPages(
+        results_prefix + ".figures.pdf", metadata={"creationDate": None}
+    )
     pdf.infodict().update(
         {
             "Title": f"Aligned Variant Diagnostics Plots for {path_to_alignment}",
@@ -518,7 +563,9 @@ def main(
     )
     pd.plotting.table(
         axs[1],
-        shenkin_regressions.loc[["synonymous", "filtered_synonymous"]].round(2),
+        shenkin_regressions.loc[["synonymous", "filtered_synonymous"]].round(
+            2
+        ),
         loc="upper right",
         colWidths=[0.12] * 6,
         zorder=100,
@@ -534,7 +581,9 @@ def main(
     log.info(f"plot_data:\n{plot_data.head().to_string()}")
 
     protein_consequences = analysis_toolkit._aggregate_annotation(
-        alignment_variant_table, ("VEP", "Consequence"), aggregate_by=["SOURCE_ID"]
+        alignment_variant_table,
+        ("VEP", "Consequence"),
+        aggregate_by=["SOURCE_ID"],
     )
     protein_consequences.hist(facecolor="black", edgecolor="black")
     plt.title("Variants per Sequence")
@@ -548,7 +597,9 @@ def main(
         ("VEP", "Consequence"),
         aggregate_by=["SOURCE_ID", "Protein_position"],
     )
-    residue_counts = residue_counts.reindex(indexed_mapping_table.index).fillna(0)
+    residue_counts = residue_counts.reindex(
+        indexed_mapping_table.index
+    ).fillna(0)
     residue_counts["missense_variant"].astype(int).value_counts().plot.bar(
         ax=axes[0], width=1, facecolor="black", edgecolor="black"
     )
@@ -557,7 +608,9 @@ def main(
         ax=axes[1], facecolor="black", edgecolor="black"
     )
     axes[1].set_title("Missense Variants per Column")
-    pdf.attach_note("Distribution of variants over residues and alignment columns")
+    pdf.attach_note(
+        "Distribution of variants over residues and alignment columns"
+    )
     pdf.savefig(metadata={"creationDate": None})
     plt.close()
     pdf.close()
@@ -593,7 +646,9 @@ def main(
         cme
     ].to_csv(results_prefix + ".cmeres.csv")
 
-    alignment_column_index = list(range(1, alignment.get_alignment_length() + 1))
+    alignment_column_index = list(
+        range(1, alignment.get_alignment_length() + 1)
+    )
     jalview.marked_columns_track(
         umd_mask.reindex(alignment_column_index, fill_value=False),
         "UMD",
