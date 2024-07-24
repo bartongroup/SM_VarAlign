@@ -1,0 +1,37 @@
+# This requirements file lists all third-party dependencies for this project.
+#
+# Run 'conda env create -f environment.yml' in a new conda environment.
+
+name: varalign-dev
+dependencies:
+  - python=3
+  - pip
+  - biopython
+  - matplotlib
+  - numpy
+  - pandas
+  - pysam
+  - requests
+  - requests-cache
+  - scipy
+  - seaborn
+  - scikit-learn
+  - tqdm
+  - pyvcf
+  - java-jdk
+  # Development tools
+  - flake8
+  - pylint
+  - black
+  - mypy
+  - pytest
+  - pytest-cov
+  - pre-commit
+  - ipython
+  - jupyter
+  - pip:
+      - proteofav
+      # - git+ssh://git@github.com/bartongroup/SM_VarAlign.git
+      - -e /Users/smacgowan/OneDrive-Projects/230908a-varalign-1.0/public/SM_VarAlign
+      # - git+ssh://git@github.com/bartongroup/ProIntVar.git@f5ae6dae6e505d45be2c13ab7b44e6ed44c414a8#egg=ProIntVar-Core
+      - -e /Users/smacgowan/OneDrive-Projects/230908a-varalign-1.0/public/ProIntVar

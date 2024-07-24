@@ -55,13 +55,13 @@ def index_seq_to_alignment(sequence, gap_chars=set(['-', '.']),
 def alignment_info_table(alignment, id_filter=''):
     """
     Build a table with key alignment info.
-    
+
     Scan an alignment and return a Pandas DataFrame with sequence identifiers (seq.id, names and UniProts),
     alignment index to sequence mappings and source species.
-    
+
     :param alignment:
     :param id_filter:
-    :return: 
+    :return:
     """
     alignment_info = []
     for sequence in alignment:
@@ -81,4 +81,3 @@ def alignment_info_table(alignment, id_filter=''):
     alignment_info = alignment_info.join(seq_lengths)
 
     return alignment_info
-

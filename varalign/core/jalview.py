@@ -100,4 +100,3 @@ def marked_columns_track(mask, title, description, filename, append=False):
     with open(filename, 'a') as f:
         f.write('NO_GRAPH\t{}\t{}\t'.format(title, description) + '|'.join(values.tolist()))
         f.write('\n')
-

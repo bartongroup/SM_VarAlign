@@ -400,7 +400,7 @@ def main(path_to_alignment, override, only_sifts_best, max_pdbs, n_proc):
             structure_table = pd.concat(tabs)
         except ValueError:
             # Most likely nothing to concatenate due absense of PDBs
-            log.info('DONE (no structural data processed).')    
+            log.info('DONE (no structural data processed).')
             return
         log.info('{} atom-atom records created.'.format(len(structure_table)))  # Shouldn't this be even?
 

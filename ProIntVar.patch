@@ -14,7 +14,7 @@ index d6be494..397c397 100644
 +            # shutil.copyfile(output_amri, new_output_amri)
 +            # shutil.copyfile(output_ari, new_output_ari)
 +            # shutil.copyfile(output_ri, new_output_ri)
- 
+
          if hydro_method == "arpeggio":
              shutil.copyfile(output_hydro, self.inputfile_h)
 diff --git a/prointvar/merger.py b/prointvar/merger.py
@@ -24,7 +24,7 @@ index 54e9b7e..84b2c59 100644
 @@ -182,30 +182,16 @@ def contacts_mmcif_table_merger(contacts_table, mmcif_table, suffix='A'):
      :return: merged pandas DataFrame
      """
- 
+
 -    if ('new_seq_id' in mmcif_table and 'new_asym_id' in mmcif_table and
 -            'RES_FULL_{}'.format(suffix) in contacts_table and
 -            'CHAIN_{}'.format(suffix) in contacts_table):
@@ -43,10 +43,10 @@ index 54e9b7e..84b2c59 100644
 +    if ('auth_seq_id_full' in mmcif_table and 'label_asym_id' in mmcif_table and
              'RES_FULL_{}'.format(suffix) in contacts_table and
              'CHAIN_{}'.format(suffix) in contacts_table):
- 
+
          new_col_names = {k: '{}_{}'.format(k, suffix) for k in list(mmcif_table)}
          mmcif_table = mmcif_table.rename(columns=new_col_names)
- 
+
 -        table = contacts_table.merge(mmcif_table, how='inner',
 +        table = contacts_table.merge(mmcif_table, how='right',  # Inner loses all ligand contacts if not in sifts...
                                       right_on=['auth_seq_id_full_{}'.format(suffix),

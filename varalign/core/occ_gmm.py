@@ -112,4 +112,3 @@ def _core_column_mask(model, x, n_groups=1):
     :return:
     """
     return pd.Series(model.predict(x)).isin(np.argsort(model.means_.reshape(-1))[-n_groups:]).values
-

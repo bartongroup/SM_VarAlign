@@ -120,8 +120,8 @@ def construct_mapping_table(alignment_info):
     mapping_table.reset_index(inplace=True)
     mapping_table = pd.melt(mapping_table, id_vars=['level_0', 'seq_id'])
     mapping_table.dropna(subset=['value'], inplace=True)
-    
-    indexed_map_table = pd.DataFrame(mapping_table['value'].tolist(), columns=['Column', 'Protein_position'], 
+
+    indexed_map_table = pd.DataFrame(mapping_table['value'].tolist(), columns=['Column', 'Protein_position'],
                                      index=[mapping_table['seq_id']]).reset_index()
     indexed_map_table.set_index(['seq_id', 'Protein_position'], inplace=True)
     indexed_map_table.index.rename(['SOURCE_ID', 'Protein_position'], inplace=True)

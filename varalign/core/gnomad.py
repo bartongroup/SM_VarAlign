@@ -328,7 +328,7 @@ class Reader(vcf.Reader):
         except ValueError:
             # probably no variants leading to no objects to concatenate
             return None
-        
+
         # Write alignment variants to a VCF
         # TODO: add alignment to file name? (needs refactoring...)
         with open(os.path.join('results', 'alignment_variants.vcf'), 'w') as vcf_out:

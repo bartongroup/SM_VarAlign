@@ -5,7 +5,7 @@ from varalign.core.path_utils import get_test_data_path
 
 class TestVCFReader(TestCase):
     """Test the PyVCF `vcf.Reader` subclass."""
-    
+
     def setUp(self):
         self.data_dir = get_test_data_path()
 

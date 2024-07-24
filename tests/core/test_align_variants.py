@@ -76,7 +76,7 @@ class TestAlign_Variants(TestCase):
 
         os.chdir(TestAlign_Variants.start_dir)
         shutil.rmtree(TestAlign_Variants.test_dir)
-        
+
     def updateReferenceData(self):
         """Update the reference data used for testing."""
         # Generate new data
