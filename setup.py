@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-from setuptools import find_packages, setup
+from setuptools import find_namespace_packages, setup
 
 from varalign import __license__, __version__
 
@@ -24,9 +24,7 @@ def read_readme():
 setup(
     name="VarAlign",
     version=__version__,
-    packages=find_packages(
-        include=["varalign", "varalign.*"], exclude=["tests", "tests.*"]
-    ),
+    packages=find_namespace_packages(include=["varalign", "varalign.*"]),
     package_data={
         "varalign": [
             "config.txt",
@@ -54,12 +52,16 @@ setup(
         "Programming Language :: Python :: 3",
         "License :: OSI Approved :: MIT License",
         "Operating System :: OS Independent",
-        "Development Status :: 4 - Beta",
+        "Development Status :: 3 - Alpha",
         "Intended Audience :: Science/Research",
+        "Intended Audience :: Developers",
+        "Intended Audience :: Education",
         "Topic :: Scientific/Engineering :: Bio-Informatics",
         "Topic :: Scientific/Engineering :: Chemistry",
         "Topic :: Scientific/Engineering :: Information Analysis",
         "Topic :: Software Development :: Libraries :: Python Modules",
+        "Natural Language :: English",
+        "Environment :: Console",
     ],
     python_requires=">=3.6",
 )
