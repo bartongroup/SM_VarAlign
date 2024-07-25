@@ -1,8 +1,15 @@
-VarAlign.egg-info
-dev_notebook.ipynb
-environment-py2.yml
+# Ignore build artifacts
+build/
+dist/
+*.egg-info/
+*.egg
+
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+tmp/
 *.DS_Store
 .ipynb_checkpoints
 *~
-__pycache__
-tmp/
