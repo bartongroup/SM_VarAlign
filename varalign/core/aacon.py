@@ -3,16 +3,19 @@ import logging
 import os
 import subprocess
 
-import pandas as pd
 from Bio import AlignIO  # Needs PR #768 #769 patched
+
+import pandas as pd
 
 import varalign
 from varalign.core.jabaws import apply_column_mask
 from varalign.core.utils import (
-    sanitise_alignment,
-    make_dir_if_needed,
     ALIGNMENT_CHARS,
+    make_dir_if_needed,
+    sanitise_alignment,
 )
+
+DEFAULT_TMP_DIR = os.path.join(".varalign", "aacon")
 
 log = logging.getLogger(__name__)
 log.setLevel("INFO")
@@ -98,7 +101,7 @@ def _reformat_alignment_for_aacon(aln):
 def _run_aacon(
     aln,
     aacon_jar_path=aacon_path,
-    tmp_dir=os.path.join(".varalign", "aacon"),
+    tmp_dir=DEFAULT_TMP_DIR,
     methods=aacon_methods,
 ):
     """

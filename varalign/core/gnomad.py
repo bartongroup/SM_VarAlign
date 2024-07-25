@@ -4,8 +4,10 @@ import os
 from copy import deepcopy
 
 import pandas as pd
+
 import tqdm
-import vcf  ## Requires pysam functionality
+
+import vcf  # Requires pysam functionality
 from vcf.utils import trim_common_suffix
 
 log = logging.getLogger(__name__)
@@ -79,7 +81,11 @@ class Reader(vcf.Reader):
         self.info_header = info_header
 
         # Annotations that need special handling during variant allele expansion
-        standard_num_values = [info_flag_num, info_value_num, info_allele_num]
+        standard_num_values = [  # noqa: F841
+            info_flag_num,
+            info_value_num,
+            info_allele_num,
+        ]
         special_handling = {
             "INFO": list(
                 info_header.query("num not in @standard_num_values").id
@@ -179,7 +185,7 @@ class Reader(vcf.Reader):
         return info_table[site_fields], info_table[allele_fields]
 
     def split_variant(
-        self, variant, alleles=[], exclude=None, value_only=False
+        self, variant, alleles=[], exclude=None, value_only=False  # noqa: B006
     ):
         """
         Split a multiallelic variant.

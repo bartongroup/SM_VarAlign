@@ -1,10 +1,10 @@
 import argparse
-from Bio import AlignIO
 import os
+
+from Bio import AlignIO
+
 import varalign
 from varalign.core import pfam
-
-#!/usr/bin/env python
 
 
 sp_whitelist = os.path.join(

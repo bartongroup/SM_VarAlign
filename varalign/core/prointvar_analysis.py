@@ -11,23 +11,27 @@ import subprocess
 import sys
 
 import matplotlib
-
-matplotlib.use("Agg")  # headless backend for matplotlib
 import matplotlib.pyplot as plt
-import numpy as np
-import pandas as pd
-import tqdm
 from matplotlib.backends.backend_pdf import PdfPages
+
+import numpy as np
+
+import pandas as pd
+
 from prointvar import (
     merger,
 )  # TODO: Document that requires my patched version.
 
-from varalign.core import prointvar_stats
+import tqdm
+
 from varalign.cli import cli
+from varalign.core import prointvar_stats
 from varalign.core.utils import make_dir_if_needed
 
 log = logging.getLogger(__name__)
 log.setLevel("INFO")
+
+matplotlib.use("Agg")  # headless backend for matplotlib
 
 
 def _format_structure_data(pdb):
@@ -45,18 +49,18 @@ def _format_structure_data(pdb):
             dssp=False,
         )
         # TODO: Re-enable override
-    except FileNotFoundError as e:
+    except FileNotFoundError:
         # TODO: raise or don't catch this once prointvar bugs worked out...
         log.error("{} failed with FileNotFoundError".format(pdb))
         return None
-    except OSError as e:
+    except OSError:
         log.error("{} failed with OSError".format(pdb))
         return None
-    except ValueError as e:
+    except ValueError:
         # TODO: This error can be caused by ProIntVar trying to parse empty special contacts from arpeggio
         log.error("{} failed with ValueError".format(pdb))
         return None
-    except IndexError as e:
+    except IndexError:
         log.error("{} failed with IndexError".format(pdb))
         return None
     # Merge tables
@@ -178,7 +182,7 @@ def _sort_ab_contacts(aligned_contacts_table):
     :return: AB sorted contacts table.
     """
 
-    def _swap_ending(x, swap=["_A", "_B"]):
+    def _swap_ending(x, swap=["_A", "_B"]):  # noqa: B006
         a, b = swap
         if x.endswith(a):
             # return x.replace(*swap)
@@ -305,7 +309,7 @@ def _classify_contacts(
     residue=True,
     protein=True,
     polymer=True,
-    domain=["Pfam", "CATH", "SCOP"],
+    domain=["Pfam", "CATH", "SCOP"],  # noqa: B006
     cath_hierarchy=True,
 ):
     """
@@ -620,7 +624,7 @@ def main(path_to_alignment, override, only_sifts_best, max_pdbs, n_proc):
                 .unique()
             )
         elif max_pdbs:
-            allowed_sifts_indexes = list(range(1, 1 + max_pdbs))
+            allowed_sifts_indexes = list(range(1, 1 + max_pdbs))  # noqa: F841
             to_load = (
                 downloaded.query("sifts_index in @allowed_sifts_indexes")[
                     "pdb_id"

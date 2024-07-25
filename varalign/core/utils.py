@@ -6,11 +6,12 @@ import copy
 import logging
 import os
 import re
+import urllib
 
-import requests
 from Bio.Align import MultipleSeqAlignment
 from Bio.Seq import Seq
-import urllib
+
+import requests
 
 from varalign.core.retry import retry
 
@@ -95,7 +96,7 @@ def parse_seq_name(seq_name):
     :param seq_name: Alignment sequence identifier.
     :return:
     """
-    return re.search("\w*", seq_name).group().strip()
+    return re.search("\w*", seq_name).group().strip()  # noqa: W605
 
 
 def filter_alignment(alignment, seq_id_filter):

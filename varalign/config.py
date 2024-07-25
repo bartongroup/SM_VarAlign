@@ -26,7 +26,6 @@ AttributeError: 'Defaults' object has no attribute 'email'"""
 
 import logging
 import os
-
 from configparser import ConfigParser
 
 __all__ = ["defaults", "Defaults"]

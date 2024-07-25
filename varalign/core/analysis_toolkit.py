@@ -1,14 +1,18 @@
-import numpy as np
-import pandas as pd
-import seaborn as sns
-from scipy import stats
 from collections import namedtuple
+
+import numpy as np
+
+import pandas as pd
+
+from scipy import stats
+
+import seaborn as sns
 
 
 def _aggregate_annotation(
     aligned_variant_table,
     annotation_column,
-    aggregate_by=[("Alignment", "Column")],
+    aggregate_by=[("Alignment", "Column")],  # noqa: B006
     fill_value=0,
 ):
     """Count category frequencies over a set of aggregation columns.
@@ -162,7 +166,7 @@ def _missense_per_residue_plot(aligned_variants_table, mapping_table):
     residue_counts = residue_counts.reindex(mapping_table.index).fillna(
         0
     )  # Fill in residues with no variants
-    ax = (
+    (
         residue_counts["missense_variant"]
         .astype(int)
         .value_counts()
@@ -183,7 +187,7 @@ def _variant_per_protein_plot(aligned_variants_table):
         ("VEP", "Consequence"),
         aggregate_by=["SOURCE_ID"],
     )
-    ax = protein_consequences.loc[:, protein_consequences.sum() > 100].hist(
+    protein_consequences.loc[:, protein_consequences.sum() > 100].hist(
         facecolor="black", edgecolor="black", figsize=(10, 10)
     )
 

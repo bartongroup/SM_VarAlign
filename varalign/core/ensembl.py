@@ -2,7 +2,8 @@ import os
 import sys
 import time
 
-import requests
+import requests  # noqa: F401
+
 import requests_cache
 
 from varalign.config import defaults

@@ -1,5 +1,6 @@
 import os
 from unittest import TestCase
+
 from varalign.core import gnomad
 from varalign.core.path_utils import get_test_data_path
 

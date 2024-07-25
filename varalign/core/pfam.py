@@ -3,9 +3,10 @@ import gzip
 import io
 from itertools import count, groupby
 
-import pandas as pd
 from Bio import AlignIO
 from Bio.Align import MultipleSeqAlignment
+
+import pandas as pd
 
 
 def _mask_alignment(aln, column_indexes):

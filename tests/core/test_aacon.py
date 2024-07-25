@@ -1,6 +1,8 @@
 import os
 from unittest import TestCase
+
 from Bio import AlignIO
+
 from varalign.core import aacon
 from varalign.core.path_utils import get_issues_path
 

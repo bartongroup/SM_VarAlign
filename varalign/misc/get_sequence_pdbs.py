@@ -4,20 +4,20 @@ This module will take an alignment as input and provide PDB files stripped down 
 
 import argparse
 import code
-import sys
+import logging
+import os
+import re
 
 from Bio import AlignIO
 from Bio.Alphabet import generic_protein
-from Bio.PDB import *
+from Bio.PDB import PDBList, PDBParser, PPBuilder
 from Bio.PDB.Dice import ChainSelector
 from Bio.Seq import Seq
 
-sys.path.extend(["/Users/smacgowan/PycharmProjects/ProteoFAV"])
 from proteofav.structures import sifts_best
-from varalign.core.utils import query_uniprot, parse_seq_name
-import os
-import re
-import logging
+
+from varalign.core.utils import parse_seq_name, query_uniprot
+
 
 log = logging.getLogger(__name__)
 
@@ -42,7 +42,7 @@ class in_range_or_zinc(ChainSelector):
         resid = atom.get_parent().get_id()[1]
         atom_chain_id = atom.get_parent().get_parent().get_id()
         if name.lower() == "zn" or (
-            resid in residue_range and atom_chain_id in chain_id
+            resid in residue_range and atom_chain_id in chain_id  # noqa: F821
         ):
             return 1
         else:
@@ -62,7 +62,9 @@ def main(args):
         if args.seq_name_ids == "UniProt":
             pass
         elif args.seq_name_ids == "UniProt_gene":
-            query = re.search("[^_\W]+", seq_name).group().strip()
+            query = (
+                re.search("[^_\W]+", seq_name).group().strip()  # noqa: W605
+            )
             seq_name = query_uniprot(
                 ("gene:" + query, "reviewed:yes", "organism:human"), first=True
             )
@@ -76,7 +78,7 @@ def main(args):
             log.error(
                 "Sequence names must correspond to either UniProt IDs or gene names"
             )
-            raise NotImplemented
+            raise NotImplementedError
         sifts_pdb = sifts_best(seq_name)
         if sifts_pdb is None:
             log.info("No SIFTs mapping for {}.".format(seq_name))
@@ -85,7 +87,7 @@ def main(args):
         # Pick out first X-ray structure
         # TODO: better structure selection
         pdb_id = None
-        for prot, record in sifts_pdb.items():
+        for _prot, record in sifts_pdb.items():
             for r_dict in record:
                 if r_dict.get("experimental_method") == "X-ray diffraction":
                     pdb_id = r_dict.get("pdb_id")
@@ -182,7 +184,7 @@ def main(args):
         )
         # extract(structure, chain_id, start, end, filename)
         # sel = alpha_select(chain_id, start, end)
-        sel = in_range_or_zinc(
+        sel = in_range_or_zinc(  # noqa: F841
             chain_id=chain_id, residue_range=list(range(start, end + 1))
         )
         # io = PDBIO()

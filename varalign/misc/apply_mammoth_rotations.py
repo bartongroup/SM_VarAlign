@@ -1,5 +1,7 @@
 import argparse
-from Bio.PDB import *
+
+from Bio.PDB import PDBIO, PDBParser
+
 import numpy as np
 
 if __name__ == "__main__":

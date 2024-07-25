@@ -1,13 +1,13 @@
 import logging
 
-import pandas as pd
 from Bio import pairwise2
 from Bio.Seq import Seq
 from Bio.SeqRecord import SeqRecord
 from Bio.pairwise2 import format_alignment
 
+import pandas as pd
+
 from varalign.core.fetchers import fetch_uniprot_sequences
-from varalign.core.utils import parse_seq_name
 
 log = logging.getLogger(__name__)
 
@@ -26,7 +26,6 @@ def get_row_residue_numbers(subseq, uniprot_seq, use_local_alignment):
         Seq(str(subseq.seq).replace("-", "").upper(), subseq.seq.alphabet),
         id=subseq.id,
     )
-    sequence_name = parse_seq_name(subseq.id)  # TODO: No longer needed
 
     if use_local_alignment:
         # Align input alignment sequences to UniProt Sequences

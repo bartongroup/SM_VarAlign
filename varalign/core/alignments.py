@@ -29,7 +29,7 @@ def get_start_end(sequence):
 
 def index_seq_to_alignment(
     sequence,
-    gap_chars=set(["-", "."]),
+    gap_chars=set(["-", "."]),  # noqa: B006
     zero_index=False,
     reverse_mapping=False,
 ):

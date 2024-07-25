@@ -2,9 +2,11 @@ import io
 import logging
 import os
 
-import pandas as pd
-import requests
 from Bio import SeqIO
+
+import pandas as pd
+
+import requests
 
 from varalign.config import defaults
 from varalign.core.utils import urlopen_with_retry

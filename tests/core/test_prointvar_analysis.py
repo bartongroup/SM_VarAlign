@@ -1,7 +1,6 @@
 import filecmp
 import os
 import shutil
-
 from unittest import TestCase, expectedFailure
 
 import pandas as pd

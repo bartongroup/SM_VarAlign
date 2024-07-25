@@ -1,10 +1,9 @@
 import os
 import shutil
 import unittest
+from unittest import mock
 
 import varalign.core.align_variants
-
-from unittest import mock
 
 
 @mock.patch(

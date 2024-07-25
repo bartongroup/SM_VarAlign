@@ -1,7 +1,6 @@
 import argparse
-from varalign.core import pfam
 
-#!/usr/bin/env python
+from varalign.core import pfam
 
 
 def main():

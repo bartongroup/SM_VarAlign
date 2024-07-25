@@ -2,12 +2,13 @@ import argparse
 import logging
 import os
 
-import pandas as pd
 from Bio import SeqIO  # Needs PR #768 #769 patched
 
+import pandas as pd
+
+from varalign.config import defaults
 from varalign.core import annotate_alignment
 from varalign.core import pfam
-from varalign.config import defaults
 from varalign.core.utils import filter_alignment
 
 log = logging.getLogger(__name__)
@@ -65,7 +66,7 @@ if __name__ == "__main__":
     job_number = int(os.getenv("SGE_TASK_ID", 1))
     log.info("Array job number: {}".format(job_number))
     with open(family_id_list, "r") as ids:
-        for i in range(job_number):
+        for _ in range(job_number):
             desired_family = ids.readline().strip()
     log.info("Searching Pfam for family: {}".format(desired_family))
 

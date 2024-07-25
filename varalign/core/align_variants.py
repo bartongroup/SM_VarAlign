@@ -1,17 +1,22 @@
 import logging
 import os
 
-import matplotlib
-
-matplotlib.use("Agg")
-import matplotlib.pyplot as plt
-import pandas as pd
-import seaborn as sns
-import tqdm
 from Bio import AlignIO
+
+import matplotlib
+import matplotlib.pyplot as plt
 from matplotlib.backends.backend_pdf import PdfPages
+
 from numpy import vectorize
 
+import pandas as pd
+
+import seaborn as sns
+
+import tqdm
+
+from varalign.cli import cli
+from varalign.config import defaults
 from varalign.core import aacon
 from varalign.core import alignments
 from varalign.core import analysis_toolkit
@@ -19,14 +24,15 @@ from varalign.core import ensembl
 from varalign.core import gnomad
 from varalign.core import jalview
 from varalign.core import occ_gmm
-from varalign.cli import cli
-from varalign.config import defaults
 from varalign.core.utils import make_dir_if_needed
+
+matplotlib.use("Agg")
 
 # Constants
 LOG_FILENAME = "align_variants.log"
 RESULTS_PATH = "results"
 DATA_PATH = os.path.join(".varalign", "aligned_variants_data")
+DEFAULT_CANONICAL = eval(defaults.canonical)
 
 # Set up logging
 logging.basicConfig(
@@ -56,7 +62,7 @@ def save_table_and_log(method, path, description):
 
 
 def build_vep_filter(
-    canonical=eval(defaults.canonical),
+    canonical=DEFAULT_CANONICAL,
     consequences=defaults.consequences,
     additional=defaults.additional,
 ):

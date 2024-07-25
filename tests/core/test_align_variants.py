@@ -1,15 +1,15 @@
 import filecmp
 import os
 import shutil
+from unittest import TestCase, expectedFailure, mock
 
-from unittest import TestCase, expectedFailure
-import pandas as pd
 from Bio import AlignIO
+
+import pandas as pd
 from pandas.api.types import is_bool_dtype, is_numeric_dtype
 
-from unittest import mock
-from varalign.core.align_variants import main
 from varalign.config import defaults as mock_defaults
+from varalign.core.align_variants import main
 from varalign.core.path_utils import get_project_root, get_test_data_path
 
 root = os.path.abspath(os.path.dirname(__file__))
