@@ -1,2 +1,4 @@
-recursive-include varalign/lib/aacon compbio-conservation-1.1.jar LICENSE manual.txt README.md
-include varalign/data/swissprot_uniprot-all.tab.gz
+include README.md
+include LICENSE
+recursive-include varalign/data *
+recursive-include varalign/lib/aacon *

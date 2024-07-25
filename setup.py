@@ -15,11 +15,25 @@ def gather_dependencies():
 
 DEPENDENCIES = gather_dependencies()
 
+
+def read_readme():
+    with open("README.md", "r", encoding="utf-8") as f:
+        return f.read()
+
+
 setup(
     name="VarAlign",
     version=__version__,
-    packages=find_packages(exclude=["tests", "tests.*"]),
-    package_data={"varalign": ["config.txt"]},
+    packages=find_packages(
+        include=["varalign", "varalign.*"], exclude=["tests", "tests.*"]
+    ),
+    package_data={
+        "varalign": [
+            "config.txt",
+            "data/*",
+            "lib/aacon/*",
+        ],
+    },
     include_package_data=True,
     entry_points={
         "console_scripts": [
@@ -34,4 +48,18 @@ setup(
     author="Stuart MacGowan",
     author_email="s.macgowan@dundee.ac.uk",
     description="This package is used to map and aggregate variants in multiple sequence alignments.",
+    long_description=read_readme(),
+    long_description_content_type="text/markdown",
+    classifiers=[
+        "Programming Language :: Python :: 3",
+        "License :: OSI Approved :: MIT License",
+        "Operating System :: OS Independent",
+        "Development Status :: 4 - Beta",
+        "Intended Audience :: Science/Research",
+        "Topic :: Scientific/Engineering :: Bio-Informatics",
+        "Topic :: Scientific/Engineering :: Chemistry",
+        "Topic :: Scientific/Engineering :: Information Analysis",
+        "Topic :: Software Development :: Libraries :: Python Modules",
+    ],
+    python_requires=">=3.6",
 )
