@@ -4,9 +4,9 @@ from unittest import TestCase
 import pandas as pd
 
 from varalign.core import prointvar_analysis
+from varalign.core.path_utils import get_test_data_path
 
 root = os.path.abspath(os.path.dirname(__file__))
-data_path = os.path.join(root, "data")
 
 
 class Test_alignment_contact_processing(TestCase):
@@ -14,15 +14,21 @@ class Test_alignment_contact_processing(TestCase):
         """Setup"""
         # Test contacts
         self.table = pd.read_pickle(
-            os.path.join(data_path, "4iqr_residue_B146_structure_table.p.gz")
+            os.path.join(
+                get_test_data_path(), "4iqr_residue_B146_structure_table.p.gz"
+            )
         )
         # Test info table
         self.info = pd.read_pickle(
-            os.path.join(data_path, "p41235_pf00104.29_alignment_info.p.gz")
+            os.path.join(
+                get_test_data_path(), "p41235_pf00104.29_alignment_info.p.gz"
+            )
         )
         # Mapping table
         self.index = pd.read_pickle(
-            os.path.join(data_path, "p41235_pf00104.29_mappings.p.gz")
+            os.path.join(
+                get_test_data_path(), "p41235_pf00104.29_mappings.p.gz"
+            )
         )
         self.mappings = prointvar_analysis._format_mapping_table(
             self.info, self.index
