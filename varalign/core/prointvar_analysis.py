@@ -121,6 +121,9 @@ def _format_mapping_table(alignment_info_table, alignment_mapping_table):
         :, "uniprot_id"
     ]
     aln_uniprot_ids.index.name = "SOURCE_ID"
+    alignment_mapping_table.columns = (
+        alignment_mapping_table.columns.droplevel(0)
+    )
     mapping_table = alignment_mapping_table.join(aln_uniprot_ids)
     # TODO: Are these inplace mods ok?
     mapping_table.reset_index(inplace=True)
@@ -585,6 +588,7 @@ def main(path_to_alignment, override, only_sifts_best, max_pdbs, n_proc):
             "Make sure that {}, {} and\n"
             "{} are present in the run directory."
         )
+        # TODO: Fix message paths or remove
         print(
             message.format(
                 av_data_prefix + "_info.p.gz",
