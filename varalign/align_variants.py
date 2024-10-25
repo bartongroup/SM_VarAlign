@@ -2,7 +2,7 @@
 import logging
 import os
 
-import matplotlib; matplotlib.use('Agg')
+import matplotlib
 import matplotlib.pyplot as plt
 import pandas as pd
 import seaborn as sns
