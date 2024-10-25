@@ -5,7 +5,6 @@ import subprocess
 
 import pandas as pd
 from Bio import AlignIO  # Needs PR #768 #769 patched
-from Bio.Alphabet import IUPAC
 
 import varalign
 from varalign.jabaws import apply_column_mask
@@ -32,7 +31,7 @@ def _reformat_alignment_for_aacon(aln):
     aacon_alignment = sanitise_alignment(aln)
 
     # Identify empty columns and those with unknown characters
-    allowed_chars = IUPAC.IUPACProtein.letters + '-'
+    allowed_chars = 'ACDEFGHIKLMNPQRSTVWY-'
     is_empty_column = []
     contains_unk_chars = []
     for column in range(aacon_alignment.get_alignment_length()):
