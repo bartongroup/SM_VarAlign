@@ -6,7 +6,6 @@ from subprocess import call
 
 import pandas as pd
 from Bio import AlignIO  # Needs PR #768 #769 patched
-from Bio.Alphabet import IUPAC
 
 from varalign import pfam
 from varalign.utils import filter_alignment, sanitise_alignment
@@ -116,7 +115,7 @@ if __name__ == '__main__':
 
     # Remove empty columns and those with unknown characters
     log.info('Removing empty and unrecognised columns...')
-    allowed_chars = IUPAC.IUPACProtein.letters + '-'
+    allowed_chars = 'ACDEFGHIKLMNPQRSTVWY-'
     is_empty_column = []
     contains_unk_chars = []
     for column in range(family.get_alignment_length()):
